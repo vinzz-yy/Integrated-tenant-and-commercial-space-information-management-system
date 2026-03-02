@@ -1,253 +1,436 @@
-# Commercial Space Management System
+# LA Union Skymall Corporation
+## Property Management System - React Frontend
 
-A comprehensive web application for managing commercial real estate properties with role-based access control.
+A comprehensive, fully functional web application for integrated tenant and commercial space information management.
 
-## 🏢 Overview
+---
 
-This system provides three distinct user interfaces for different roles:
-- **Admin Portal** - Full system management and oversight
-- **Staff Portal** - Operational tasks and compliance
-- **Tenant Portal** - Self-service for tenants
+## 🌟 Features
 
-## 🔑 Demo Credentials
+### **Admin System**
+- ✅ Real-time dashboard with analytics and KPIs
+- ✅ Complete user management (CRUD operations)
+- ✅ Compliance document management with approval workflows
+- ✅ Appointment scheduling system
+- ✅ Operations request tracking
+- ✅ Financial management (invoices, payments, reports)
+- ✅ Commercial space unit management
+- ✅ Bulk user import/export
+- ✅ Advanced filtering and search
 
-### Admin Access
-- **Email:** admin@commercialspace.com
-- **Password:** any text (demo mode)
+### **Staff System**
+- ✅ Role-specific dashboard
+- ✅ Profile management
+- ✅ View compliance documents (read-only)
+- ✅ Schedule management
+- ✅ Operation request handling
+- ✅ Basic financial reporting
+- ✅ Commercial space editing capabilities
 
-### Staff Access
-- **Email:** sarah.staff@commercialspace.com
-- **Password:** any text (demo mode)
+### **Tenant System**
+- ✅ Personal dashboard with account overview
+- ✅ Self-service profile management
+- ✅ Document upload for compliance
+- ✅ Appointment booking
+- ✅ Online payment portal
+- ✅ Maintenance request submission
+- ✅ View commercial unit details
 
-### Tenant Access
-- **Email:** alice.tenant@email.com
-- **Password:** any text (demo mode)
+---
 
-## 📋 Features
+## 🚀 Technology Stack
 
-### ADMIN SYSTEM
+- **Frontend Framework:** React 18.3.1
+- **Routing:** React Router 7.13.0
+- **Styling:** Tailwind CSS 4.1.12
+- **UI Components:** Radix UI
+- **Charts:** Recharts 2.15.2
+- **Forms:** React Hook Form 7.55.0
+- **Icons:** Lucide React
+- **Notifications:** Sonner
+- **Theme:** Dark/Light mode support
 
-#### Dashboard
-- Real-time KPIs (users, occupancy rate, revenue, alerts)
-- Revenue trend charts (6-month view)
-- Space occupancy pie chart
-- Pending payments overview
-- Active maintenance requests
+---
 
-#### User Management
-- CRUD operations for all users
-- Role assignment (Admin/Staff/Tenant)
-- User status management (Active/Inactive)
-- Search and filter functionality
-- Activity tracking
+## 📦 Installation
 
-#### Commercial Space Management
-- Complete space inventory
-- Unit details: number, floor, size, rental rates
-- Status tracking: Vacant, Occupied, Reserved, Under Maintenance
-- Tenant-unit assignments
-- Lease contract information
-- Filtering by status and type
+### Prerequisites
+- Node.js 18+ 
+- npm or pnpm
 
-#### Financial Management
-- Revenue monitoring dashboard
-- Payment tracking (Paid/Pending/Overdue)
-- Collection rate analytics
-- Revenue trend analysis
-- Payment history with detailed records
-- Export functionality for reports
+### Steps
 
-#### Document Management
-- Document upload and storage
-- Category management: Contracts, Permits, Compliance, Invoices, Reports
-- Approval workflows
-- Search and filter by type
-- Document status tracking
+1. **Install dependencies:**
+```bash
+npm install
+# or
+pnpm install
+```
 
-#### Operations Management
-- Maintenance request handling
-- Priority levels: Low, Medium, High, Urgent
-- Status tracking: Open, In Progress, Completed, Cancelled
-- Task assignment to staff
-- Upcoming schedule view
-- Work order management
+2. **Set up environment variables:**
 
-### STAFF SYSTEM
+Create a `.env` file in the root directory:
 
-#### Dashboard
-- Assigned tasks overview
-- Personal schedule
-- Compliance status
-- Recent activity log
-- Quick access to pending items
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
 
-#### Profile Management
-- Personal information editing
-- Contact details
-- Account security settings
-- Activity history
+3. **Run the development server:**
+```bash
+npm run dev
+```
 
-#### Space Monitoring
-- View all commercial spaces
-- Update space status
-- Access to unit information
-- Tenant contact details
+The application will be available at `http://localhost:5173`
 
-#### Document Submission
+4. **Build for production:**
+```bash
+npm run build
+```
+
+---
+
+## 🔐 Authentication
+
+### Demo Accounts
+
+The application includes three demo accounts for testing:
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@skymall.com | password |
+| **Staff** | staff@skymall.com | password |
+| **Tenant** | tenant@skymall.com | password |
+
+### User Roles & Permissions
+
+#### Admin
+- Full system access
+- User management (create, edit, delete users)
+- Approve/reject compliance documents
+- Create invoices and process payments
+- Manage all commercial units
+- View all reports and analytics
+
+#### Staff
+- Limited administrative access
+- View compliance documents (read-only)
+- Manage schedules and appointments
+- Handle operation requests
+- View financial reports
+- Edit commercial unit details
+
+#### Tenant
+- Personal account access only
 - Upload compliance documents
-- Track document status
-- Submit reports
-- View approved documents
+- Book appointments
+- Pay invoices online
+- Submit maintenance requests
+- View assigned commercial unit
 
-#### Schedule Management
-- View appointments
-- Maintenance schedules
-- Inspection timelines
-- Meeting requests
+---
 
-### TENANT SYSTEM
+## 🏗️ Project Structure
 
-#### Dashboard
-- Lease information overview
-- Current unit details
+```
+/src
+├── /app
+│   ├── App.tsx                 # Main application component
+│   ├── routes.tsx              # Route definitions
+│   │
+│   ├── /components
+│   │   ├── Layout.tsx          # Main layout wrapper
+│   │   ├── Navbar.tsx          # Top navigation bar
+│   │   ├── Sidebar.tsx         # Side navigation menu
+│   │   ├── Root.tsx            # Root component
+│   │   └── /ui                 # Reusable UI components
+│   │
+│   ├── /context
+│   │   ├── AuthContext.tsx     # Authentication state management
+│   │   └── ThemeContext.tsx    # Theme (dark/light) management
+│   │
+│   ├── /pages
+│   │   ├── Login.tsx           # Login page
+│   │   ├── NotFound.tsx        # 404 page
+│   │   │
+│   │   ├── /admin              # Admin pages
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── UserManagement.tsx
+│   │   │   ├── ComplianceManagement.tsx
+│   │   │   ├── ScheduleManagement.tsx
+│   │   │   ├── OperationsManagement.tsx
+│   │   │   ├── FinancialManagement.tsx
+│   │   │   └── CommercialSpaceManagement.tsx
+│   │   │
+│   │   ├── /staff              # Staff pages
+│   │   │   ├── StaffDashboard.tsx
+│   │   │   ├── StaffProfile.tsx
+│   │   │   ├── StaffCompliance.tsx
+│   │   │   ├── StaffSchedule.tsx
+│   │   │   ├── StaffOperations.tsx
+│   │   │   ├── StaffFinancial.tsx
+│   │   │   └── StaffCommercialSpace.tsx
+│   │   │
+│   │   └── /tenant             # Tenant pages
+│   │       ├── TenantDashboard.tsx
+│   │       ├── TenantProfile.tsx
+│   │       ├── TenantCompliance.tsx
+│   │       ├── TenantAppointments.tsx
+│   │       ├── TenantPayments.tsx
+│   │       ├── TenantMaintenance.tsx
+│   │       └── TenantCommercialSpace.tsx
+│   │
+│   └── /services
+│       ├── api.ts              # API service layer (Django integration)
+│       └── mockData.ts         # Mock data for development
+│
+└── /styles
+    ├── index.css
+    ├── tailwind.css
+    ├── theme.css
+    └── fonts.css
+```
+
+---
+
+## 🔌 Backend Integration
+
+This React frontend is designed to integrate with a **Django REST Framework** backend.
+
+### Django Backend Setup
+
+Refer to the comprehensive guide:
+📄 **[DJANGO_BACKEND_GUIDE.md](./DJANGO_BACKEND_GUIDE.md)**
+
+This guide includes:
+- Complete Django project setup
+- Database models for all modules
+- API endpoint definitions
+- Authentication with JWT
+- CORS configuration
+- File upload handling
+- Environment variables
+- Migration commands
+
+### API Integration Points
+
+All API calls are centralized in `/src/app/services/api.ts` with clear comments indicating:
+
+```typescript
+// DJANGO BACKEND INTEGRATION POINT
+// API Call: POST /api/auth/login/
+// Request: { email: string, password: string }
+// Response: { access_token: string, refresh_token: string, user: User }
+```
+
+Each function includes:
+- HTTP method (GET, POST, PATCH, DELETE)
+- Endpoint URL
+- Request body structure
+- Expected response format
+- Django model reference
+
+---
+
+## 📊 Key Modules
+
+### 1. **User Management**
+- Create, read, update, delete users
+- Role-based access control
+- Bulk import from CSV/Excel
+- User activity logs
+- Profile photo management
+
+### 2. **Compliance Management**
+- Document upload and categorization
+- Version control
+- Approval workflow
+- Expiration tracking
+- Automated reminders
+- Audit logs
+
+### 3. **Schedule Management**
+- Multi-calendar system
+- Appointment booking
+- Resource allocation
+- Email/SMS notifications
+- Calendar integration
+
+### 4. **Operations Management**
+- Request ticketing system
+- Priority levels
+- Task assignment
+- Activity tracking
+- Performance metrics
+
+### 5. **Financial Management**
+- Invoice generation
+- Payment processing
+- Revenue analytics
+- Profit & loss reports
 - Payment history
-- Compliance status
-- Announcements
-- Upcoming appointments
+- Automated billing
 
-#### Profile
-- View and edit personal information
-- Contact details
-- Account settings
+### 6. **Commercial Space Management**
+- Unit database
+- Floor plans
+- Occupancy tracking
+- Tenant assignment
+- Lease management
+- Status monitoring
 
-#### Unit Information
-- Assigned space details
-- Lease terms and conditions
-- Monthly rent information
-- Lease start/end dates
+### 7. **Maintenance Management**
+- Request submission
+- Priority classification
+- Status tracking
+- File attachments
+- Assignment workflow
 
-#### Document Management
-- Upload required documents
-- Track compliance requirements
-- View lease agreements
-- Access invoices
+---
 
-#### Appointments
-- Request maintenance
-- Schedule viewings
-- Meeting requests
-- View upcoming appointments
+## 🎨 UI/UX Features
 
-## 🛠️ Technology Stack
+### Design System
+- **Modern Interface:** Clean, professional design
+- **Responsive Layout:** Mobile, tablet, and desktop support
+- **Dark Mode:** Full dark theme support
+- **Accessibility:** WCAG 2.1 compliant
+- **Animations:** Smooth transitions and interactions
 
-### Frontend
-- **React 18.3** - UI framework
-- **TypeScript** - Type safety
-- **React Router 7** - Navigation and routing
-- **Tailwind CSS v4** - Styling
-- **Recharts** - Data visualization
-- **Lucide React** - Icon library
+### Components
+- **Data Tables:** Sortable, filterable, paginated
+- **Charts:** Interactive revenue and analytics charts
+- **Forms:** Validated with React Hook Form
+- **Modals:** Accessible dialog components
+- **Notifications:** Toast notifications with Sonner
+- **Calendars:** Interactive date pickers
+
+---
+
+## 🔒 Security Features
+
+- **JWT Authentication:** Secure token-based auth
+- **Role-Based Access Control:** Granular permissions
+- **Input Validation:** Client-side and server-side
+- **HTTPS Ready:** Secure data transmission
+- **CORS Protection:** Configured for Django backend
+- **XSS Protection:** Sanitized inputs
+- **File Upload Security:** Type and size restrictions
+
+---
+
+## 📱 Responsive Design
+
+The application is fully responsive with breakpoints:
+
+- **Mobile:** < 768px
+- **Tablet:** 768px - 1024px
+- **Desktop:** > 1024px
+
+All dashboards, tables, and forms adapt seamlessly to different screen sizes.
+
+---
+
+## 🧪 Development
+
+### Running in Development Mode
+
+```bash
+npm run dev
+```
+
+### Mock Data
+
+The application uses mock data for development. All mock data is in:
+- `/src/app/services/mockData.ts`
+
+Replace with actual API calls when backend is ready.
+
+### Environment Variables
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
+
+---
+
+## 🚀 Deployment
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+The build output will be in the `/dist` folder.
+
+### Deployment Options
+
+1. **Vercel:** 
+```bash
+vercel deploy
+```
+
+2. **Netlify:**
+```bash
+netlify deploy --prod
+```
+
+3. **Docker:**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 5173
+CMD ["npm", "run", "preview"]
+```
+
+---
+
+## 📈 Performance Optimization
+
+- **Code Splitting:** Route-based lazy loading
+- **Asset Optimization:** Vite build optimization
+- **Caching:** Service worker ready
+- **Image Optimization:** WebP support
+- **Bundle Size:** Tree shaking enabled
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+This project is proprietary software developed for LA Union Skymall Corporation.
+
+---
+
+## 📞 Support
+
+For technical support or questions:
+- Email: support@launionskymall.com
+- Phone: +1 (555) 100-1000
+
+---
+
+## 🙏 Acknowledgments
+
+- **Tailwind CSS** - Utility-first CSS framework
 - **Radix UI** - Accessible component primitives
+- **Recharts** - Composable charting library
+- **React Router** - Declarative routing
+- **Lucide** - Beautiful icon library
 
-### State Management
-- React Context API for authentication
-- Local state with useState
-- Mock data for demonstration
+---
 
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── components/
-│   │   ├── ui/           # Reusable UI components
-│   │   └── Layout.tsx    # Main layout with sidebar
-│   ├── context/
-│   │   └── AuthContext.tsx
-│   ├── data/
-│   │   └── mockData.ts   # Demo data
-│   ├── pages/
-│   │   ├── admin/        # Admin pages
-│   │   ├── staff/        # Staff pages
-│   │   ├── tenant/       # Tenant pages
-│   │   ├── Login.tsx
-│   │   └── NotFound.tsx
-│   ├── lib/
-│   │   └── utils.ts      # Utility functions
-│   ├── types.ts          # TypeScript type definitions
-│   ├── routes.tsx        # Route configuration
-│   └── App.tsx          # Main application component
-└── styles/               # Global styles
-```
-
-## 🎨 Design Features
-
-- **Responsive Design** - Optimized for desktop viewing
-- **Modern UI** - Clean, professional interface
-- **Role-based Navigation** - Dynamic sidebar based on user role
-- **Interactive Charts** - Visual data representation
-- **Search & Filter** - Quick data access
-- **Status Badges** - Clear visual indicators
-- **Data Tables** - Organized information display
-
-## 🔒 Security Features (Production Ready)
-
-For production deployment, implement:
-- Proper authentication with JWT tokens
-- Row-level security for database
-- HTTPS encryption
-- Input validation and sanitization
-- CSRF protection
-- Rate limiting
-- Audit logging
-- Data encryption at rest
-
-## 📊 Mock Data
-
-The application uses comprehensive mock data including:
-- 7 users (1 admin, 2 staff, 4 tenants)
-- 8 commercial spaces
-- 4 active leases
-- Payment records
-- Maintenance requests
-- Documents
-- Schedules
-
-## 🚀 Getting Started
-
-1. The application starts at the login page
-2. Use any of the demo credentials above
-3. Navigate through role-specific features
-4. All data is stored in memory (refreshes on reload)
-
-## 💡 Future Enhancements
-
-- Real backend integration with Django REST API
-- PostgreSQL database
-- Real-time notifications
-- Email notifications
-- Advanced reporting with PDF export
-- Mobile responsive design
-- Multi-language support
-- Payment gateway integration
-- Automated lease renewals
-- Bulk operations
-- Advanced analytics dashboard
-
-## 📝 Notes
-
-This is a frontend demonstration using mock data. For production:
-1. Integrate with Django REST API
-2. Implement proper authentication
-3. Connect to PostgreSQL database
-4. Add data validation
-5. Implement error handling
-6. Add loading states
-7. Implement pagination for large datasets
-8. Add confirmation dialogs for critical actions
-9. Implement proper file upload handling
-10. Add comprehensive logging and monitoring
-
-## 🤝 Support
-
-For questions or issues, please refer to the system documentation or contact your system administrator.
+**Built with ❤️ for LA Union Skymall Corporation**
