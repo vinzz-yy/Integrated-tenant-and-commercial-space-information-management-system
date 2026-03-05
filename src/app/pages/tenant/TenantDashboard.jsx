@@ -1,0 +1,194 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { Layout } from '../../components/Layout.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Calendar, FileCheck, CreditCard, Wrench, Building, ArrowRight } from 'lucide-react';
+import api from '../../services/api.js';
+
+export function TenantDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [invoices, setInvoices] = useState([]);
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    if (user?.role !== 'tenant') navigate('/');
+  }, [user, navigate]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const inv = await api.financial.getInvoices({ tenant_id: user?.id });
+        setInvoices(inv.results || []);
+        const req = await api.maintenance.getRequests({ tenant_id: user?.id });
+        setRequests(req.results || []);
+      } catch (e) {
+        setInvoices([]); setRequests([]);
+      }
+    };
+    load();
+  }, [user]);
+
+  const handleMyUnitClick = () => navigate('/tenant/commercial-space');
+  const handlePendingPaymentsClick = () => navigate('/tenant/payments');
+  const handleMaintenanceRequestsClick = () => navigate('/tenant/maintenance');
+  const handleDocumentsClick = () => navigate('/tenant/compliance');
+
+  const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
+  const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  return (
+    <Layout role="tenant">
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tenant Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Welcome, {user?.firstName}! Unit {user?.unitNumber}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMyUnitClick}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+                My Unit
+                <Building className="h-4 w-4 text-blue-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{user?.unitNumber || 'A-105'}</div>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                Commercial Space
+                <ArrowRight className="h-3 w-3" />
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handlePendingPaymentsClick}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+                Pending Payments
+                <CreditCard className="h-4 w-4 text-green-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                ${unpaidTotal.toLocaleString()}
+              </div>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                {unpaidInvoices.length} unpaid invoice(s)
+                <ArrowRight className="h-3 w-3" />
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMaintenanceRequestsClick}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+                Maintenance Requests
+                <Wrench className="h-4 w-4 text-orange-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{requests.length}</div>
+              <p className="text-xs text-gray-500 mt-1">
+                {requests.filter(req => req.status === 'pending').length} pending
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleDocumentsClick}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+                Documents
+                <FileCheck className="h-4 w-4 text-purple-600" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">3</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Compliance documents
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Invoices</CardTitle>
+                <CardDescription>Your recent billing statements</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/tenant/payments')} className="gap-1">
+                View All <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {invoices.slice(0, 3).map((invoice) => (
+                  <div 
+                    key={invoice.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => navigate('/tenant/payments')}
+                  >
+                    <div className="flex items-start gap-3">
+                      <CreditCard className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">{invoice.description}</p>
+                        <p className="text-xs text-gray-500 mt-1">Due: {invoice.dueDate}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">${(invoice.amount || 0).toLocaleString()}</p>
+                      <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'} className="mt-1">
+                        {invoice.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>My Maintenance Requests</CardTitle>
+                <CardDescription>Track your maintenance requests</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/tenant/maintenance')} className="gap-1">
+                View All <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {requests.slice(0, 3).map((request) => (
+                  <div 
+                    key={request.id} 
+                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => navigate('/tenant/maintenance')}
+                  >
+                    <Wrench className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{request.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Created: {request.createdAt}
+                      </p>
+                      <Badge variant={request.status === 'completed' ? 'default' : 'secondary'} className="mt-2">
+                        {request.status?.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Layout>
+  );
+}
