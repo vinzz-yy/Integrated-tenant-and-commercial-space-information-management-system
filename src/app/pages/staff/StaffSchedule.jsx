@@ -1,3 +1,6 @@
+// StaffSchedule.jsx - Staff schedule management page
+// Allows staff to view, create, and manage their appointments
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -29,9 +32,15 @@ import api from '../../services/api.js';
 export function StaffSchedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for calendar and appointments
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
+  
+  // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form state for new appointment
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -41,11 +50,13 @@ export function StaffSchedule() {
     duration: '1 hour',
   });
 
+  // Redirect if not staff and load appointments
   useEffect(() => {
     if (user?.role !== 'staff') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       const resp = await api.schedule.getAppointments();
       setAppointments(resp.results || []);
@@ -53,12 +64,19 @@ export function StaffSchedule() {
     load();
   }, [user, navigate]);
 
+  // Handle creating a new appointment
   const handleCreateAppointment = async () => {
+    // Validate required fields
     if (!formData.title || !formData.date || !formData.time) {
+      alert('Please fill in all required fields');
       return;
     }
+    
     try {
-      const created = await api.schedule.createAppointment({ ...formData, status: 'scheduled' });
+      const created = await api.schedule.createAppointment({ 
+        ...formData, 
+        status: 'scheduled' 
+      });
       setAppointments([...appointments, created]);
       setIsCreateDialogOpen(false);
       resetForm();
@@ -68,6 +86,7 @@ export function StaffSchedule() {
     }
   };
 
+  // Handle deleting an appointment
   const handleDeleteAppointment = async (id) => {
     try {
       await api.schedule.deleteAppointment(String(id));
@@ -78,6 +97,7 @@ export function StaffSchedule() {
     }
   };
 
+  // Reset form to initial state
   const resetForm = () => {
     setFormData({
       title: '',
@@ -89,6 +109,7 @@ export function StaffSchedule() {
     });
   };
 
+  // Filter appointments for selected date
   const filteredAppointments = selectedDate
     ? appointments.filter(apt => {
         const aptDate = new Date(apt.date);
@@ -99,6 +120,7 @@ export function StaffSchedule() {
   return (
     <Layout role="staff">
       <div className="space-y-6">
+        {/* Header with create button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -114,7 +136,9 @@ export function StaffSchedule() {
           </Button>
         </div>
 
+        {/* Main grid - Calendar and Appointments */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar card */}
           <Card>
             <CardHeader>
               <CardTitle>Calendar</CardTitle>
@@ -130,6 +154,7 @@ export function StaffSchedule() {
             </CardContent>
           </Card>
 
+          {/* Appointments list card */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>
@@ -148,12 +173,15 @@ export function StaffSchedule() {
                 {filteredAppointments.length > 0 ? (
                   filteredAppointments.map((appointment) => (
                     <div key={appointment.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      {/* Date icon */}
                       <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex flex-col items-center justify-center">
                         <CalendarIcon className="h-6 w-6 text-blue-600" />
                         <span className="text-xs font-medium text-blue-600 mt-1">
                           {new Date(appointment.date).toLocaleDateString('en-US', { day: 'numeric' })}
                         </span>
                       </div>
+                      
+                      {/* Appointment details */}
                       <div className="flex-1">
                         <h3 className="font-semibold">{appointment.title}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -171,6 +199,8 @@ export function StaffSchedule() {
                           </Badge>
                         </div>
                       </div>
+                      
+                      {/* Action buttons */}
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
@@ -195,6 +225,7 @@ export function StaffSchedule() {
           </Card>
         </div>
 
+        {/* Create Appointment Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -204,6 +235,7 @@ export function StaffSchedule() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {/* Title input */}
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -213,6 +245,8 @@ export function StaffSchedule() {
                   placeholder="Appointment title"
                 />
               </div>
+              
+              {/* Date and time inputs */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Date *</Label>
@@ -233,6 +267,8 @@ export function StaffSchedule() {
                   />
                 </div>
               </div>
+              
+              {/* Type select */}
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
@@ -247,6 +283,8 @@ export function StaffSchedule() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Location input */}
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input

@@ -1,3 +1,6 @@
+// ScheduleManagement.jsx - Admin schedule management page
+// Allows administrators to view, create, and manage appointments and schedules
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -29,9 +32,17 @@ import api from '../../services/api.js';
 export function ScheduleManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing appointments data
   const [appointments, setAppointments] = useState([]);
+  
+  // State for calendar selection
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Dialog state for creating new appointments
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form state for new appointment
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -41,26 +52,37 @@ export function ScheduleManagement() {
     location: '',
   });
 
+  // Load appointments when component mounts
   useEffect(() => {
+    // Redirect if user is not an admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
+    // Async function to fetch appointments from API
     const load = async () => {
       try {
         const resp = await api.schedule.getAppointments();
         setAppointments(resp.results || []);
       } catch (e) {
+        // Set empty array on error to prevent undefined issues
         setAppointments([]);
       }
     };
     load();
   }, [user, navigate]);
 
+  // Handle creating a new appointment
   const handleCreateAppointment = async () => {
     try {
+      // Send request to create appointment
       const created = await api.schedule.createAppointment(formData);
+      
+      // Add new appointment to the list
       setAppointments([...appointments, created]);
+      
+      // Close the dialog
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -68,9 +90,13 @@ export function ScheduleManagement() {
     }
   };
 
+  // Handle deleting an appointment
   const handleDeleteAppointment = async (id) => {
     try {
+      // Send delete request to API
       await api.schedule.deleteAppointment(String(id));
+      
+      // Remove deleted appointment from state
       setAppointments(appointments.filter(a => String(a.id) !== String(id)));
     } catch (error) {
       console.error('Error deleting appointment:', error);
@@ -81,6 +107,7 @@ export function ScheduleManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header section with title and create button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -96,7 +123,9 @@ export function ScheduleManagement() {
           </Button>
         </div>
 
+        {/* Main grid - Calendar and Appointments list */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar card - takes 1/3 of the grid */}
           <Card>
             <CardHeader>
               <CardTitle>Calendar</CardTitle>
@@ -111,6 +140,7 @@ export function ScheduleManagement() {
             </CardContent>
           </Card>
 
+          {/* Appointments list card - takes 2/3 of the grid */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Appointments</CardTitle>
@@ -118,11 +148,15 @@ export function ScheduleManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Map through appointments and display each one */}
                 {appointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                    {/* Date icon/visual representation */}
                     <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex flex-col items-center justify-center">
                       <CalendarIcon className="h-6 w-6 text-blue-600" />
                     </div>
+                    
+                    {/* Appointment details */}
                     <div className="flex-1">
                       <h3 className="font-semibold">{appointment.title}</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -135,6 +169,8 @@ export function ScheduleManagement() {
                         {appointment.type}
                       </Badge>
                     </div>
+                    
+                    {/* Action buttons (Edit and Delete) */}
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
@@ -154,13 +190,17 @@ export function ScheduleManagement() {
           </Card>
         </div>
 
+        {/* Create Appointment Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Appointment</DialogTitle>
               <DialogDescription>Schedule a new appointment</DialogDescription>
             </DialogHeader>
+            
+            {/* Form fields */}
             <div className="space-y-4">
+              {/* Title input */}
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
@@ -169,6 +209,8 @@ export function ScheduleManagement() {
                   placeholder="Appointment title"
                 />
               </div>
+              
+              {/* Date and time inputs (2-column grid) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date</Label>
@@ -187,9 +229,14 @@ export function ScheduleManagement() {
                   />
                 </div>
               </div>
+              
+              {/* Type select dropdown */}
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -201,6 +248,8 @@ export function ScheduleManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Location input */}
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input
@@ -210,6 +259,8 @@ export function ScheduleManagement() {
                 />
               </div>
             </div>
+            
+            {/* Dialog footer with action buttons */}
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel

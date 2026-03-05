@@ -1,3 +1,6 @@
+// StaffCompliance.jsx - Staff view for managing compliance documents
+// Allows staff to view and review tenant compliance documents
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -36,17 +39,21 @@ import api from '../../services/api.js';
 export function StaffCompliance() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing compliance documents
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
 
+  // Redirect if not staff and load documents
   useEffect(() => {
     if (user?.role !== 'staff') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       const resp = await api.compliance.getDocuments();
       setDocuments(resp.results || []);
@@ -54,6 +61,7 @@ export function StaffCompliance() {
     load();
   }, [user, navigate]);
 
+  // Helper function to get appropriate icon based on document status
   const getStatusIcon = (status) => {
     switch (status) {
       case 'approved':
@@ -67,19 +75,21 @@ export function StaffCompliance() {
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusVariant = (status) => {
     switch (status) {
       case 'approved':
-        return 'default';
+        return 'default'; // Blue badge
       case 'pending':
-        return 'secondary';
+        return 'secondary'; // Gray badge
       case 'expiring_soon':
-        return 'destructive';
+        return 'destructive'; // Red badge
       default:
         return 'outline';
     }
   };
 
+  // Open review dialog with selected document
   const openReviewDialog = (document) => {
     setSelectedDocument(document);
     setReviewStatus(document.status);
@@ -87,22 +97,30 @@ export function StaffCompliance() {
     setIsReviewDialogOpen(true);
   };
 
+  // Handle submission of document review
   const handleReviewSubmit = async () => {
     if (!selectedDocument) return;
+    
+    // Update document status via API
     await api.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+    
+    // Update local state
     setDocuments(documents.map(doc => 
       String(doc.id) === String(selectedDocument.id) 
         ? { ...doc, status: reviewStatus, notes: reviewNotes }
         : doc
     ));
+    
     setIsReviewDialogOpen(false);
   };
 
+  // Placeholder for download functionality
   const handleDownload = (doc) => {};
 
   return (
     <Layout role="staff">
       <div className="space-y-6">
+        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Compliance Documents
@@ -112,6 +130,7 @@ export function StaffCompliance() {
           </p>
         </div>
 
+        {/* Documents table */}
         <Card>
           <CardHeader>
             <CardTitle>Compliance Documents ({documents.length})</CardTitle>
@@ -174,6 +193,7 @@ export function StaffCompliance() {
           </CardContent>
         </Card>
 
+        {/* Review Document Dialog */}
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -184,11 +204,14 @@ export function StaffCompliance() {
             </DialogHeader>
             {selectedDocument && (
               <div className="space-y-4">
+                {/* Document info summary */}
                 <div>
                   <p className="text-sm font-medium">Tenant: {selectedDocument.tenantName}</p>
                   <p className="text-sm text-gray-600">Document: {selectedDocument.documentType}</p>
                   <p className="text-sm text-gray-600">File: {selectedDocument.fileName}</p>
                 </div>
+                
+                {/* Status selector */}
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={reviewStatus} onValueChange={setReviewStatus}>
@@ -203,6 +226,8 @@ export function StaffCompliance() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Review notes */}
                 <div className="space-y-2">
                   <Label>Notes</Label>
                   <Textarea

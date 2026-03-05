@@ -1,0 +1,83 @@
+PYTHON
+# Navigate to your backend directory
+cd "c:\Users\vncea\OneDrive\Desktop\react\my-react-app\backend"
+
+# Create and activate virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies/OPTIONAL
+pip install -r requirements.txt
+
+# Run the Python server
+python manage.py runserver  # For Django
+
+React
+# In a NEW terminal window
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start React development server
+npm start
+# OR
+npm run dev
+
+
+GITHUB
+# If you haven't connected to GitHub yet
+git remote add origin https://github.com/yourusername/your-repo-name.git
+git branch -M main
+git push -u origin main
+
+
+Regular Push (After Changes)
+# Step 1: Check what files you've changed
+git status
+
+# Step 2: Add files to staging
+git add .                          # Add all changes
+# OR
+git add src/components/Login.jsx   # Add specific file
+# OR
+git add src/                       # Add entire folder
+
+# Step 3: Commit with a message
+git commit -m "Your commit message here"
+
+# Step 4: Push to GitHub
+git push                            # If already connected
+# OR
+git push origin main                 # Specify branch
+# OR
+git push origin your-branch-name     # Push to specific branch
+
+
+DJANGO DATABASE
+1.  Django Shell (most common): python manage.py shell
+from api.models import User, Appointment, Payment, etc.
+User.objects.all()  # View all users
+Appointment.objects.filter(user_id=1)  # Filter by condition
+
+2. Django Admin Interface:   python manage.py runserver
+
+3. SQLite CLI (direct database access):  sqlite3 db.sqlite3
+
+4. Create a superuser (if needed for admin):  python manage.py createsuperuser
+
+5.  Run pwsh command within C:\Users\vncea\OneDrive\Desktop\react\my-react-app\backend?
+cd c:\Users\vncea\OneDrive\Desktop\react\my-react-app\backend ; sqlite3 db.sqlite3 ".tables"
+
+Database Structure & Data Summary
+Database Models (11 tables):
+UserProfile - User role and profile info (admin, staff, tenant)
+Unit - Residential/commercial units
+CommercialUnit - Commercial units tracking
+Appointment - Scheduled appointments
+Invoice - Billing invoices
+Payment - Payment records
+Notification - User notifications
+Document - Uploaded documents (lease, insurance, etc.)
+MaintenanceRequest - Maintenance tickets
+ComplianceDocument - Compliance status tracking

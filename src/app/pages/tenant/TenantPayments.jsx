@@ -1,3 +1,6 @@
+// TenantPayments.jsx - Tenant payment management
+// Allows tenants to view invoices, payment history, and make payments
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -16,31 +19,40 @@ import api from '../../services/api.js';
 export function TenantPayments() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for financial data
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
   const [isPayDialogOpen, setIsPayDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
 
+  // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
+  // Load tenant's invoices and payment history
   useEffect(() => {
     const load = async () => {
+      // Fetch invoices for this tenant
       const inv = await api.financial.getInvoices({ tenant_id: user?.id });
       setInvoices(inv.results || []);
+      
+      // Fetch payments for this tenant
       const pay = await api.financial.getPayments({ tenant_id: user?.id });
       setPayments(pay.results || []);
     };
     load();
   }, [user]);
 
+  // Handle opening payment dialog for an invoice
   const handlePayNow = (invoice) => {
     setSelectedInvoice(invoice);
     setIsPayDialogOpen(true);
   };
 
+  // Handle processing payment
   const handleProcessPayment = async () => {
     await api.financial.processPayment({
       invoice_id: selectedInvoice?.id,
@@ -51,14 +63,17 @@ export function TenantPayments() {
     setIsPayDialogOpen(false);
   };
 
+  // Calculate financial summaries
   const outstanding = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const paidTotal = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   return (
     <Layout role="tenant">
       <div className="space-y-6">
+        {/* Header */}
         <h1 className="text-3xl font-bold">Payments & Billing</h1>
 
+        {/* Financial summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -96,6 +111,7 @@ export function TenantPayments() {
           </Card>
         </div>
 
+        {/* Invoices and payment history tabs */}
         <Card>
           <CardHeader>
             <CardTitle>Billing & Payments</CardTitle>
@@ -107,6 +123,7 @@ export function TenantPayments() {
                 <TabsTrigger value="history">Payment History</TabsTrigger>
               </TabsList>
 
+              {/* Invoices tab */}
               <TabsContent value="invoices" className="mt-4">
                 <div className="space-y-4">
                   {invoices.map((invoice) => (
@@ -135,6 +152,7 @@ export function TenantPayments() {
                 </div>
               </TabsContent>
 
+              {/* Payment history tab */}
               <TabsContent value="history" className="mt-4">
                 <div className="space-y-4">
                   {payments.map((payment) => (
@@ -159,6 +177,7 @@ export function TenantPayments() {
           </CardContent>
         </Card>
 
+        {/* Payment Dialog */}
         <Dialog open={isPayDialogOpen} onOpenChange={setIsPayDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -169,10 +188,13 @@ export function TenantPayments() {
             </DialogHeader>
             {selectedInvoice && (
               <div className="space-y-4">
+                {/* Amount due */}
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Amount Due</p>
                   <p className="text-2xl font-bold">${(selectedInvoice.amount || 0).toLocaleString()}</p>
                 </div>
+                
+                {/* Payment method selection */}
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -186,6 +208,8 @@ export function TenantPayments() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Credit card details (shown only if credit card selected) */}
                 {paymentMethod === 'credit_card' && (
                   <>
                     <div className="space-y-2">
@@ -208,7 +232,9 @@ export function TenantPayments() {
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsPayDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleProcessPayment}>Pay ${(selectedInvoice?.amount || 0).toLocaleString()}</Button>
+              <Button onClick={handleProcessPayment}>
+                Pay ${(selectedInvoice?.amount || 0).toLocaleString()}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

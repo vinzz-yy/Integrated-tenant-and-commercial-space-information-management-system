@@ -1,3 +1,6 @@
+// TenantDashboard.jsx - Main dashboard for tenant users
+// Displays tenant's unit info, invoices, and maintenance requests
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -11,38 +14,49 @@ import api from '../../services/api.js';
 export function TenantDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for tenant's data
   const [invoices, setInvoices] = useState([]);
   const [requests, setRequests] = useState([]);
 
+  // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
+  // Load tenant's invoices and maintenance requests
   useEffect(() => {
     const load = async () => {
       try {
+        // Fetch invoices for this tenant
         const inv = await api.financial.getInvoices({ tenant_id: user?.id });
         setInvoices(inv.results || []);
+        
+        // Fetch maintenance requests for this tenant
         const req = await api.maintenance.getRequests({ tenant_id: user?.id });
         setRequests(req.results || []);
       } catch (e) {
-        setInvoices([]); setRequests([]);
+        setInvoices([]); 
+        setRequests([]);
       }
     };
     load();
   }, [user]);
 
+  // Navigation handlers
   const handleMyUnitClick = () => navigate('/tenant/commercial-space');
   const handlePendingPaymentsClick = () => navigate('/tenant/payments');
   const handleMaintenanceRequestsClick = () => navigate('/tenant/maintenance');
   const handleDocumentsClick = () => navigate('/tenant/compliance');
 
+  // Calculate unpaid invoices total
   const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
   const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   return (
     <Layout role="tenant">
       <div className="space-y-8">
+        {/* Header with welcome message */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tenant Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -50,7 +64,9 @@ export function TenantDashboard() {
           </p>
         </div>
 
+        {/* Stats cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* My Unit Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMyUnitClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
@@ -67,6 +83,7 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
+          {/* Pending Payments Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handlePendingPaymentsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
@@ -85,6 +102,7 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
+          {/* Maintenance Requests Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMaintenanceRequestsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
@@ -100,6 +118,7 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
+          {/* Documents Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleDocumentsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
@@ -116,7 +135,9 @@ export function TenantDashboard() {
           </Card>
         </div>
 
+        {/* Main content grid - Recent Invoices and Maintenance Requests */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Invoices section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -154,6 +175,7 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
+          {/* Maintenance Requests section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>

@@ -1,3 +1,6 @@
+// FinancialManagement.jsx - Admin panel for managing financial records
+// Displays invoices, payments, revenue charts, and allows exporting financial reports
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -21,44 +24,58 @@ import api from '../../services/api.js';
 export function FinancialManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for financial data
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
 
+  // Initial load - fetch all financial data
   useEffect(() => {
+    // Redirect if not admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       try {
+        // Fetch invoices, payments, and revenue analytics in parallel
         const inv = await api.financial.getInvoices();
         setInvoices(inv.results || []);
+        
         const pay = await api.financial.getPayments();
         setPayments(pay.results || []);
+        
         const revenue = await api.financial.getRevenueAnalytics({ period: 'month' });
         setRevenueData(revenue.data || []);
       } catch (e) {
-        setInvoices([]); setPayments([]); setRevenueData([]);
+        // Set empty arrays on error
+        setInvoices([]); 
+        setPayments([]); 
+        setRevenueData([]);
       }
     };
     load();
   }, [user, navigate]);
 
+  // Calculate financial summaries
   const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
   const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const unpaidAmount = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
+  // Handle exporting financial report as CSV
   const handleExportReport = async () => {
     try {
-      // Get all financial data
+      // Fetch all financial data
       const allInvoices = await api.financial.getInvoices();
       const allPayments = await api.financial.getPayments();
       
-      // Convert to CSV
+      // Convert to CSV format
       const headers = ['Type', 'ID', 'Amount', 'Status', 'Date'];
       const csvContent = [
         headers.join(','),
+        // Add invoice rows
         ...allInvoices.results.map(inv => [
           'Invoice',
           inv.id,
@@ -66,6 +83,7 @@ export function FinancialManagement() {
           inv.status,
           inv.created_at
         ].join(',')),
+        // Add payment rows
         ...allPayments.results.map(pay => [
           'Payment',
           pay.id,
@@ -75,7 +93,7 @@ export function FinancialManagement() {
         ].join(','))
       ].join('\n');
       
-      // Download CSV
+      // Create download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -94,6 +112,7 @@ export function FinancialManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header with export button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -109,6 +128,7 @@ export function FinancialManagement() {
           </Button>
         </div>
 
+        {/* Financial summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -156,6 +176,7 @@ export function FinancialManagement() {
           </Card>
         </div>
 
+        {/* Revenue chart */}
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <Card>
             <CardHeader>
@@ -177,6 +198,7 @@ export function FinancialManagement() {
           </Card>
         </div>
 
+        {/* Financial records table with tabs */}
         <Card>
           <CardHeader>
             <CardTitle>Financial Records</CardTitle>
@@ -188,6 +210,7 @@ export function FinancialManagement() {
                 <TabsTrigger value="payments">Payments</TabsTrigger>
               </TabsList>
               
+              {/* Invoices tab */}
               <TabsContent value="invoices" className="mt-4">
                 <Table>
                   <TableHeader>
@@ -221,6 +244,7 @@ export function FinancialManagement() {
                 </Table>
               </TabsContent>
 
+              {/* Payments tab */}
               <TabsContent value="payments" className="mt-4">
                 <Table>
                   <TableHeader>

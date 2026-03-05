@@ -1,3 +1,6 @@
+// TenantAppointments.jsx - Tenant appointment management page
+// Allows tenants to view and book appointments
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -17,15 +20,19 @@ import { toast } from 'sonner';
 export function TenantAppointments() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for appointments
   const [appointments, setAppointments] = useState([]);
   const [isBookDialogOpen, setIsBookDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ date: '', time: '', purpose: '' });
   const [loading, setLoading] = useState(false);
 
+  // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
+  // Load tenant's appointments
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return;
@@ -42,11 +49,14 @@ export function TenantAppointments() {
     load();
   }, [user]);
 
+  // Handle booking a new appointment
   const handleBookAppointment = async () => {
+    // Validate required fields
     if (!formData.date || !formData.time || !formData.purpose) {
       toast.warning('Please complete all fields');
       return;
     }
+    
     try {
       const created = await api.schedule.createAppointment({
         date: formData.date,
@@ -67,6 +77,7 @@ export function TenantAppointments() {
   return (
     <Layout role="tenant">
       <div className="space-y-6">
+        {/* Header with book button */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">My Appointments</h1>
           <Button onClick={() => setIsBookDialogOpen(true)}>
@@ -75,14 +86,19 @@ export function TenantAppointments() {
           </Button>
         </div>
 
+        {/* Main grid - Calendar and Appointments */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar card */}
           <Card>
-            <CardHeader><CardTitle>Calendar</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Calendar</CardTitle>
+            </CardHeader>
             <CardContent>
               <Calendar mode="single" className="rounded-md border" />
             </CardContent>
           </Card>
 
+          {/* Appointments list */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Upcoming Appointments</CardTitle>
@@ -91,16 +107,19 @@ export function TenantAppointments() {
             <CardContent>
               <div className="space-y-4">
                 {loading ? (
+                  // Loading skeletons
                   <>
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                   </>
                 ) : appointments.length === 0 ? (
+                  // Empty state
                   <div className="text-center text-gray-500 py-8">
                     <p className="font-medium">No upcoming appointments</p>
                   </div>
                 ) : (
+                  // Appointment list
                   appointments.map((appt) => (
                     <div key={appt.id} className="flex items-start gap-4 p-4 border rounded-lg">
                       <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -117,6 +136,7 @@ export function TenantAppointments() {
           </Card>
         </div>
 
+        {/* Book Appointment Dialog */}
         <Dialog open={isBookDialogOpen} onOpenChange={setIsBookDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -124,17 +144,34 @@ export function TenantAppointments() {
               <DialogDescription>Schedule a new appointment</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Date input */}
               <div className="space-y-2">
                 <Label>Date</Label>
-                <Input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
+                <Input 
+                  type="date" 
+                  value={formData.date} 
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
+                />
               </div>
+              
+              {/* Time input */}
               <div className="space-y-2">
                 <Label>Time</Label>
-                <Input type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} />
+                <Input 
+                  type="time" 
+                  value={formData.time} 
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })} 
+                />
               </div>
+              
+              {/* Purpose textarea */}
               <div className="space-y-2">
                 <Label>Purpose</Label>
-                <Textarea value={formData.purpose} onChange={(e) => setFormData({ ...formData, purpose: e.target.value })} rows={3} />
+                <Textarea 
+                  value={formData.purpose} 
+                  onChange={(e) => setFormData({ ...formData, purpose: e.target.value })} 
+                  rows={3} 
+                />
               </div>
             </div>
             <DialogFooter>

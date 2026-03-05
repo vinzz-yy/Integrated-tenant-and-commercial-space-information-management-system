@@ -1,3 +1,6 @@
+// ComplianceManagement.jsx - Admin panel for managing tenant compliance documents
+// Allows admins to view, filter, review, and update compliance document status
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -37,26 +40,36 @@ import api from '../../services/api.js';
 export function ComplianceManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing compliance documents
   const [documents, setDocuments] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Review dialog states
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
 
+  // Initial load - fetch all compliance documents
   useEffect(() => {
+    // Redirect if not admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       try {
         const resp = await api.compliance.getDocuments();
         setDocuments(resp.results || []);
         setFilteredDocuments(resp.results || []);
       } catch (e) {
+        // Set empty arrays on error
         setDocuments([]);
         setFilteredDocuments([]);
       }
@@ -64,20 +77,27 @@ export function ComplianceManagement() {
     load();
   }, [user, navigate]);
 
+  // Filter documents when search query or status filter changes
   useEffect(() => {
     let filtered = documents;
+    
+    // Apply search filter (search by tenant name or document type)
     if (searchQuery) {
       filtered = filtered.filter(doc =>
         (doc.tenantName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (doc.documentType || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    
+    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(doc => doc.status === statusFilter);
     }
+    
     setFilteredDocuments(filtered);
   }, [searchQuery, statusFilter, documents]);
 
+  // Open review dialog with selected document data
   const openReviewDialog = (document) => {
     setSelectedDocument(document);
     setReviewStatus(document.status);
@@ -85,15 +105,21 @@ export function ComplianceManagement() {
     setIsReviewDialogOpen(true);
   };
 
+  // Handle submission of document review
   const handleReviewSubmit = async () => {
     if (!selectedDocument) return;
+    
     try {
+      // Update document status via API
       await api.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+      
+      // Update local state with the new status
       setDocuments(documents.map(doc => 
         doc.id === selectedDocument.id 
           ? { ...doc, status: reviewStatus, notes: reviewNotes }
           : doc
       ));
+      
       setIsReviewDialogOpen(false);
     } catch (error) {
       console.error('Error updating document status:', error);
@@ -101,6 +127,7 @@ export function ComplianceManagement() {
     }
   };
 
+  // Helper function to get appropriate icon based on document status
   const getStatusIcon = (status) => {
     switch (status) {
       case 'approved':
@@ -114,22 +141,24 @@ export function ComplianceManagement() {
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusVariant = (status) => {
     switch (status) {
       case 'approved':
-        return 'default';
+        return 'default'; // Blue badge
       case 'pending':
-        return 'secondary';
+        return 'secondary'; // Gray badge
       case 'expiring_soon':
-        return 'destructive';
+        return 'destructive'; // Red badge
       default:
-        return 'outline';
+        return 'outline'; // Outlined badge
     }
   };
 
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header section */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -141,6 +170,7 @@ export function ComplianceManagement() {
           </div>
         </div>
 
+        {/* Stats cards showing document overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -190,12 +220,14 @@ export function ComplianceManagement() {
           </Card>
         </div>
 
+        {/* Filters card */}
         <Card>
           <CardHeader>
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search input */}
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -205,6 +237,7 @@ export function ComplianceManagement() {
                   className="pl-10"
                 />
               </div>
+              {/* Status filter dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -220,6 +253,7 @@ export function ComplianceManagement() {
           </CardContent>
         </Card>
 
+        {/* Documents table */}
         <Card>
           <CardHeader>
             <CardTitle>Compliance Documents ({filteredDocuments.length})</CardTitle>
@@ -278,6 +312,7 @@ export function ComplianceManagement() {
           </CardContent>
         </Card>
 
+        {/* Review Document Dialog */}
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -288,11 +323,14 @@ export function ComplianceManagement() {
             </DialogHeader>
             {selectedDocument && (
               <div className="space-y-4">
+                {/* Document info summary */}
                 <div>
                   <p className="text-sm font-medium">Tenant: {selectedDocument.tenantName}</p>
                   <p className="text-sm text-gray-600">Document: {selectedDocument.documentType}</p>
                   <p className="text-sm text-gray-600">File: {selectedDocument.fileName}</p>
                 </div>
+                
+                {/* Status selector */}
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={reviewStatus} onValueChange={setReviewStatus}>
@@ -307,6 +345,8 @@ export function ComplianceManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Review notes textarea */}
                 <div className="space-y-2">
                   <Label>Notes</Label>
                   <Textarea

@@ -1,3 +1,6 @@
+// AdminDashboard.jsx - Main dashboard for admin users showing system overview
+// This component displays key metrics, charts, and notifications for administrators
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -28,8 +31,11 @@ import {
 } from 'recharts';
 
 export function AdminDashboard() {
+  // Get current user from auth context and navigation hook
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing dashboard statistics
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalTenants: 0,
@@ -40,54 +46,69 @@ export function AdminDashboard() {
     scheduledAppointments: 0,
   });
 
+  // State for chart data and lists
   const [revenueData, setRevenueData] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
+  // Load all dashboard data when component mounts
   useEffect(() => {
+    // Redirect non-admin users
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
+    // Async function to load all dashboard data
     const load = async () => {
       try {
+        // Fetch user statistics
         const usersResp = await api.users.getUsers();
         const totalUsers = usersResp.count || (usersResp.results?.length || 0);
         const totalTenants = (usersResp.results || []).filter(u => u.role === 'tenant').length;
         const totalStaff = (usersResp.results || []).filter(u => u.role === 'staff').length;
 
+        // Fetch financial data
         const paymentsResp = await api.financial.getPayments();
         const totalRevenue = (paymentsResp.results || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
+        // Fetch commercial space data
         const unitsResp = await api.commercialSpace.getUnits();
         const units = unitsResp.results || [];
         const occupied = units.filter(u => u.status === 'occupied').length;
         const occupancyRate = units.length ? Math.round((occupied / units.length) * 100) : 0;
 
+        // Fetch compliance data
         const compResp = await api.compliance.getDocuments({ status: 'pending' });
         const pendingCompliance = (compResp.results || []).length;
 
+        // Fetch appointment data
         const apptResp = await api.schedule.getAppointments({ status: 'scheduled' });
         const scheduledAppointments = (apptResp.results || []).length;
 
+        // Update stats state
         setStats({
           totalUsers, totalTenants, totalStaff, totalRevenue, occupancyRate, pendingCompliance, scheduledAppointments
         });
 
+        // Fetch revenue analytics for chart
         const revenue = await api.financial.getRevenueAnalytics({ period: 'month' });
         setRevenueData(revenue.data || []);
 
+        // Get upcoming appointments (first 3)
         setAppointments((apptResp.results || []).slice(0, 3));
 
+        // Get unread notifications
         const notifResp = await api.notifications.getNotifications({ read: false });
         setNotifications(notifResp.results || []);
       } catch (e) {
-        // ignore errors for now
+        // Silently ignore errors for now (UI will show empty states)
       }
     };
     load();
   }, [user, navigate]);
 
+  // Navigation handlers for cards
   const handleTotalUsersClick = () => {
     navigate('/admin/users');
   };
@@ -107,6 +128,7 @@ export function AdminDashboard() {
   return (
     <Layout role="admin">
       <div className="space-y-8">
+        {/* Header section with welcome message */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Admin Dashboard
@@ -116,7 +138,9 @@ export function AdminDashboard() {
           </p>
         </div>
 
+        {/* Stats cards grid - each card shows a key metric */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Users Card */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
             onClick={handleTotalUsersClick}
@@ -135,6 +159,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
+          {/* Monthly Revenue Card */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
             onClick={handleMonthlyRevenueClick}
@@ -156,6 +181,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
+          {/* Occupancy Rate Card */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
             onClick={handleOccupancyRateClick}
@@ -174,6 +200,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
+          {/* Pending Items Card */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
             onClick={handlePendingItemsClick}
@@ -193,7 +220,9 @@ export function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Main content grid - Revenue chart and appointments */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Revenue Chart - takes 2/3 of the grid */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Revenue Overview</CardTitle>
@@ -225,6 +254,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
+          {/* Upcoming Appointments - takes 1/3 of the grid */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -260,6 +290,7 @@ export function AdminDashboard() {
           </Card>
         </div>
 
+        {/* System Notifications section */}
         <div className="grid grid-cols-1 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -278,6 +309,7 @@ export function AdminDashboard() {
                     key={notification.id} 
                     className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
                     onClick={() => {
+                      // Navigate to relevant section based on notification type
                       if (notification.type === 'success') {
                         navigate('/admin/financial');
                       } else if (notification.type === 'warning') {
@@ -287,6 +319,7 @@ export function AdminDashboard() {
                       }
                     }}
                   >
+                    {/* Different icons for different notification types */}
                     {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />}
                     {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />}
                     {notification.type === 'info' && <Clock className="h-5 w-5 text-blue-600 mt-0.5" />}

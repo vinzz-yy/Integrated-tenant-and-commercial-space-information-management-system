@@ -1,3 +1,6 @@
+// CommercialSpaceManagement.jsx - Admin panel for managing commercial units
+// Allows admins to view, filter, create, and delete commercial spaces
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -36,11 +39,19 @@ import api from '../../services/api.js';
 export function CommercialSpaceManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for managing units data
   const [units, setUnits] = useState([]);
   const [filteredUnits, setFilteredUnits] = useState([]);
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form state for creating new unit
   const [formData, setFormData] = useState({
     unitNumber: '',
     floor: 1,
@@ -50,17 +61,21 @@ export function CommercialSpaceManagement() {
     status: 'available',
   });
 
+  // Initial load - fetch all units
   useEffect(() => {
+    // Redirect if not admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       try {
         const resp = await api.commercialSpace.getUnits();
         setUnits(resp.results || []);
         setFilteredUnits(resp.results || []);
       } catch (e) {
+        // Set empty arrays on error
         setUnits([]);
         setFilteredUnits([]);
       }
@@ -68,20 +83,27 @@ export function CommercialSpaceManagement() {
     load();
   }, [user, navigate]);
 
+  // Filter units when search query or status filter changes
   useEffect(() => {
     let filtered = units;
+    
+    // Apply search filter (search by unit number or tenant name)
     if (searchQuery) {
       filtered = filtered.filter(u =>
         (u.unitNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (u.tenant_name || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    
+    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(u => u.status === statusFilter);
     }
+    
     setFilteredUnits(filtered);
   }, [searchQuery, statusFilter, units]);
 
+  // Handler for creating a new unit
   const handleCreateUnit = async () => {
     try {
       const created = await api.commercialSpace.createUnit({
@@ -90,6 +112,7 @@ export function CommercialSpaceManagement() {
         type: formData.type.toLowerCase(),
         status: formData.status,
       });
+      // Add new unit to the list
       const updated = [...units, created];
       setUnits(updated);
       setIsCreateDialogOpen(false);
@@ -99,10 +122,12 @@ export function CommercialSpaceManagement() {
     }
   };
 
+  // Handler for deleting a unit
   const handleDeleteUnit = async (id) => {
     if (confirm('Are you sure you want to delete this unit?')) {
       try {
         await api.commercialSpace.deleteUnit(String(id));
+        // Remove deleted unit from state
         setUnits(units.filter(u => String(u.id) !== String(id)));
       } catch (error) {
         console.error('Error deleting unit:', error);
@@ -111,12 +136,13 @@ export function CommercialSpaceManagement() {
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusVariant = (status) => {
     switch (status) {
-      case 'occupied': return 'default';
-      case 'available': return 'secondary';
-      case 'reserved': return 'outline';
-      case 'maintenance': return 'destructive';
+      case 'occupied': return 'default'; // Blue badge
+      case 'available': return 'secondary'; // Gray badge
+      case 'reserved': return 'outline'; // Outlined badge
+      case 'maintenance': return 'destructive'; // Red badge
       default: return 'outline';
     }
   };
@@ -124,6 +150,7 @@ export function CommercialSpaceManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header with title and add button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -139,6 +166,7 @@ export function CommercialSpaceManagement() {
           </Button>
         </div>
 
+        {/* Stats cards showing unit overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -188,12 +216,14 @@ export function CommercialSpaceManagement() {
           </Card>
         </div>
 
+        {/* Filters card - search and status filter */}
         <Card>
           <CardHeader>
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search input with icon */}
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -203,6 +233,7 @@ export function CommercialSpaceManagement() {
                   className="pl-10"
                 />
               </div>
+              {/* Status filter dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -219,6 +250,7 @@ export function CommercialSpaceManagement() {
           </CardContent>
         </Card>
 
+        {/* Units table */}
         <Card>
           <CardHeader>
             <CardTitle>Commercial Units ({filteredUnits.length})</CardTitle>
@@ -272,6 +304,7 @@ export function CommercialSpaceManagement() {
           </CardContent>
         </Card>
 
+        {/* Create Unit Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>

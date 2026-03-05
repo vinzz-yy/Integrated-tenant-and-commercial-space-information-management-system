@@ -1,3 +1,6 @@
+// StaffCommercialSpace.jsx - Staff view for managing commercial units
+// Allows staff to view and update commercial unit information
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -29,9 +32,13 @@ import api from '../../services/api.js';
 export function StaffCommercialSpace() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing units data
   const [units, setUnits] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Form state for editing unit
   const [formData, setFormData] = useState({
     unitNumber: '',
     floor: '',
@@ -44,10 +51,12 @@ export function StaffCommercialSpace() {
     leaseEnd: '',
   });
 
+  // Redirect if not staff
   useEffect(() => {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
 
+  // Load all commercial units
   useEffect(() => {
     const load = async () => {
       const resp = await api.commercialSpace.getUnits();
@@ -56,6 +65,7 @@ export function StaffCommercialSpace() {
     load();
   }, []);
 
+  // Open edit dialog with selected unit's data
   const openEditDialog = (unit) => {
     setSelectedUnit(unit);
     setFormData({
@@ -72,10 +82,14 @@ export function StaffCommercialSpace() {
     setIsEditDialogOpen(true);
   };
 
+  // Handle updating unit information
   const handleUpdateUnit = async () => {
+    // Validate required fields
     if (!formData.unitNumber || !formData.floor || !formData.type || !formData.status) {
       return;
     }
+    
+    // Update unit via API
     await api.commercialSpace.updateUnit(String(selectedUnit.id), {
       number: formData.unitNumber,
       floor: parseInt(formData.floor) || 0,
@@ -83,19 +97,22 @@ export function StaffCommercialSpace() {
       status: formData.status,
       tenant_name: formData.tenantName || null,
     });
+    
+    // Refresh units list
     const refreshed = await api.commercialSpace.getUnits();
     setUnits(refreshed.results || []);
     setIsEditDialogOpen(false);
   };
 
+  // Helper function to determine badge color based on status
   const getStatusVariant = (status) => {
     switch (status) {
       case 'occupied':
-        return 'default';
+        return 'default'; // Blue badge
       case 'available':
-        return 'secondary';
+        return 'secondary'; // Gray badge
       case 'maintenance':
-        return 'destructive';
+        return 'destructive'; // Red badge
       default:
         return 'outline';
     }
@@ -104,6 +121,7 @@ export function StaffCommercialSpace() {
   return (
     <Layout role="staff">
       <div className="space-y-6">
+        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Commercial Units
@@ -113,6 +131,7 @@ export function StaffCommercialSpace() {
           </p>
         </div>
 
+        {/* Units table */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle>Units ({units.length})</CardTitle>
@@ -164,6 +183,7 @@ export function StaffCommercialSpace() {
           </CardContent>
         </Card>
 
+        {/* Edit Unit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -174,6 +194,7 @@ export function StaffCommercialSpace() {
             </DialogHeader>
             {selectedUnit && (
               <div className="grid grid-cols-2 gap-4 py-4">
+                {/* Unit Number */}
                 <div className="space-y-2">
                   <Label htmlFor="unitNumber">Unit Number *</Label>
                   <Input
@@ -183,6 +204,8 @@ export function StaffCommercialSpace() {
                     placeholder="e.g., A-101"
                   />
                 </div>
+                
+                {/* Floor */}
                 <div className="space-y-2">
                   <Label htmlFor="floor">Floor *</Label>
                   <Input
@@ -192,6 +215,8 @@ export function StaffCommercialSpace() {
                     placeholder="e.g., 1"
                   />
                 </div>
+                
+                {/* Type */}
                 <div className="space-y-2">
                   <Label htmlFor="type">Type *</Label>
                   <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
@@ -206,6 +231,8 @@ export function StaffCommercialSpace() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Status */}
                 <div className="space-y-2">
                   <Label htmlFor="status">Status *</Label>
                   <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
@@ -219,6 +246,8 @@ export function StaffCommercialSpace() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Tenant Name */}
                 <div className="space-y-2">
                   <Label htmlFor="tenantName">Tenant Name</Label>
                   <Input

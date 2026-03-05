@@ -1,3 +1,6 @@
+// UserManagement.jsx - Admin user management page
+// Allows administrators to view, create, edit, delete, and export system users
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -37,16 +40,26 @@ import api from '../../services/api.js';
 export function UserManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing users data
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  
+  // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  
+  // Loading states for async operations
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Form state for creating/editing users
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -58,17 +71,21 @@ export function UserManagement() {
     password: '',
   });
 
+  // Load users when component mounts
   useEffect(() => {
+    // Redirect if user is not an admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       try {
         const resp = await api.users.getUsers();
         setUsers(resp.results || []);
         setFilteredUsers(resp.results || []);
       } catch (e) {
+        // Set empty arrays on error
         setUsers([]);
         setFilteredUsers([]);
       }
@@ -76,8 +93,11 @@ export function UserManagement() {
     load();
   }, [user, navigate]);
 
+  // Filter users when search query or role filter changes
   useEffect(() => {
     let filtered = users;
+    
+    // Apply search filter (search by name or email)
     if (searchQuery) {
       filtered = filtered.filter(u =>
         (u.firstName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,12 +105,16 @@ export function UserManagement() {
         (u.email || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    
+    // Apply role filter
     if (roleFilter !== 'all') {
       filtered = filtered.filter(u => u.role === roleFilter);
     }
+    
     setFilteredUsers(filtered);
   }, [searchQuery, roleFilter, users]);
 
+  // Handle creating a new user
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
@@ -106,8 +130,10 @@ export function UserManagement() {
     }
   };
 
+  // Handle updating an existing user
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
+    
     try {
       setIsUpdating(true);
       const updated = await api.users.updateUser(String(selectedUser.id), formData);
@@ -122,6 +148,7 @@ export function UserManagement() {
     }
   };
 
+  // Handle deleting a user
   const handleDeleteUser = async (userId) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
@@ -134,13 +161,15 @@ export function UserManagement() {
     }
   };
 
+  // Handle exporting users to CSV
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      // Get all users data
+      
+      // Fetch all users data
       const allUsers = await api.users.getUsers();
       
-      // Convert to CSV
+      // Convert to CSV format
       const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number'];
       const csvContent = [
         headers.join(','),
@@ -156,7 +185,7 @@ export function UserManagement() {
         ].map(field => `"${field}"`).join(','))
       ].join('\n');
       
-      // Download CSV
+      // Create download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -174,6 +203,7 @@ export function UserManagement() {
     }
   };
 
+  // Reset form to initial state
   const resetForm = () => {
     setFormData({
       email: '',
@@ -187,6 +217,7 @@ export function UserManagement() {
     setSelectedUser(null);
   };
 
+  // Open edit dialog with selected user's data
   const openEditDialog = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -204,6 +235,7 @@ export function UserManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header with title and action buttons */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -214,10 +246,13 @@ export function UserManagement() {
             </p>
           </div>
           <div className="flex gap-2">
+            {/* Export button */}
             <Button variant="outline" onClick={handleExport} disabled={isExporting}>
               <Download className="h-4 w-4 mr-2" />
               {isExporting ? 'Exporting...' : 'Export'}
             </Button>
+            
+            {/* Add user button */}
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add User
@@ -225,12 +260,14 @@ export function UserManagement() {
           </div>
         </div>
 
+        {/* Filters card */}
         <Card>
           <CardHeader>
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search input */}
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -240,6 +277,8 @@ export function UserManagement() {
                   className="pl-10"
                 />
               </div>
+              
+              {/* Role filter dropdown */}
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by role" />
@@ -254,6 +293,7 @@ export function UserManagement() {
           </CardContent>
         </Card>
 
+        {/* Users table */}
         <Card>
           <CardHeader>
             <CardTitle>Users ({filteredUsers.length})</CardTitle>
@@ -275,6 +315,7 @@ export function UserManagement() {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
+                    {/* User avatar and name */}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -291,21 +332,31 @@ export function UserManagement() {
                         </div>
                       </div>
                     </TableCell>
+                    
+                    {/* User email */}
                     <TableCell className="text-sm">{user.email}</TableCell>
+                    
+                    {/* User role badge */}
                     <TableCell>
-                      <Badge variant={
-                        user.role === 'staff' ? 'default' : 'secondary'
-                      }>
+                      <Badge variant={user.role === 'staff' ? 'default' : 'secondary'}>
                         {user.role}
                       </Badge>
                     </TableCell>
+                    
+                    {/* User phone */}
                     <TableCell className="text-sm">{user.phone || '-'}</TableCell>
+                    
+                    {/* User unit or department */}
                     <TableCell className="text-sm">
                       {user.unitNumber || user.department || '-'}
                     </TableCell>
+                    
+                    {/* User status */}
                     <TableCell>
                       <Badge variant="outline">{user.status || 'active'}</Badge>
                     </TableCell>
+                    
+                    {/* Action buttons */}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -331,6 +382,7 @@ export function UserManagement() {
           </CardContent>
         </Card>
 
+        {/* Create User Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -339,7 +391,10 @@ export function UserManagement() {
                 Add a new user to the system
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Form fields in a 2-column grid */}
             <div className="grid grid-cols-2 gap-4">
+              {/* First name */}
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
@@ -348,6 +403,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
               </div>
+              
+              {/* Last name */}
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
@@ -356,6 +413,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
               </div>
+              
+              {/* Email (full width) */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -365,6 +424,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+              
+              {/* Password (full width) */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -374,9 +435,14 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
               </div>
+              
+              {/* Role select */}
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -386,6 +452,8 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
                 <Input
@@ -394,6 +462,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
+              
+              {/* Conditional fields based on role */}
               {formData.role === 'tenant' && (
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="unitNumber">Unit Number</Label>
@@ -404,6 +474,7 @@ export function UserManagement() {
                   />
                 </div>
               )}
+              
               {formData.role === 'staff' && (
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="department">Department</Label>
@@ -415,6 +486,7 @@ export function UserManagement() {
                 </div>
               )}
             </div>
+            
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
@@ -426,6 +498,7 @@ export function UserManagement() {
           </DialogContent>
         </Dialog>
 
+        {/* Edit User Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -434,7 +507,10 @@ export function UserManagement() {
                 Update user information
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Form fields in a 2-column grid */}
             <div className="grid grid-cols-2 gap-4">
+              {/* First name */}
               <div className="space-y-2">
                 <Label htmlFor="editFirstName">First Name</Label>
                 <Input
@@ -443,6 +519,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
               </div>
+              
+              {/* Last name */}
               <div className="space-y-2">
                 <Label htmlFor="editLastName">Last Name</Label>
                 <Input
@@ -451,6 +529,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
               </div>
+              
+              {/* Email (full width) */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="editEmail">Email</Label>
                 <Input
@@ -460,9 +540,14 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+              
+              {/* Role select */}
               <div className="space-y-2">
                 <Label htmlFor="editRole">Role</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -472,6 +557,8 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="editPhone">Phone</Label>
                 <Input
@@ -480,6 +567,8 @@ export function UserManagement() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
+              
+              {/* Conditional fields based on role */}
               {formData.role === 'tenant' && (
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="editUnitNumber">Unit Number</Label>
@@ -490,6 +579,7 @@ export function UserManagement() {
                   />
                 </div>
               )}
+              
               {formData.role === 'staff' && (
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="editDepartment">Department</Label>
@@ -501,6 +591,7 @@ export function UserManagement() {
                 </div>
               )}
             </div>
+            
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel

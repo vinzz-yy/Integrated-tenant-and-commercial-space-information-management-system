@@ -1,3 +1,6 @@
+// OperationsManagement.jsx - Admin panel for managing operational requests
+// Allows admins to view, filter, and create operational requests (maintenance, security, etc.)
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -37,11 +40,19 @@ import api from '../../services/api.js';
 export function OperationsManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing operation requests
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form state for creating new request
   const [formData, setFormData] = useState({
     title: '',
     type: 'Technical',
@@ -49,11 +60,14 @@ export function OperationsManagement() {
     description: '',
   });
 
+  // Initial load - fetch all operation requests
   useEffect(() => {
+    // Redirect if not admin
     if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       const resp = await api.operations.getRequests();
       setRequests(resp.results || []);
@@ -62,19 +76,26 @@ export function OperationsManagement() {
     load();
   }, [user, navigate]);
 
+  // Filter requests when search query or status filter changes
   useEffect(() => {
     let filtered = requests;
+    
+    // Apply search filter (search by title)
     if (searchQuery) {
       filtered = filtered.filter(r =>
         (r.title || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+    
+    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(r => r.status === statusFilter);
     }
+    
     setFilteredRequests(filtered);
   }, [searchQuery, statusFilter, requests]);
 
+  // Handle creating a new operation request
   const handleCreateRequest = async () => {
     try {
       const created = await api.operations.createRequest(formData);
@@ -86,20 +107,22 @@ export function OperationsManagement() {
     }
   };
 
+  // Helper function to determine badge color based on priority
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
+      case 'high': return 'destructive'; // Red badge
+      case 'medium': return 'default'; // Blue badge
+      case 'low': return 'secondary'; // Gray badge
       default: return 'outline';
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusColor = (status) => {
     switch (status) {
-      case 'closed': return 'outline';
-      case 'in_progress': return 'default';
-      case 'open': return 'secondary';
+      case 'closed': return 'outline'; // Outlined badge
+      case 'in_progress': return 'default'; // Blue badge
+      case 'open': return 'secondary'; // Gray badge
       default: return 'outline';
     }
   };
@@ -107,6 +130,7 @@ export function OperationsManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header with create button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -122,6 +146,7 @@ export function OperationsManagement() {
           </Button>
         </div>
 
+        {/* Stats cards showing request overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -161,12 +186,14 @@ export function OperationsManagement() {
           </Card>
         </div>
 
+        {/* Filters card */}
         <Card>
           <CardHeader>
             <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search input */}
               <div className="relative">
                 <Input
                   placeholder="Search requests..."
@@ -175,6 +202,7 @@ export function OperationsManagement() {
                   className="pl-10"
                 />
               </div>
+              {/* Status filter dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -190,6 +218,7 @@ export function OperationsManagement() {
           </CardContent>
         </Card>
 
+        {/* Requests table */}
         <Card>
           <CardHeader>
             <CardTitle>Operation Requests ({filteredRequests.length})</CardTitle>
@@ -232,6 +261,7 @@ export function OperationsManagement() {
           </CardContent>
         </Card>
 
+        {/* Create Request Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -239,6 +269,7 @@ export function OperationsManagement() {
               <DialogDescription>Submit a new operational request</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Title input */}
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
@@ -247,6 +278,8 @@ export function OperationsManagement() {
                   placeholder="Request title"
                 />
               </div>
+              
+              {/* Type and Priority selects */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Type</Label>
@@ -276,6 +309,8 @@ export function OperationsManagement() {
                   </Select>
                 </div>
               </div>
+              
+              {/* Description textarea */}
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea

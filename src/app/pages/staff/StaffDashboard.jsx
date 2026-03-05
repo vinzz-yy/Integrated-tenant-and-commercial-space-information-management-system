@@ -1,3 +1,6 @@
+// StaffDashboard.jsx - Main dashboard for staff users
+// Displays staff's tasks, appointments, and pending reviews
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -10,27 +13,37 @@ import api from '../../services/api.js';
 export function StaffDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing staff's appointments and requests
   const [appointments, setAppointments] = useState([]);
   const [requests, setRequests] = useState([]);
 
+  // Load staff data when component mounts
   useEffect(() => {
+    // Redirect if not staff
     if (user?.role !== 'staff') {
       navigate('/');
       return;
     }
+    
     const load = async () => {
       try {
+        // Fetch appointments and requests in parallel
         const appts = await api.schedule.getAppointments();
         setAppointments(appts.results || []);
+        
         const reqs = await api.operations.getRequests();
         setRequests(reqs.results || []);
       } catch (e) {
-        setAppointments([]); setRequests([]);
+        // Set empty arrays on error
+        setAppointments([]); 
+        setRequests([]);
       }
     };
     load();
   }, [user, navigate]);
 
+  // Navigation handlers for quick access
   const handleMyTasksClick = () => navigate('/staff/operations');
   const handleAppointmentsTodayClick = () => navigate('/staff/schedule');
   const handlePendingReviewsClick = () => navigate('/staff/compliance');
@@ -39,6 +52,7 @@ export function StaffDashboard() {
   return (
     <Layout role="staff">
       <div className="space-y-8">
+        {/* Header with welcome message */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Staff Dashboard
@@ -48,7 +62,9 @@ export function StaffDashboard() {
           </p>
         </div>
 
+        {/* Stats cards grid - each card shows a key metric and navigates to relevant page */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* My Tasks Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleMyTasksClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -61,6 +77,7 @@ export function StaffDashboard() {
             </CardContent>
           </Card>
 
+          {/* Appointments Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleAppointmentsTodayClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -73,6 +90,7 @@ export function StaffDashboard() {
             </CardContent>
           </Card>
 
+          {/* Pending Reviews Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handlePendingReviewsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -85,6 +103,7 @@ export function StaffDashboard() {
             </CardContent>
           </Card>
 
+          {/* Active Requests Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleActiveRequestsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -98,7 +117,9 @@ export function StaffDashboard() {
           </Card>
         </div>
 
+        {/* Main content grid - Appointments and Tasks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* My Appointments section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -130,6 +151,7 @@ export function StaffDashboard() {
             </CardContent>
           </Card>
 
+          {/* Assigned Tasks section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>

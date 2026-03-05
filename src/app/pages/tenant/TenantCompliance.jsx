@@ -1,3 +1,6 @@
+// TenantCompliance.jsx - Tenant compliance document management
+// Allows tenants to upload and manage their compliance documents
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -17,15 +20,19 @@ import { toast } from 'sonner';
 export function TenantCompliance() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for documents
   const [documents, setDocuments] = useState([]);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ documentType: '', file: null });
   const [loading, setLoading] = useState(false);
 
+  // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
+  // Load tenant's documents
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return;
@@ -42,21 +49,30 @@ export function TenantCompliance() {
     load();
   }, [user]);
 
+  // Handle document upload
   const handleUpload = async () => {
+    // Validate required fields
     if (!formData.documentType || !formData.file) {
       toast.warning('Please select a type and file');
       return;
     }
+    
+    // Create FormData for file upload
     const data = new FormData();
     data.append('file', formData.file);
     data.append('document_type', formData.documentType);
     data.append('tenant_id', String(user?.id || ''));
+    
     try {
       await api.compliance.uploadDocument(data);
       toast.success('Document uploaded');
       setIsUploadDialogOpen(false);
+      
+      // Refresh document list
       const resp = await api.compliance.getDocuments({ tenant_id: user?.id });
       setDocuments(resp.results || []);
+      
+      // Reset form
       setFormData({ documentType: '', file: null });
     } catch (err) {
       toast.error('Upload failed');
@@ -66,10 +82,13 @@ export function TenantCompliance() {
   return (
     <Layout role="tenant">
       <div className="space-y-6">
+        {/* Header with upload button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">My Documents</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Upload and manage compliance documents</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Upload and manage compliance documents
+            </p>
           </div>
           <Button onClick={() => setIsUploadDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
@@ -77,6 +96,7 @@ export function TenantCompliance() {
           </Button>
         </div>
 
+        {/* Documents list */}
         <Card>
           <CardHeader>
             <CardTitle>My Compliance Documents</CardTitle>
@@ -85,16 +105,19 @@ export function TenantCompliance() {
           <CardContent>
             <div className="space-y-4">
               {loading ? (
+                // Loading skeletons
                 <>
                   <Skeleton className="h-16 w-full" />
                   <Skeleton className="h-16 w-full" />
                   <Skeleton className="h-16 w-full" />
                 </>
               ) : documents.length === 0 ? (
+                // Empty state
                 <div className="text-center text-gray-500 py-8">
                   <p className="font-medium">No documents uploaded</p>
                 </div>
               ) : (
+                // Document list
                 documents.map((doc) => (
                   <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-start gap-3">
@@ -117,6 +140,7 @@ export function TenantCompliance() {
           </CardContent>
         </Card>
 
+        {/* Upload Document Dialog */}
         <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -124,9 +148,13 @@ export function TenantCompliance() {
               <DialogDescription>Upload a compliance document</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Document type select */}
               <div className="space-y-2">
                 <Label>Document Type</Label>
-                <Select value={formData.documentType} onValueChange={(value) => setFormData({ ...formData, documentType: value })}>
+                <Select 
+                  value={formData.documentType} 
+                  onValueChange={(value) => setFormData({ ...formData, documentType: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select document type" />
                   </SelectTrigger>
@@ -138,6 +166,8 @@ export function TenantCompliance() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* File input */}
               <div className="space-y-2">
                 <Label>File</Label>
                 <Input

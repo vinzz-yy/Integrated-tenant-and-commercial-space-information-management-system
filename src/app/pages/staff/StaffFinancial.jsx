@@ -1,3 +1,6 @@
+// StaffFinancial.jsx - Staff view for financial records
+// Allows staff to view and review invoices
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -29,16 +32,20 @@ import api from '../../services/api.js';
 export function StaffFinancial() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for storing invoices
   const [invoices, setInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
 
+  // Redirect if not staff
   useEffect(() => {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
 
+  // Load invoices
   useEffect(() => {
     const load = async () => {
       const inv = await api.financial.getInvoices();
@@ -47,8 +54,10 @@ export function StaffFinancial() {
     load();
   }, []);
 
+  // Placeholder for export functionality
   const handleExport = () => {};
 
+  // Open review dialog with selected invoice
   const openReviewDialog = (invoice) => {
     setSelectedInvoice(invoice);
     setReviewStatus(invoice.status);
@@ -56,7 +65,9 @@ export function StaffFinancial() {
     setIsReviewDialogOpen(true);
   };
 
+  // Handle submission of invoice review
   const handleReviewSubmit = async () => {
+    // Update local state (would normally call API)
     setInvoices(invoices.map(inv => 
       String(inv.id) === String(selectedInvoice.id) 
         ? { ...inv, status: reviewStatus, notes: reviewNotes }
@@ -65,6 +76,7 @@ export function StaffFinancial() {
     setIsReviewDialogOpen(false);
   };
 
+  // Helper function to get appropriate icon based on invoice status
   const getStatusIcon = (status) => {
     switch (status) {
       case 'paid':
@@ -78,14 +90,15 @@ export function StaffFinancial() {
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusVariant = (status) => {
     switch (status) {
       case 'paid':
-        return 'default';
+        return 'default'; // Blue badge
       case 'pending':
-        return 'secondary';
+        return 'secondary'; // Gray badge
       case 'overdue':
-        return 'destructive';
+        return 'destructive'; // Red badge
       default:
         return 'outline';
     }
@@ -94,6 +107,7 @@ export function StaffFinancial() {
   return (
     <Layout role="staff">
       <div className="space-y-6">
+        {/* Header with export button */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Financial Overview
@@ -104,6 +118,7 @@ export function StaffFinancial() {
           </Button>
         </div>
         
+        {/* Invoices table */}
         <Card>
           <CardHeader>
             <CardTitle>Invoices ({invoices.length})</CardTitle>
@@ -150,6 +165,7 @@ export function StaffFinancial() {
           </CardContent>
         </Card>
 
+        {/* Review Invoice Dialog */}
         <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -160,6 +176,7 @@ export function StaffFinancial() {
             </DialogHeader>
             {selectedInvoice && (
               <div className="space-y-4 py-4">
+                {/* Invoice info summary */}
                 <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg space-y-1">
                   <p className="text-sm">
                     <span className="font-medium">Invoice:</span> {selectedInvoice.id}
@@ -175,6 +192,7 @@ export function StaffFinancial() {
                   </p>
                 </div>
 
+                {/* Status selector */}
                 <div className="space-y-2">
                   <Label htmlFor="review-status">Status</Label>
                   <Select value={reviewStatus} onValueChange={setReviewStatus}>
@@ -190,6 +208,7 @@ export function StaffFinancial() {
                   </Select>
                 </div>
 
+                {/* Review notes */}
                 <div className="space-y-2">
                   <Label htmlFor="review-notes">Review Notes</Label>
                   <Textarea

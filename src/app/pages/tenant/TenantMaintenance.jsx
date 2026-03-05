@@ -1,3 +1,6 @@
+// TenantMaintenance.jsx - Tenant maintenance request management
+// Allows tenants to submit and track maintenance requests for their unit
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -16,8 +19,12 @@ import api from '../../services/api.js';
 export function TenantMaintenance() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for maintenance requests
   const [requests, setRequests] = useState([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form state for new request
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,10 +32,12 @@ export function TenantMaintenance() {
     file: null,
   });
 
+  // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
+  // Load tenant's maintenance requests
   useEffect(() => {
     const load = async () => {
       const resp = await api.maintenance.getRequests({ tenant_id: user?.id });
@@ -37,17 +46,21 @@ export function TenantMaintenance() {
     load();
   }, [user]);
 
+  // Handle submitting a new maintenance request
   const handleSubmitRequest = async () => {
     try {
+      // Create FormData for file upload
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description);
       data.append('priority', formData.priority);
       data.append('tenant_id', String(user?.id || ''));
       if (formData.file) data.append('file', formData.file);
+      
       await api.maintenance.createRequest(data);
       setIsCreateDialogOpen(false);
-      // Reload requests
+      
+      // Refresh requests list
       const resp = await api.maintenance.getRequests({ tenant_id: user?.id });
       setRequests(resp.results || []);
     } catch (error) {
@@ -56,20 +69,22 @@ export function TenantMaintenance() {
     }
   };
 
+  // Helper function to determine badge color based on priority
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
+      case 'high': return 'destructive'; // Red badge
+      case 'medium': return 'default'; // Blue badge
+      case 'low': return 'secondary'; // Gray badge
       default: return 'outline';
     }
   };
 
+  // Helper function to determine badge color based on status
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'default';
-      case 'in_progress': return 'secondary';
-      case 'pending': return 'outline';
+      case 'completed': return 'default'; // Blue badge
+      case 'in_progress': return 'secondary'; // Gray badge
+      case 'pending': return 'outline'; // Outlined badge
       default: return 'outline';
     }
   };
@@ -77,6 +92,7 @@ export function TenantMaintenance() {
   return (
     <Layout role="tenant">
       <div className="space-y-6">
+        {/* Header with create button */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Maintenance Requests</h1>
@@ -90,6 +106,7 @@ export function TenantMaintenance() {
           </Button>
         </div>
 
+        {/* Stats cards showing request overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -127,6 +144,7 @@ export function TenantMaintenance() {
           </Card>
         </div>
 
+        {/* Requests list */}
         <Card>
           <CardHeader>
             <CardTitle>My Requests</CardTitle>
@@ -174,6 +192,7 @@ export function TenantMaintenance() {
           </CardContent>
         </Card>
 
+        {/* Create Request Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -183,6 +202,7 @@ export function TenantMaintenance() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {/* Title input */}
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
@@ -191,9 +211,14 @@ export function TenantMaintenance() {
                   placeholder="Brief description of the issue"
                 />
               </div>
+              
+              {/* Priority select */}
               <div className="space-y-2">
                 <Label>Priority</Label>
-                <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                <Select 
+                  value={formData.priority} 
+                  onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -204,6 +229,8 @@ export function TenantMaintenance() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Description textarea */}
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea
@@ -213,6 +240,8 @@ export function TenantMaintenance() {
                   rows={4}
                 />
               </div>
+              
+              {/* File attachment */}
               <div className="space-y-2">
                 <Label>Attachment (Optional)</Label>
                 <Input
