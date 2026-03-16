@@ -57,7 +57,7 @@ git add src/components/Login.jsx   # Add specific file
 git add src/                       # Add entire folder
 
 # Step 3: Commit with a message
-git commit -m "Your commit message here"
+git commit -m "updated file"
 
 # Step 4: Push to GitHub
 git push                            # If already connected
