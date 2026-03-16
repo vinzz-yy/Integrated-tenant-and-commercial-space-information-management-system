@@ -17,9 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
-import { Download, TrendingUp } from 'lucide-react';
+import { Download, TrendingUp, FileText, Table as TableIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../../services/api.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../utils/export.js';
 
 export function FinancialManagement() {
   const { user } = useAuth();
@@ -64,45 +66,30 @@ export function FinancialManagement() {
   const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const unpaidAmount = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
-  // Handle exporting financial report as CSV
-  const handleExportReport = async () => {
+  // Handle exporting financial report with format choice
+  const handleExportReport = async (format) => {
     try {
       // Fetch all financial data
       const allInvoices = await api.financial.getInvoices();
       const allPayments = await api.financial.getPayments();
       
-      // Convert to CSV format
-      const headers = ['Type', 'ID', 'Amount', 'Status', 'Date'];
-      const csvContent = [
-        headers.join(','),
-        // Add invoice rows
-        ...allInvoices.results.map(inv => [
-          'Invoice',
-          inv.id,
-          inv.amount,
-          inv.status,
-          inv.created_at
-        ].join(',')),
-        // Add payment rows
-        ...allPayments.results.map(pay => [
-          'Payment',
-          pay.id,
-          pay.amount,
-          'completed',
-          pay.created_at
-        ].join(','))
-      ].join('\n');
-      
-      // Create download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'financial_report.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const headers = ['Type', 'ID', 'Amount (PHP)', 'Status', 'Date'];
+      const rows = [
+        ...(allInvoices.results || []).map(inv => ['Invoice', inv.id, inv.amount, inv.status, inv.created_at]),
+        ...(allPayments.results || []).map(pay => ['Payment', pay.id, pay.amount, 'completed', pay.created_at]),
+      ];
+
+      if (format === 'csv') {
+        exportToCSV(headers, rows, 'financial_report.csv');
+      } else if (format === 'excel') {
+        exportToExcel(headers, rows, 'financial_report.xls', 'Financial Report');
+      } else if (format === 'word') {
+        exportToWord(headers, rows, 'financial_report.doc', 'Financial Report');
+      } else if (format === 'docx') {
+        await exportToDocx(headers, rows, 'financial_report.docx', 'Financial Report');
+      } else if (format === 'pdf') {
+        printToPDF(headers, rows, 'Financial Report');
+      }
     } catch (error) {
       console.error('Error exporting financial report:', error);
       alert('Failed to export report. Please try again.');
@@ -122,10 +109,36 @@ export function FinancialManagement() {
               Manage invoices, payments, and financial reports
             </p>
           </div>
-          <Button variant="outline" onClick={handleExportReport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExportReport('pdf')}>
+                <FileText className="h-4 w-4 mr-2" />
+                PDF (Print)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('word')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Word (.doc)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('docx')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Word (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('excel')}>
+                <TableIcon className="h-4 w-4 mr-2" />
+                Excel (.xls)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('csv')}>
+                <TableIcon className="h-4 w-4 mr-2" />
+                CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Financial summary cards */}
@@ -137,7 +150,7 @@ export function FinancialManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₱{totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
                 +8.2% from last month
@@ -151,7 +164,7 @@ export function FinancialManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${paidAmount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-green-600">₱{paidAmount.toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
@@ -161,7 +174,7 @@ export function FinancialManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">${unpaidAmount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-orange-600">₱{unpaidAmount.toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
@@ -181,7 +194,7 @@ export function FinancialManagement() {
           <Card>
             <CardHeader>
               <CardTitle>Profit & Loss</CardTitle>
-              <CardDescription>Revenue vs Expenses</CardDescription>
+              <CardDescription>Revenue vs Expenses (PHP)</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -189,9 +202,9 @@ export function FinancialManagement() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} />
+                  <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Amount']} />
+                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue" />
+                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -218,7 +231,7 @@ export function FinancialManagement() {
                       <TableHead>Invoice ID</TableHead>
                       <TableHead>Tenant</TableHead>
                       <TableHead>Unit</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Amount (PHP)</TableHead>
                       <TableHead>Issue Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead>Status</TableHead>
@@ -230,7 +243,7 @@ export function FinancialManagement() {
                         <TableCell className="font-medium">{invoice.id}</TableCell>
                         <TableCell>{invoice.tenantName}</TableCell>
                         <TableCell>{invoice.unitNumber}</TableCell>
-                        <TableCell>${(invoice.amount || 0).toLocaleString()}</TableCell>
+                        <TableCell>₱{(invoice.amount || 0).toLocaleString()}</TableCell>
                         <TableCell className="text-sm">{invoice.issueDate}</TableCell>
                         <TableCell className="text-sm">{invoice.dueDate}</TableCell>
                         <TableCell>
@@ -252,7 +265,7 @@ export function FinancialManagement() {
                       <TableHead>Payment ID</TableHead>
                       <TableHead>Invoice ID</TableHead>
                       <TableHead>Tenant</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Amount (PHP)</TableHead>
                       <TableHead>Payment Date</TableHead>
                       <TableHead>Method</TableHead>
                       <TableHead>Status</TableHead>
@@ -264,7 +277,7 @@ export function FinancialManagement() {
                         <TableCell className="font-medium">{payment.id}</TableCell>
                         <TableCell>{payment.invoiceId}</TableCell>
                         <TableCell>{payment.tenantName}</TableCell>
-                        <TableCell>${(payment.amount || 0).toLocaleString()}</TableCell>
+                        <TableCell>₱{(payment.amount || 0).toLocaleString()}</TableCell>
                         <TableCell className="text-sm">{payment.paymentDate}</TableCell>
                         <TableCell className="text-sm">{payment.paymentMethod}</TableCell>
                         <TableCell>

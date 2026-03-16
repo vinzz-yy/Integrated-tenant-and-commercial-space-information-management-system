@@ -2,6 +2,11 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { CheckIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Checkbox - Interactive checkbox for multiple selection
+ * Used on: Forms with multiple options, Terms acceptance, Filters
+ * Screens: Registration forms, Settings, Filter panels, Todo lists
+ */
 function Checkbox({ className, ...props }) {
   return (
     <CheckboxPrimitive.Root

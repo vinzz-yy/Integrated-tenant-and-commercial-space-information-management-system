@@ -20,12 +20,21 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 const SidebarContext = React.createContext(null);
 
+/**
+ * useSidebar - Hook to access sidebar context
+ * Used on: Any component that needs to interact with sidebar state
+ */
 function useSidebar() {
   const context = React.useContext(SidebarContext);
   if (!context) throw new Error("useSidebar must be used within a SidebarProvider.");
   return context;
 }
 
+/**
+ * SidebarProvider - Provider component for sidebar context
+ * Used on: Root layout to enable sidebar functionality
+ * Screens: Dashboard layouts, Admin panels, App layouts
+ */
 function SidebarProvider({ defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props }) {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
@@ -90,6 +99,11 @@ function SidebarProvider({ defaultOpen = true, open: openProp, onOpenChange: set
   );
 }
 
+/**
+ * Sidebar - Main sidebar navigation component
+ * Used on: Persistent navigation in dashboard layouts
+ * Screens: Dashboard, Admin panels, App layouts
+ */
 function Sidebar({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
   if (collapsible === "none") {
@@ -172,6 +186,10 @@ function Sidebar({ side = "left", variant = "sidebar", collapsible = "offcanvas"
   );
 }
 
+/**
+ * SidebarTrigger - Button to toggle sidebar
+ * Used on: Header button to collapse/expand sidebar
+ */
 function SidebarTrigger({ className, onClick, ...props }) {
   const { toggleSidebar } = useSidebar();
   return (
@@ -193,6 +211,10 @@ function SidebarTrigger({ className, onClick, ...props }) {
   );
 }
 
+/**
+ * SidebarRail - Vertical rail for collapsing sidebar
+ * Used on: Edge of sidebar for collapse interaction
+ */
 function SidebarRail({ className, ...props }) {
   const { toggleSidebar } = useSidebar();
   return (
@@ -217,6 +239,10 @@ function SidebarRail({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarInset - Main content area next to sidebar
+ * Used on: Content area that adjusts for sidebar
+ */
 function SidebarInset({ className, ...props }) {
   return (
     <main
@@ -231,6 +257,10 @@ function SidebarInset({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarInput - Input field styled for sidebar
+ * Used on: Search inputs in sidebar
+ */
 function SidebarInput({ className, ...props }) {
   return (
     <Input
@@ -242,6 +272,10 @@ function SidebarInput({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarHeader - Header section of sidebar
+ * Used on: Top section with branding or user info
+ */
 function SidebarHeader({ className, ...props }) {
   return (
     <div
@@ -253,6 +287,10 @@ function SidebarHeader({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarFooter - Footer section of sidebar
+ * Used on: Bottom section with user menu or settings
+ */
 function SidebarFooter({ className, ...props }) {
   return (
     <div
@@ -264,17 +302,10 @@ function SidebarFooter({ className, ...props }) {
   );
 }
 
-function SidebarSeparator({ className, ...props }) {
-  return (
-    <Separator
-      data-slot="sidebar-separator"
-      data-sidebar="separator"
-      className={cn("bg-sidebar-border mx-2 w-auto", className)}
-      {...props}
-    />
-  );
-}
-
+/**
+ * SidebarContent - Scrollable content area of sidebar
+ * Used on: Contains navigation items
+ */
 function SidebarContent({ className, ...props }) {
   return (
     <div
@@ -289,6 +320,10 @@ function SidebarContent({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarGroup - Group of related sidebar items
+ * Used on: Category sections in sidebar
+ */
 function SidebarGroup({ className, ...props }) {
   return (
     <div
@@ -300,6 +335,10 @@ function SidebarGroup({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarGroupLabel - Label for sidebar group
+ * Used on: Category headers in sidebar
+ */
 function SidebarGroupLabel({ className, asChild = false, ...props }) {
   const Comp = asChild ? Slot : "div";
   return (
@@ -316,34 +355,10 @@ function SidebarGroupLabel({ className, asChild = false, ...props }) {
   );
 }
 
-function SidebarGroupAction({ className, asChild = false, ...props }) {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp
-      data-slot="sidebar-group-action"
-      data-sidebar="group-action"
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        "after:absolute after:-inset-2 md:after:hidden",
-        "group-data-[collapsible=icon]:hidden",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function SidebarGroupContent({ className, ...props }) {
-  return (
-    <div
-      data-slot="sidebar-group-content"
-      data-sidebar="group-content"
-      className={cn("w-full text-sm", className)}
-      {...props}
-    />
-  );
-}
-
+/**
+ * SidebarMenu - Navigation menu in sidebar
+ * Used on: List of navigation items
+ */
 function SidebarMenu({ className, ...props }) {
   return (
     <ul
@@ -355,6 +370,10 @@ function SidebarMenu({ className, ...props }) {
   );
 }
 
+/**
+ * SidebarMenuItem - Individual menu item
+ * Used on: Each navigation link
+ */
 function SidebarMenuItem({ className, ...props }) {
   return (
     <li
@@ -388,6 +407,10 @@ const sidebarMenuButtonVariants = cva(
   },
 );
 
+/**
+ * SidebarMenuButton - Button for sidebar menu items
+ * Used on: Clickable navigation items
+ */
 function SidebarMenuButton({ asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, ...props }) {
   const Comp = asChild ? Slot : "button";
   const { isMobile, state } = useSidebar();
@@ -416,115 +439,6 @@ function SidebarMenuButton({ asChild = false, isActive = false, variant = "defau
         {...tooltipProps}
       />
     </Tooltip>
-  );
-}
-
-function SidebarMenuAction({ className, asChild = false, showOnHover = false, ...props }) {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp
-      data-slot="sidebar-menu-action"
-      data-sidebar="menu-action"
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        "after:absolute after:-inset-2 md:after:hidden",
-        "peer-data-[size=sm]/menu-button:top-1",
-        "peer-data-[size=default]/menu-button:top-1.5",
-        "peer-data-[size=lg]/menu-button:top-2.5",
-        "group-data-[collapsible=icon]:hidden",
-        showOnHover &&
-          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function SidebarMenuBadge({ className, ...props }) {
-  return (
-    <div
-      data-slot="sidebar-menu-badge"
-      data-sidebar="menu-badge"
-      className={cn(
-        "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
-        "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
-        "peer-data-[size=sm]/menu-button:top-1",
-        "peer-data-[size=default]/menu-button:top-1.5",
-        "peer-data-[size=lg]/menu-button:top-2.5",
-        "group-data-[collapsible=icon]:hidden",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function SidebarMenuSkeleton({ className, showIcon = false, ...props }) {
-  const width = React.useMemo(() => `${Math.floor(Math.random() * 40) + 50}%`, []);
-  return (
-    <div
-      data-slot="sidebar-menu-skeleton"
-      data-sidebar="menu-skeleton"
-      className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
-      {...props}
-    >
-      {showIcon && (
-        <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />
-      )}
-      <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
-        data-sidebar="menu-skeleton-text"
-        style={{ "--skeleton-width": width }}
-      />
-    </div>
-  );
-}
-
-function SidebarMenuSub({ className, ...props }) {
-  return (
-    <ul
-      data-slot="sidebar-menu-sub"
-      data-sidebar="menu-sub"
-      className={cn(
-        "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5",
-        "group-data-[collapsible=icon]:hidden",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function SidebarMenuSubItem({ className, ...props }) {
-  return (
-    <li
-      data-slot="sidebar-menu-sub-item"
-      data-sidebar="menu-sub-item"
-      className={cn("group/menu-sub-item relative", className)}
-      {...props}
-    />
-  );
-}
-
-function SidebarMenuSubButton({ asChild = false, size = "md", isActive = false, className, ...props }) {
-  const Comp = asChild ? Slot : "a";
-  return (
-    <Comp
-      data-slot="sidebar-menu-sub-button"
-      data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-        size === "sm" && "text-xs",
-        size === "md" && "text-sm",
-        "group-data-[collapsible=icon]:hidden",
-        className,
-      )}
-      {...props}
-    />
   );
 }
 

@@ -2,6 +2,11 @@ import * as MenubarPrimitive from "@radix-ui/react-menubar";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Menubar - Desktop-style horizontal menu bar
+ * Used on: Complex applications with multiple menu categories
+ * Screens: Desktop applications, Admin panels, Complex dashboards
+ */
 function Menubar({ className, ...props }) {
   return (
     <MenubarPrimitive.Root
@@ -15,24 +20,44 @@ function Menubar({ className, ...props }) {
   );
 }
 
+/**
+ * MenubarMenu - Individual menu in the menubar
+ * Used on: Each top-level menu category
+ */
 function MenubarMenu(props) {
   return <MenubarPrimitive.Menu data-slot="menubar-menu" {...props} />;
 }
 
+/**
+ * MenubarGroup - Group of related menu items
+ * Used on: Categorizing items within a menu
+ */
 function MenubarGroup(props) {
   return <MenubarPrimitive.Group data-slot="menubar-group" {...props} />;
 }
 
+/**
+ * MenubarPortal - Renders menu in a portal
+ * Used on: Internal - handles rendering outside component hierarchy
+ */
 function MenubarPortal(props) {
   return <MenubarPrimitive.Portal data-slot="menubar-portal" {...props} />;
 }
 
+/**
+ * MenubarRadioGroup - Group of radio items
+ * Used on: Mutually exclusive options in menu
+ */
 function MenubarRadioGroup(props) {
   return (
     <MenubarPrimitive.RadioGroup data-slot="menubar-radio-group" {...props} />
   );
 }
 
+/**
+ * MenubarTrigger - Button that opens a menu
+ * Used on: Top-level menu buttons
+ */
 function MenubarTrigger({ className, ...props }) {
   return (
     <MenubarPrimitive.Trigger
@@ -46,6 +71,10 @@ function MenubarTrigger({ className, ...props }) {
   );
 }
 
+/**
+ * MenubarContent - Menu content container
+ * Used on: Contains dropdown menu items
+ */
 function MenubarContent({ className, align = "start", alignOffset = -4, sideOffset = 8, ...props }) {
   return (
     <MenubarPortal>
@@ -64,6 +93,10 @@ function MenubarContent({ className, align = "start", alignOffset = -4, sideOffs
   );
 }
 
+/**
+ * MenubarItem - Individual menu item
+ * Used on: Each action in the menu
+ */
 function MenubarItem({ className, inset, variant = "default", ...props }) {
   return (
     <MenubarPrimitive.Item
@@ -79,6 +112,10 @@ function MenubarItem({ className, inset, variant = "default", ...props }) {
   );
 }
 
+/**
+ * MenubarCheckboxItem - Checkbox item in menu
+ * Used on: Toggleable options in menu
+ */
 function MenubarCheckboxItem({ className, children, checked, ...props }) {
   return (
     <MenubarPrimitive.CheckboxItem
@@ -100,6 +137,10 @@ function MenubarCheckboxItem({ className, children, checked, ...props }) {
   );
 }
 
+/**
+ * MenubarRadioItem - Radio item in menu
+ * Used on: Single selection options in menu
+ */
 function MenubarRadioItem({ className, children, ...props }) {
   return (
     <MenubarPrimitive.RadioItem
@@ -120,6 +161,10 @@ function MenubarRadioItem({ className, children, ...props }) {
   );
 }
 
+/**
+ * MenubarLabel - Label for menu section
+ * Used on: Category headers in menu
+ */
 function MenubarLabel({ className, inset, ...props }) {
   return (
     <MenubarPrimitive.Label
@@ -134,6 +179,10 @@ function MenubarLabel({ className, inset, ...props }) {
   );
 }
 
+/**
+ * MenubarSeparator - Visual divider between menu items
+ * Used on: Separating different menu sections
+ */
 function MenubarSeparator({ className, ...props }) {
   return (
     <MenubarPrimitive.Separator
@@ -144,6 +193,10 @@ function MenubarSeparator({ className, ...props }) {
   );
 }
 
+/**
+ * MenubarShortcut - Keyboard shortcut display
+ * Used on: Shows keyboard shortcuts next to menu items
+ */
 function MenubarShortcut({ className, ...props }) {
   return (
     <span
@@ -157,10 +210,18 @@ function MenubarShortcut({ className, ...props }) {
   );
 }
 
+/**
+ * MenubarSub - Nested submenu
+ * Used on: Menu items with additional options
+ */
 function MenubarSub(props) {
   return <MenubarPrimitive.Sub data-slot="menubar-sub" {...props} />;
 }
 
+/**
+ * MenubarSubTrigger - Button that opens submenu
+ * Used on: Menu item that expands into submenu
+ */
 function MenubarSubTrigger({ className, inset, children, ...props }) {
   return (
     <MenubarPrimitive.SubTrigger
@@ -178,6 +239,10 @@ function MenubarSubTrigger({ className, inset, children, ...props }) {
   );
 }
 
+/**
+ * MenubarSubContent - Content of submenu
+ * Used on: Submenu items container
+ */
 function MenubarSubContent({ className, ...props }) {
   return (
     <MenubarPrimitive.SubContent

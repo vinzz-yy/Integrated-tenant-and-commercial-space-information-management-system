@@ -5,10 +5,19 @@ import { Controller, FormProvider, useFormContext, useFormState } from "react-ho
 import { cn } from "./utils";
 import { Label } from "./label";
 
+/**
+ * Form - Form wrapper with react-hook-form integration
+ * Used on: All forms with validation (login, registration, settings)
+ * Screens: Login/Register, Profile edit, Settings, Checkout
+ */
 const Form = FormProvider;
 
 const FormFieldContext = React.createContext({});
 
+/**
+ * FormField - Connects form field with react-hook-form
+ * Used on: Each form input that needs validation
+ */
 const FormField = (props) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
@@ -19,6 +28,10 @@ const FormField = (props) => {
 
 const FormItemContext = React.createContext({});
 
+/**
+ * useFormField - Hook to access form field state
+ * Used on: Internal - provides field error state and IDs
+ */
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
@@ -39,6 +52,10 @@ const useFormField = () => {
   };
 };
 
+/**
+ * FormItem - Container for form field elements
+ * Used on: Wrapper around label, input, and message
+ */
 function FormItem({ className, ...props }) {
   const id = React.useId();
   return (
@@ -52,6 +69,10 @@ function FormItem({ className, ...props }) {
   );
 }
 
+/**
+ * FormLabel - Label for form field
+ * Used on: Describes what the form field is for
+ */
 function FormLabel({ className, ...props }) {
   const { error, formItemId } = useFormField();
   return (
@@ -65,6 +86,10 @@ function FormLabel({ className, ...props }) {
   );
 }
 
+/**
+ * FormControl - Wraps the actual form input
+ * Used on: Connects input with form state and accessibility
+ */
 function FormControl(props) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
@@ -78,6 +103,10 @@ function FormControl(props) {
   );
 }
 
+/**
+ * FormDescription - Help text for form field
+ * Used on: Explains what to enter in the field
+ */
 function FormDescription({ className, ...props }) {
   const { formDescriptionId } = useFormField();
   return (
@@ -90,6 +119,10 @@ function FormDescription({ className, ...props }) {
   );
 }
 
+/**
+ * FormMessage - Validation error message
+ * Used on: Shows validation errors for form fields
+ */
 function FormMessage({ className, ...props }) {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? "") : props.children;

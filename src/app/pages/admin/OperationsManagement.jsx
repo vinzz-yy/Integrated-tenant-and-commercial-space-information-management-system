@@ -51,14 +51,27 @@ export function OperationsManagement() {
   
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
+  const [resultTitle, setResultTitle] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
   
   // Form state for creating new request
   const [formData, setFormData] = useState({
     title: '',
     type: 'Technical',
-    priority: 'medium',
     description: '',
+    assignedTo: '',
+    date: '',
   });
+  const [staffUsers, setStaffUsers] = useState([]);
+  const formatDate = (d) => {
+    if (!d) return '';
+    try {
+      return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch {
+      return String(d).split('T')[0] || '';
+    }
+  };
 
   // Initial load - fetch all operation requests
   useEffect(() => {
@@ -70,8 +83,14 @@ export function OperationsManagement() {
     
     const load = async () => {
       const resp = await api.operations.getRequests();
-      setRequests(resp.results || []);
-      setFilteredRequests(resp.results || []);
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setRequests(list);
+      setFilteredRequests(list);
+      try {
+        const usersResp = await api.users.getUsers();
+        const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
+        setStaffUsers(usersList.filter(u => (u.role || '').toLowerCase() === 'staff'));
+      } catch {}
     };
     load();
   }, [user, navigate]);
@@ -98,12 +117,24 @@ export function OperationsManagement() {
   // Handle creating a new operation request
   const handleCreateRequest = async () => {
     try {
-      const created = await api.operations.createRequest(formData);
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        status: 'pending',
+        tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
+      };
+      const created = await api.operations.createRequest(payload);
       setRequests([...requests, created]);
       setIsCreateDialogOpen(false);
+      setResultTitle('Adding Request Successful');
+      setResultMessage('The request has been submitted successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error creating request:', error);
-      alert('Failed to create request. Please try again.');
+      setResultTitle('Failed Adding Request');
+      setResultMessage('Failed adding request. Please try again.');
+      setIsResultDialogOpen(true);
     }
   };
 
@@ -229,9 +260,7 @@ export function OperationsManagement() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created By</TableHead>
                   <TableHead>Assigned To</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
@@ -240,20 +269,30 @@ export function OperationsManagement() {
                 {filteredRequests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">{request.title}</TableCell>
-                    <TableCell>{request.type}</TableCell>
+                    <TableCell>{request.type || request.request_type}</TableCell>
                     <TableCell>
-                      <Badge variant={getPriorityColor(request.priority)}>
-                        {request.priority}
-                      </Badge>
+                      <Select
+                        value={request.status || 'pending'}
+                        onValueChange={async (value) => {
+                          try {
+                            const updated = await api.operations.updateRequest(String(request.id), { status: value });
+                            setRequests(requests.map(r => String(r.id) === String(request.id) ? updated : r));
+                          } catch (e) {}
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(request.status)}>
-                        {request.status?.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{request.createdBy}</TableCell>
                     <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
-                    <TableCell className="text-sm">{request.createdAt}</TableCell>
+                    <TableCell className="text-sm">{formatDate(request.createdAt || request.created_at)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -279,7 +318,7 @@ export function OperationsManagement() {
                 />
               </div>
               
-              {/* Type and Priority selects */}
+              {/* Type select */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Type</Label>
@@ -295,16 +334,30 @@ export function OperationsManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              {/* Date and Assigned To */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Assigned To</Label>
+                  <Select value={String(formData.assignedTo || '')} onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
+                      {staffUsers.map(s => (
+                        <SelectItem key={s.id} value={String(s.id)}>
+                          {(s.firstName || s.first_name || '') + ' ' + (s.lastName || s.last_name || '') || s.email}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -326,6 +379,17 @@ export function OperationsManagement() {
                 Cancel
               </Button>
               <Button onClick={handleCreateRequest}>Create Request</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

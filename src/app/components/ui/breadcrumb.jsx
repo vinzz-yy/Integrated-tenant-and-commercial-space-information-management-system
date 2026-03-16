@@ -2,10 +2,19 @@ import { Slot } from "@radix-ui/react-slot";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Breadcrumb - Navigation trail showing current location hierarchy
+ * Used on: Shows page hierarchy for easy navigation back
+ * Screens: Documentation pages, E-commerce product pages, Admin panels
+ */
 function Breadcrumb(props) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
 }
 
+/**
+ * BreadcrumbList - Container for breadcrumb items
+ * Used on: Wrapper for all breadcrumb items
+ */
 function BreadcrumbList({ className, ...props }) {
   return (
     <ol
@@ -19,6 +28,10 @@ function BreadcrumbList({ className, ...props }) {
   );
 }
 
+/**
+ * BreadcrumbItem - Individual breadcrumb element
+ * Used on: Each level in the navigation hierarchy
+ */
 function BreadcrumbItem({ className, ...props }) {
   return (
     <li
@@ -29,6 +42,10 @@ function BreadcrumbItem({ className, ...props }) {
   );
 }
 
+/**
+ * BreadcrumbLink - Clickable breadcrumb item
+ * Used on: Navigational links in the breadcrumb trail
+ */
 function BreadcrumbLink({ asChild, className, ...props }) {
   const Comp = asChild ? Slot : "a";
   return (
@@ -40,6 +57,10 @@ function BreadcrumbLink({ asChild, className, ...props }) {
   );
 }
 
+/**
+ * BreadcrumbPage - Current page indicator (non-clickable)
+ * Used on: Last item in breadcrumb showing current page
+ */
 function BreadcrumbPage({ className, ...props }) {
   return (
     <span
@@ -53,6 +74,10 @@ function BreadcrumbPage({ className, ...props }) {
   );
 }
 
+/**
+ * BreadcrumbSeparator - Visual separator between breadcrumb items
+ * Used on: Between each breadcrumb item (usually / or >)
+ */
 function BreadcrumbSeparator({ children, className, ...props }) {
   return (
     <li
@@ -67,6 +92,10 @@ function BreadcrumbSeparator({ children, className, ...props }) {
   );
 }
 
+/**
+ * BreadcrumbEllipsis - Indicates truncated breadcrumb items
+ * Used on: When there are too many levels to display
+ */
 function BreadcrumbEllipsis({ className, ...props }) {
   return (
     <span

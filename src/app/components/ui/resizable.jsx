@@ -2,6 +2,11 @@ import { GripVerticalIcon } from "lucide-react";
 import * as ResizablePrimitive from "react-resizable-panels";
 import { cn } from "./utils";
 
+/**
+ * ResizablePanelGroup - Container for resizable panels
+ * Used on: Split views, Code editors, Dashboards with adjustable sections
+ * Screens: IDE layouts, Admin dashboards, Email clients
+ */
 function ResizablePanelGroup({ className, ...props }) {
   return (
     <ResizablePrimitive.PanelGroup
@@ -15,10 +20,18 @@ function ResizablePanelGroup({ className, ...props }) {
   );
 }
 
+/**
+ * ResizablePanel - Individual resizable panel
+ * Used on: Each section that can be resized
+ */
 function ResizablePanel(props) {
   return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
 }
 
+/**
+ * ResizableHandle - Draggable handle between panels
+ * Used on: Separator that allows resizing
+ */
 function ResizableHandle({ withHandle, className, ...props }) {
   return (
     <ResizablePrimitive.PanelResizeHandle

@@ -1,6 +1,10 @@
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "./utils";
 
+/**
+ * TooltipProvider - Provider for tooltip functionality
+ * Used on: Wraps app to enable tooltips globally
+ */
 function TooltipProvider({ delayDuration = 0, ...props }) {
   return (
     <TooltipPrimitive.Provider
@@ -11,6 +15,11 @@ function TooltipProvider({ delayDuration = 0, ...props }) {
   );
 }
 
+/**
+ * Tooltip - Shows helpful text on hover
+ * Used on: Icon explanations, Feature descriptions, Help text
+ * Screens: All screens - helps with UI understanding
+ */
 function Tooltip(props) {
   return (
     <TooltipProvider>
@@ -19,10 +28,18 @@ function Tooltip(props) {
   );
 }
 
+/**
+ * TooltipTrigger - Element that triggers the tooltip
+ * Used on: Icons, buttons, elements needing explanation
+ */
 function TooltipTrigger(props) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
+/**
+ * TooltipContent - Content that appears in tooltip
+ * Used on: The actual help text
+ */
 function TooltipContent({ className, sideOffset = 0, children, ...props }) {
   return (
     <TooltipPrimitive.Portal>

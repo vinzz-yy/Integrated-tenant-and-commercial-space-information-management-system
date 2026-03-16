@@ -17,6 +17,11 @@ const alertVariants = cva(
   },
 );
 
+/**
+ * Alert - Displays important messages or feedback
+ * Used on: Form validation errors, Success messages, Warning notifications
+ * Screens: All screens (Login, Dashboard, Settings, etc.)
+ */
 function Alert({ className, variant, ...props }) {
   return (
     <div
@@ -28,6 +33,10 @@ function Alert({ className, variant, ...props }) {
   );
 }
 
+/**
+ * AlertTitle - Title of the alert message
+ * Used on: Headline of the alert
+ */
 function AlertTitle({ className, ...props }) {
   return (
     <div
@@ -41,6 +50,10 @@ function AlertTitle({ className, ...props }) {
   );
 }
 
+/**
+ * AlertDescription - Detailed content of the alert
+ * Used on: Body text of the alert
+ */
 function AlertDescription({ className, ...props }) {
   return (
     <div

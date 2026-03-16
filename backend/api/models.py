@@ -45,7 +45,7 @@ class Appointment(models.Model):
     date = models.DateField()
     time = models.CharField(max_length=32)
     location = models.CharField(max_length=128, blank=True, null=True)
-    status = models.CharField(max_length=16, choices=[('scheduled','scheduled'),('completed','completed'),('cancelled','cancelled')], default='scheduled')
+    status = models.CharField(max_length=16, choices=[('scheduled','scheduled'),('in_progress','in_progress'),('completed','completed'),('cancelled','cancelled')], default='scheduled')
 
     def to_dict(self):
         return {
@@ -147,9 +147,11 @@ class Unit(models.Model):
     status = models.CharField(max_length=16, choices=[('available','available'),('occupied','occupied'),('reserved','reserved'),('maintenance','maintenance')], default='available')
     security_deposit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     tenant = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='units')
+    tenant_name = models.CharField(max_length=128, blank=True, null=True)
     lease_start_date = models.DateField(blank=True, null=True)
     lease_end_date = models.DateField(blank=True, null=True)
     amenities = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='units/', blank=True, null=True)
 
     def to_dict(self):
         return {
@@ -164,9 +166,11 @@ class Unit(models.Model):
             'status': self.status,
             'security_deposit': float(self.security_deposit) if self.security_deposit else None,
             'tenant': self.tenant.id if self.tenant else None,
+            'tenant_name': self.tenant_name,
             'lease_start_date': self.lease_start_date.isoformat() if self.lease_start_date else None,
             'lease_end_date': self.lease_end_date.isoformat() if self.lease_end_date else None,
             'amenities': self.amenities,
+            'image': self.image.url if self.image else None,
         }
 
 class MaintenanceRequest(models.Model):
@@ -174,6 +178,7 @@ class MaintenanceRequest(models.Model):
     title = models.CharField(max_length=128)
     description = models.TextField()
     attachment = models.FileField(upload_to='maintenance/', blank=True, null=True)
+    request_type = models.CharField(max_length=32, default='Technical')
     status = models.CharField(max_length=16, choices=[('pending','pending'),('in_progress','in_progress'),('completed','completed'),('cancelled','cancelled')], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -184,6 +189,7 @@ class MaintenanceRequest(models.Model):
             'title': self.title,
             'description': self.description,
             'attachment': self.attachment.url if self.attachment else None,
+            'type': self.request_type,
             'status': self.status,
             'created_at': self.created_at.isoformat(),
         }

@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import api from '../../services/api.js';
 
@@ -16,6 +17,14 @@ export function StaffOperations() {
   
   // State for storing operation requests
   const [requests, setRequests] = useState([]);
+  const formatDate = (d) => {
+    if (!d) return '';
+    try {
+      return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch {
+      return String(d).split('T')[0] || '';
+    }
+  };
 
   // Redirect if not staff
   useEffect(() => {
@@ -26,7 +35,8 @@ export function StaffOperations() {
   useEffect(() => {
     const load = async () => {
       const resp = await api.operations.getRequests();
-      setRequests(resp.results || []);
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setRequests(list);
     };
     load();
   }, []);
@@ -57,16 +67,34 @@ export function StaffOperations() {
                 {requests.map((req) => (
                   <TableRow key={req.id}>
                     <TableCell className="font-medium">{req.title}</TableCell>
-                    <TableCell>{req.type}</TableCell>
+                    <TableCell>{req.type || req.request_type}</TableCell>
                     <TableCell>
                       <Badge variant={req.priority === 'high' ? 'destructive' : 'default'}>
                         {req.priority}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{(req.status || '').replace('_', ' ')}</Badge>
+                      <Select
+                        value={req.status || 'pending'}
+                        onValueChange={async (value) => {
+                          try {
+                            const updated = await api.operations.updateRequest(String(req.id), { status: value });
+                            setRequests(requests.map(r => String(r.id) === String(req.id) ? updated : r));
+                          } catch (e) {}
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                    <TableCell>{req.createdAt}</TableCell>
+                    <TableCell>{formatDate(req.createdAt || req.created_at)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

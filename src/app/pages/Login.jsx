@@ -12,6 +12,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Eye, EyeOff, Loader2, Building2, UserCog, User } from 'lucide-react';
 
+
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +26,6 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
 
   // Load saved email if "remember me" was checked
   useEffect(() => {
@@ -56,11 +56,13 @@ export function Login() {
     
     try {
       // Attempt login
-      const user = await login(email, password);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+      const user = await login(cleanEmail, cleanPassword);
       
       // Handle "remember me" functionality
       if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedEmail', cleanEmail);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
@@ -93,29 +95,13 @@ export function Login() {
           navigate('/');
       }
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError(err?.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Quick fill demo credentials for testing
-  const fillDemoCredentials = (role) => {
-    setDemoMode(true);
-    const demos = {
-      admin: { email: 'admin@example.com', password: 'admin123' },
-      staff: { email: 'staff@example.com', password: 'staff123' },
-      tenant: { email: 'tenant@example.com', password: 'tenant123' }
-    };
-    
-    setEmail(demos[role].email);
-    setPassword(demos[role].password);
-    setError('');
-    
-    // Auto-hide demo mode after 3 seconds
-    setTimeout(() => setDemoMode(false), 3000);
-  };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       {/* Animated background decoration */}
@@ -143,14 +129,7 @@ export function Login() {
         </CardHeader>
 
         <CardContent>
-          {/* Demo mode success message */}
-          {demoMode && (
-            <Alert className="mb-6 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-              <AlertDescription className="text-green-700 dark:text-green-300 text-sm">
-                Demo credentials filled! Click "Sign In" to continue.
-              </AlertDescription>
-            </Alert>
-          )}
+        
 
           {/* Error alert */}
           {error && (
@@ -163,7 +142,7 @@ export function Login() {
             {/* Email input */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                Email Address
+                Email 
               </Label>
               <Input
                 id="email"
@@ -190,11 +169,7 @@ export function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                 
                 </button>
               </div>
               <Input
@@ -243,55 +218,7 @@ export function Login() {
             </Button>
           </form>
 
-          {/* Demo credentials section */}
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
-                  Demo Credentials
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('admin')}
-                className="text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                disabled={loading}
-              >
-                <UserCog className="h-3 w-3 mr-1" />
-                Admin
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('staff')}
-                className="text-xs hover:bg-green-50 dark:hover:bg-green-900/20"
-                disabled={loading}
-              >
-                <User className="h-3 w-3 mr-1" />
-                Staff
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('tenant')}
-                className="text-xs hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                disabled={loading}
-              >
-                <Building2 className="h-3 w-3 mr-1" />
-                Tenant
-              </Button>
-            </div>
-          </div>
+        
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600 dark:text-gray-400">
@@ -306,7 +233,7 @@ export function Login() {
       </Card>
 
       {/* Add animation styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }

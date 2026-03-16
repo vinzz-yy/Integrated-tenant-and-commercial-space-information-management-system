@@ -24,6 +24,11 @@ const toggleVariants = cva(
   },
 );
 
+/**
+ * Toggle - Button with on/off state
+ * Used on: Feature toggles, Bold/Italic buttons, Filter toggles
+ * Screens: Text editors, Filter bars, Settings
+ */
 function Toggle({ className, variant, size, ...props }) {
   return (
     <TogglePrimitive.Root

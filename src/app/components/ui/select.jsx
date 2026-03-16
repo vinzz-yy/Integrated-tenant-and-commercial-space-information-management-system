@@ -2,18 +2,35 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Select - Dropdown selection component
+ * Used on: Forms with predefined options, Filters, Settings
+ * Screens: Forms, Filters panels, Settings pages, Checkout
+ */
 function Select(props) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
 }
 
+/**
+ * SelectGroup - Group of related select options
+ * Used on: Categorizing options in select dropdown
+ */
 function SelectGroup(props) {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
+/**
+ * SelectValue - Display selected value
+ * Used on: Shows currently selected option
+ */
 function SelectValue(props) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
+/**
+ * SelectTrigger - Button that opens select dropdown
+ * Used on: Clickable area showing current selection
+ */
 function SelectTrigger({ className, size = "default", children, ...props }) {
   return (
     <SelectPrimitive.Trigger
@@ -33,6 +50,10 @@ function SelectTrigger({ className, size = "default", children, ...props }) {
   );
 }
 
+/**
+ * SelectContent - Dropdown menu content
+ * Used on: Contains all select options
+ */
 function SelectContent({ className, children, position = "popper", ...props }) {
   return (
     <SelectPrimitive.Portal>
@@ -63,6 +84,10 @@ function SelectContent({ className, children, position = "popper", ...props }) {
   );
 }
 
+/**
+ * SelectLabel - Label for select group
+ * Used on: Category headers in select dropdown
+ */
 function SelectLabel({ className, ...props }) {
   return (
     <SelectPrimitive.Label
@@ -73,6 +98,10 @@ function SelectLabel({ className, ...props }) {
   );
 }
 
+/**
+ * SelectItem - Individual select option
+ * Used on: Each option in the dropdown
+ */
 function SelectItem({ className, children, ...props }) {
   return (
     <SelectPrimitive.Item
@@ -93,6 +122,10 @@ function SelectItem({ className, children, ...props }) {
   );
 }
 
+/**
+ * SelectSeparator - Visual divider between options
+ * Used on: Separating different option groups
+ */
 function SelectSeparator({ className, ...props }) {
   return (
     <SelectPrimitive.Separator
@@ -103,6 +136,10 @@ function SelectSeparator({ className, ...props }) {
   );
 }
 
+/**
+ * SelectScrollUpButton - Scroll up button for long lists
+ * Used on: Top of dropdown when content overflows
+ */
 function SelectScrollUpButton({ className, ...props }) {
   return (
     <SelectPrimitive.ScrollUpButton
@@ -118,6 +155,10 @@ function SelectScrollUpButton({ className, ...props }) {
   );
 }
 
+/**
+ * SelectScrollDownButton - Scroll down button for long lists
+ * Used on: Bottom of dropdown when content overflows
+ */
 function SelectScrollDownButton({ className, ...props }) {
   return (
     <SelectPrimitive.ScrollDownButton

@@ -3,6 +3,11 @@ import { SearchIcon } from "lucide-react";
 import { cn } from "./utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./dialog";
 
+/**
+ * Command - Quick command palette (Cmd+K menu)
+ * Used on: Global search, Quick actions, Navigation
+ * Screens: All screens (activated by keyboard shortcut), Power-user interfaces
+ */
 function Command({ className, ...props }) {
   return (
     <CommandPrimitive
@@ -16,6 +21,10 @@ function Command({ className, ...props }) {
   );
 }
 
+/**
+ * CommandDialog - Command palette wrapped in a dialog
+ * Used on: Modal command palette with overlay
+ */
 function CommandDialog({ title = "Command Palette", description = "Search for a command to run...", children, ...props }) {
   return (
     <Dialog {...props}>
@@ -32,6 +41,10 @@ function CommandDialog({ title = "Command Palette", description = "Search for a 
   );
 }
 
+/**
+ * CommandInput - Search input for command palette
+ * Used on: Top of command palette for filtering commands
+ */
 function CommandInput({ className, ...props }) {
   return (
     <div
@@ -51,6 +64,10 @@ function CommandInput({ className, ...props }) {
   );
 }
 
+/**
+ * CommandList - Container for command items
+ * Used on: Scrollable list of commands
+ */
 function CommandList({ className, ...props }) {
   return (
     <CommandPrimitive.List
@@ -64,6 +81,10 @@ function CommandList({ className, ...props }) {
   );
 }
 
+/**
+ * CommandEmpty - Shown when no commands match search
+ * Used on: Empty state in command palette
+ */
 function CommandEmpty(props) {
   return (
     <CommandPrimitive.Empty
@@ -74,6 +95,10 @@ function CommandEmpty(props) {
   );
 }
 
+/**
+ * CommandGroup - Group of related commands
+ * Used on: Categorized command sections
+ */
 function CommandGroup({ className, ...props }) {
   return (
     <CommandPrimitive.Group
@@ -87,6 +112,10 @@ function CommandGroup({ className, ...props }) {
   );
 }
 
+/**
+ * CommandSeparator - Visual divider between command groups
+ * Used on: Separating different command sections
+ */
 function CommandSeparator({ className, ...props }) {
   return (
     <CommandPrimitive.Separator
@@ -97,6 +126,10 @@ function CommandSeparator({ className, ...props }) {
   );
 }
 
+/**
+ * CommandItem - Individual selectable command
+ * Used on: Each command in the palette
+ */
 function CommandItem({ className, ...props }) {
   return (
     <CommandPrimitive.Item
@@ -110,6 +143,10 @@ function CommandItem({ className, ...props }) {
   );
 }
 
+/**
+ * CommandShortcut - Keyboard shortcut display
+ * Used on: Shows keyboard shortcuts next to commands
+ */
 function CommandShortcut({ className, ...props }) {
   return (
     <span

@@ -1,22 +1,43 @@
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "./utils";
 
+/**
+ * Drawer - Slide-out panel from screen edges (mobile-first)
+ * Used on: Mobile navigation, Quick actions, Filters on mobile
+ * Screens: Mobile views, Shopping carts, Filter panels
+ */
 function Drawer(props) {
   return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
 }
 
+/**
+ * DrawerTrigger - Button that opens the drawer
+ * Used on: Menu buttons, Filter buttons, Cart buttons
+ */
 function DrawerTrigger(props) {
   return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
 }
 
+/**
+ * DrawerPortal - Renders drawer in a portal
+ * Used on: Internal - handles rendering outside component hierarchy
+ */
 function DrawerPortal(props) {
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
+/**
+ * DrawerClose - Button that closes the drawer
+ * Used on: Close buttons inside drawer
+ */
 function DrawerClose(props) {
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
+/**
+ * DrawerOverlay - Semi-transparent background overlay
+ * Used on: Behind the drawer to dim the background
+ */
 function DrawerOverlay({ className, ...props }) {
   return (
     <DrawerPrimitive.Overlay
@@ -30,6 +51,10 @@ function DrawerOverlay({ className, ...props }) {
   );
 }
 
+/**
+ * DrawerContent - Main content container of the drawer
+ * Used on: Contains all drawer content
+ */
 function DrawerContent({ className, children, ...props }) {
   return (
     <DrawerPortal data-slot="drawer-portal">
@@ -53,6 +78,10 @@ function DrawerContent({ className, children, ...props }) {
   );
 }
 
+/**
+ * DrawerHeader - Header section of the drawer
+ * Used on: Top section containing title
+ */
 function DrawerHeader({ className, ...props }) {
   return (
     <div
@@ -63,6 +92,10 @@ function DrawerHeader({ className, ...props }) {
   );
 }
 
+/**
+ * DrawerFooter - Footer section with action buttons
+ * Used on: Bottom section with actions
+ */
 function DrawerFooter({ className, ...props }) {
   return (
     <div
@@ -73,6 +106,10 @@ function DrawerFooter({ className, ...props }) {
   );
 }
 
+/**
+ * DrawerTitle - Title of the drawer
+ * Used on: Describes the drawer purpose
+ */
 function DrawerTitle({ className, ...props }) {
   return (
     <DrawerPrimitive.Title
@@ -83,6 +120,10 @@ function DrawerTitle({ className, ...props }) {
   );
 }
 
+/**
+ * DrawerDescription - Detailed message of the drawer
+ * Used on: Explains what the drawer contains
+ */
 function DrawerDescription({ className, ...props }) {
   return (
     <DrawerPrimitive.Description

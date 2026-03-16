@@ -2,10 +2,18 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ChevronDownIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Accordion Component - Collapsible sections for FAQs or settings panels
+ * Used on: FAQ pages, Settings screens, Documentation pages
+ */
 function Accordion(props) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }
 
+/**
+ * AccordionItem - Individual section in the accordion
+ * Used on: Same as Accordion, each item represents a collapsible section
+ */
 function AccordionItem({ className, ...props }) {
   return (
     <AccordionPrimitive.Item
@@ -16,6 +24,10 @@ function AccordionItem({ className, ...props }) {
   );
 }
 
+/**
+ * AccordionTrigger - Button that expands/collapses the accordion section
+ * Used on: Each accordion header
+ */
 function AccordionTrigger({ className, children, ...props }) {
   return (
     <AccordionPrimitive.Header className="flex">
@@ -34,6 +46,10 @@ function AccordionTrigger({ className, children, ...props }) {
   );
 }
 
+/**
+ * AccordionContent - Content that expands/collapses
+ * Used on: The content area of each accordion section
+ */
 function AccordionContent({ className, children, ...props }) {
   return (
     <AccordionPrimitive.Content

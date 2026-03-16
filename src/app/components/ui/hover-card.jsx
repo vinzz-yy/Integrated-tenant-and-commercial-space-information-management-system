@@ -1,16 +1,29 @@
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import { cn } from "./utils";
 
+/**
+ * HoverCard - Card that appears when hovering over an element
+ * Used on: User profiles, Info tooltips, Preview cards
+ * Screens: Social media, User lists, Product cards
+ */
 function HoverCard(props) {
   return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
+/**
+ * HoverCardTrigger - Element that triggers the hover card
+ * Used on: User names, avatars, items that need preview
+ */
 function HoverCardTrigger(props) {
   return (
     <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
   );
 }
 
+/**
+ * HoverCardContent - Content that appears on hover
+ * Used on: Preview information, quick actions, user details
+ */
 function HoverCardContent({ className, align = "center", sideOffset = 4, ...props }) {
   return (
     <HoverCardPrimitive.Portal data-slot="hover-card-portal">

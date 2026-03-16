@@ -66,8 +66,9 @@ export function ComplianceManagement() {
     const load = async () => {
       try {
         const resp = await api.compliance.getDocuments();
-        setDocuments(resp.results || []);
-        setFilteredDocuments(resp.results || []);
+        const list = Array.isArray(resp) ? resp : (resp?.results || []);
+        setDocuments(list);
+        setFilteredDocuments(list);
       } catch (e) {
         // Set empty arrays on error
         setDocuments([]);
@@ -85,7 +86,7 @@ export function ComplianceManagement() {
     if (searchQuery) {
       filtered = filtered.filter(doc =>
         (doc.tenantName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (doc.documentType || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (doc.documentType || doc.document_type || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     

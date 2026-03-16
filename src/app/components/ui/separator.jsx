@@ -1,6 +1,11 @@
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import { cn } from "./utils";
 
+/**
+ * Separator - Visual divider between content sections
+ * Used on: Separating different sections in layouts
+ * Screens: All screens - between menu items, content sections, lists
+ */
 function Separator({ className, orientation = "horizontal", decorative = true, ...props }) {
   return (
     <SeparatorPrimitive.Root

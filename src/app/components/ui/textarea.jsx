@@ -1,5 +1,10 @@
 import { cn } from "./utils";
 
+/**
+ * Textarea - Multi-line text input field
+ * Used on: Long-form text entry, comments, descriptions
+ * Screens: Comment sections, Profile bio, Contact forms
+ */
 function Textarea({ className, ...props }) {
   return (
     <textarea

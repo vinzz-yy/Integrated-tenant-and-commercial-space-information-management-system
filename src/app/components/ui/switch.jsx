@@ -1,6 +1,11 @@
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { cn } from "./utils";
 
+/**
+ * Switch - Toggle switch for binary settings
+ * Used on: Settings toggles, Feature enable/disable
+ * Screens: Settings pages, Preferences panels, Feature flags
+ */
 function Switch({ className, ...props }) {
   return (
     <SwitchPrimitive.Root

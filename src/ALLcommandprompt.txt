@@ -12,6 +12,13 @@ pip install -r requirements.txt
 # Run the Python server
 python manage.py runserver  # For Django
 
+
+# backend database
+Admin URL: http://127.0.0.1:8000/admin/
+email: admin
+password : admin123
+
+
 React
 # In a NEW terminal window
 cd frontend

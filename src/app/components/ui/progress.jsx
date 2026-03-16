@@ -1,6 +1,11 @@
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "./utils";
 
+/**
+ * Progress - Visual indicator of completion
+ * Used on: Loading states, File uploads, Multi-step processes
+ * Screens: Upload screens, Setup wizards, Dashboard stats
+ */
 function Progress({ className, value, ...props }) {
   return (
     <ProgressPrimitive.Root

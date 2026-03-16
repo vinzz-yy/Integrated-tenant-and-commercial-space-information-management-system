@@ -60,7 +60,8 @@ export function StaffCommercialSpace() {
   useEffect(() => {
     const load = async () => {
       const resp = await api.commercialSpace.getUnits();
-      setUnits(resp.results || []);
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setUnits(list);
     };
     load();
   }, []);
@@ -84,24 +85,35 @@ export function StaffCommercialSpace() {
 
   // Handle updating unit information
   const handleUpdateUnit = async () => {
-    // Validate required fields
-    if (!formData.unitNumber || !formData.floor || !formData.type || !formData.status) {
-      return;
+    try {
+      // Validate required fields
+      if (!formData.unitNumber || !formData.floor || !formData.type || !formData.status) {
+        alert('Please fill all required fields');
+        return;
+      }
+      // Build payload using serializer-supported fields only
+      const payload = {
+        number: formData.unitNumber,
+        floor: parseInt(formData.floor, 10) || 0,
+        type: (formData.type || '').toLowerCase(),
+        status: formData.status,
+      };
+      if (formData.size) payload.size = parseFloat(formData.size);
+      if (formData.monthlyRent) payload.monthlyRent = parseFloat(formData.monthlyRent);
+      if (formData.leaseStart) payload.leaseStartDate = formData.leaseStart;
+      if (formData.leaseEnd) payload.leaseEndDate = formData.leaseEnd;
+      if (formData.tenantName) payload.tenantName = formData.tenantName;
+      // Send update
+      await api.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      // Refresh units list
+      const refreshed = await api.commercialSpace.getUnits();
+      const list = Array.isArray(refreshed) ? refreshed : (refreshed?.results || []);
+      setUnits(list);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating unit:', error);
+      alert('Failed to update unit. Please check values and try again.');
     }
-    
-    // Update unit via API
-    await api.commercialSpace.updateUnit(String(selectedUnit.id), {
-      number: formData.unitNumber,
-      floor: parseInt(formData.floor) || 0,
-      type: formData.type,
-      status: formData.status,
-      tenant_name: formData.tenantName || null,
-    });
-    
-    // Refresh units list
-    const refreshed = await api.commercialSpace.getUnits();
-    setUnits(refreshed.results || []);
-    setIsEditDialogOpen(false);
   };
 
   // Helper function to determine badge color based on status
@@ -111,6 +123,8 @@ export function StaffCommercialSpace() {
         return 'default'; // Blue badge
       case 'available':
         return 'secondary'; // Gray badge
+      case 'reserved':
+        return 'outline'; // Outline badge
       case 'maintenance':
         return 'destructive'; // Red badge
       default:
@@ -153,6 +167,8 @@ export function StaffCommercialSpace() {
                 {units.map((unit) => (
                   <TableRow key={unit.id}>
                     <TableCell className="font-medium">{unit.number || unit.unitNumber}</TableCell>
+                    {/* optional thumbnail */}
+                    {/* <img src={api.mediaUrl(unit.image)} alt="" className="h-8 w-12 object-cover rounded border mr-2" /> */}
                     <TableCell>{unit.floor}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
@@ -242,6 +258,7 @@ export function StaffCommercialSpace() {
                     <SelectContent>
                       <SelectItem value="occupied">Occupied</SelectItem>
                       <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="reserved">Reserved</SelectItem>
                       <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>

@@ -29,11 +29,13 @@ export function StaffDashboard() {
     const load = async () => {
       try {
         // Fetch appointments and requests in parallel
-        const appts = await api.schedule.getAppointments();
-        setAppointments(appts.results || []);
+        const appts = await api.schedule.getAppointments({ tenant_id: user?.id });
+        const apptList = Array.isArray(appts) ? appts : (appts?.results || []);
+        setAppointments(apptList);
         
-        const reqs = await api.operations.getRequests();
-        setRequests(reqs.results || []);
+        const reqs = await api.operations.getRequests({ tenant_id: user?.id });
+        const reqList = Array.isArray(reqs) ? reqs : (reqs?.results || []);
+        setRequests(reqList);
       } catch (e) {
         // Set empty arrays on error
         setAppointments([]); 

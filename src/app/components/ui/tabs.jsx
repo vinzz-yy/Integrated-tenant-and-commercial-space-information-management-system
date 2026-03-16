@@ -1,6 +1,11 @@
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { cn } from "./utils";
 
+/**
+ * Tabs - Tabbed interface for organizing content
+ * Used on: Profile sections, Settings categories, Content switchers
+ * Screens: User profiles, Settings pages, Dashboard sections
+ */
 function Tabs({ className, ...props }) {
   return (
     <TabsPrimitive.Root
@@ -11,6 +16,10 @@ function Tabs({ className, ...props }) {
   );
 }
 
+/**
+ * TabsList - Container for tab triggers
+ * Used on: The tab navigation bar
+ */
 function TabsList({ className, ...props }) {
   return (
     <TabsPrimitive.List
@@ -24,6 +33,10 @@ function TabsList({ className, ...props }) {
   );
 }
 
+/**
+ * TabsTrigger - Individual tab button
+ * Used on: Each tab in the navigation
+ */
 function TabsTrigger({ className, ...props }) {
   return (
     <TabsPrimitive.Trigger
@@ -37,6 +50,10 @@ function TabsTrigger({ className, ...props }) {
   );
 }
 
+/**
+ * TabsContent - Content panel for a tab
+ * Used on: The content that appears when tab is selected
+ */
 function TabsContent({ className, ...props }) {
   return (
     <TabsPrimitive.Content

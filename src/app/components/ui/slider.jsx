@@ -2,6 +2,11 @@ import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import { cn } from "./utils";
 
+/**
+ * Slider - Range selection input
+ * Used on: Price filters, Volume controls, Setting ranges
+ * Screens: Filter panels, Settings, Audio/video controls
+ */
 function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }) {
   const _values = React.useMemo(
     () =>

@@ -1,6 +1,11 @@
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./utils";
 
+/**
+ * ScrollArea - Custom scrollable container with styled scrollbar
+ * Used on: Content areas that need custom scrolling behavior
+ * Screens: Long forms, Chat windows, Code editors, Sidebars
+ */
 function ScrollArea({ className, children, ...props }) {
   return (
     <ScrollAreaPrimitive.Root
@@ -20,6 +25,10 @@ function ScrollArea({ className, children, ...props }) {
   );
 }
 
+/**
+ * ScrollBar - Custom scrollbar for scrollable areas
+ * Used on: Vertical/horizontal scroll indicators
+ */
 function ScrollBar({ className, orientation = "vertical", ...props }) {
   return (
     <ScrollAreaPrimitive.ScrollAreaScrollbar

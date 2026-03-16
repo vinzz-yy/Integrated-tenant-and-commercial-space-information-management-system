@@ -26,8 +26,10 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { Download, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Download, FileText, CheckCircle, XCircle, Clock, Table as TableIcon } from 'lucide-react';
 import api from '../../services/api.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../utils/export.js';
 
 export function StaffFinancial() {
   const { user } = useAuth();
@@ -54,8 +56,32 @@ export function StaffFinancial() {
     load();
   }, []);
 
-  // Placeholder for export functionality
-  const handleExport = () => {};
+  // Export invoices with format choice
+  const handleExport = async (format) => {
+    try {
+      const headers = ['Invoice ID', 'Tenant', 'Amount', 'Due Date', 'Status'];
+      const rows = invoices.map(inv => [
+        inv.id,
+        inv.tenantName,
+        inv.amount,
+        inv.dueDate,
+        inv.status,
+      ]);
+      if (format === 'csv') {
+        exportToCSV(headers, rows, 'staff_invoices.csv');
+      } else if (format === 'excel') {
+        exportToExcel(headers, rows, 'staff_invoices.xls', 'Invoices');
+      } else if (format === 'word') {
+        exportToWord(headers, rows, 'staff_invoices.doc', 'Invoices');
+      } else if (format === 'docx') {
+        await exportToDocx(headers, rows, 'staff_invoices.docx', 'Invoices');
+      } else if (format === 'pdf') {
+        printToPDF(headers, rows, 'Invoices');
+      }
+    } catch (e) {
+      alert('Failed to export. Please try again.');
+    }
+  };
 
   // Open review dialog with selected invoice
   const openReviewDialog = (invoice) => {
@@ -112,10 +138,36 @@ export function StaffFinancial() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Financial Overview
           </h1>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileText className="h-4 w-4 mr-2" />
+                PDF (Print)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('word')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Word (.doc)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('docx')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Word (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                <TableIcon className="h-4 w-4 mr-2" />
+                Excel (.xls)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                <TableIcon className="h-4 w-4 mr-2" />
+                CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         {/* Invoices table */}

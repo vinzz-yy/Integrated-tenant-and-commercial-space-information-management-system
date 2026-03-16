@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
+const BACKEND_ORIGIN = 'http://localhost:8000';
 
 function getAuthToken() {
   return localStorage.getItem('authToken');
@@ -6,39 +7,55 @@ function getAuthToken() {
 
 async function apiRequest(endpoint, options = {}) {
   const token = getAuthToken();
+  const { skipAuth, headers: optHeaders, ...rest } = options;
   const headers = {
     'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
+    ...(!skipAuth && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(optHeaders || {}),
   };
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+    ...rest,
     headers,
   });
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`);
+  let data = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
   }
-  return response.json();
+  if (!response.ok) {
+    const message = (data && (data.detail || data.message)) || 'Request failed';
+    throw new Error(message);
+  }
+  return data;
 }
 
 export const authAPI = {
   login: async (email, password) => {
     return apiRequest('/auth/login/', {
       method: 'POST',
+      skipAuth: true,
       body: JSON.stringify({ email, password }),
     });
   },
   logout: async () => {
-    return apiRequest('/auth/logout/', { method: 'POST' });
+    return apiRequest('/auth/logout/', { method: 'POST', skipAuth: true });
   },
   refreshToken: async (refreshToken) => {
     return apiRequest('/auth/refresh/', {
       method: 'POST',
+      skipAuth: true,
       body: JSON.stringify({ refresh: refreshToken }),
     });
   },
   getCurrentUser: async () => {
     return apiRequest('/auth/me/');
+  },
+  updateCurrentUser: async (userData) => {
+    return apiRequest('/auth/me/', {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    });
   },
 };
 

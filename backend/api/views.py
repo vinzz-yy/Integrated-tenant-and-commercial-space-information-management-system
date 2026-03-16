@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -40,14 +40,56 @@ class LogoutView(APIView):
 class MeView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+    
+    def patch(self, request):
+        user = request.user
+        data = request.data or {}
+        # Update basic user fields
+        first_name = data.get("firstName") or data.get("first_name")
+        last_name = data.get("lastName") or data.get("last_name")
+        email = data.get("email")
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        # Optionally allow email change
+        if email:
+            user.email = email
+        user.save()
+        # Update profile fields
+        profile = getattr(user, "profile", None)
+        if profile:
+            if "phone" in data:
+                profile.phone = data.get("phone")
+            if "department" in data:
+                profile.department = data.get("department")
+            if "avatar" in data:
+                profile.avatar = data.get("avatar")
+            if "unitNumber" in data:
+                profile.unitNumber = data.get("unitNumber")
+            profile.save()
+        return Response(UserSerializer(user).data)
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("id")
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = getattr(self.request, "user", None)
+        if not (getattr(user, "is_staff", False) or getattr(getattr(user, "profile", None), "role", "") == "admin"):
+            return User.objects.none()
+        return super().get_queryset()
 
     def create(self, request, *args, **kwargs):
+        if not (getattr(request.user, "is_staff", False) or getattr(getattr(request.user, "profile", None), "role", "") == "admin"):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         data = request.data.copy()
+        # Support camelCase from frontend
+        if "firstName" in data:
+            data["first_name"] = data.pop("firstName")
+        if "lastName" in data:
+            data["last_name"] = data.pop("lastName")
         password = data.pop('password', None)
         user = User.objects.create_user(
             username=data['email'],
@@ -67,8 +109,15 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        if not (getattr(request.user, "is_staff", False) or getattr(getattr(request.user, "profile", None), "role", "") == "admin"):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         instance = self.get_object()
         data = request.data.copy()
+        # Support camelCase from frontend
+        if "firstName" in data:
+            data["first_name"] = data.pop("firstName")
+        if "lastName" in data:
+            data["last_name"] = data.pop("lastName")
         password = data.pop('password', None)
         if password:
             instance.set_password(password)
@@ -125,11 +174,13 @@ class DocumentsViewSet(viewsets.ModelViewSet):
 class AppointmentsViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all().order_by("date")
     serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
-        if user.profile.role == 'tenant':
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant' or role == 'staff':
             qs = qs.filter(tenant=user)
         else:
             tenant_id = self.request.query_params.get("tenant_id")
@@ -152,19 +203,23 @@ class AppointmentsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class UnitsViewSet(viewsets.ModelViewSet):
-    queryset = Unit.objects.all().order_by("id")
+    queryset = Unit.objects.all().order_by("-id")
     serializer_class = UnitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
-        user = self.request.user
-        if user.profile.role == 'tenant':
-            qs = qs.filter(tenant=user)
-        else:
-            tenant_id = self.request.query_params.get("tenant_id")
-            if tenant_id:
-                qs = qs.filter(tenant_id=tenant_id)
-        return qs
+        user = getattr(self.request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant':
+            return qs.filter(tenant=user)
+        if getattr(user, "is_staff", False) or role in ('admin', 'staff'):
+            return qs
+        tenant_id = self.request.query_params.get("tenant_id")
+        if tenant_id:
+            return qs.filter(tenant_id=tenant_id)
+        return Unit.objects.none()
 
     @action(detail=True, methods=["post"], url_path="assign-tenant")
     def assign_tenant(self, request, pk=None):
@@ -229,9 +284,60 @@ class NotificationsViewSet(viewsets.ModelViewSet):
         return Response({"detail": "All marked read"})
 
 class OperationsRequestsViewSet(viewsets.ModelViewSet):
-    # Placeholder using MaintenanceRequest model for simplicity
     queryset = MaintenanceRequest.objects.all().order_by("-created_at")
     serializer_class = MaintenanceRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = getattr(self.request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == "tenant":
+            return qs.filter(tenant=user)
+        tenant_id = self.request.query_params.get("tenant_id")
+        if tenant_id:
+            return qs.filter(tenant_id=tenant_id)
+        if getattr(user, "is_staff", False) or role == "admin":
+            return qs
+        return MaintenanceRequest.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        user = request.user
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == "tenant":
+            data["tenant"] = user.id
+        else:
+            tid = data.pop("tenant_id", None)
+            data["tenant"] = tid or user.id
+        if "status" not in data:
+            data["status"] = "pending"
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data.copy()
+        tid = data.pop("tenant_id", None)
+        if tid:
+            data["tenant"] = tid
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"], url_path="set-status")
+    def set_status(self, request, pk=None):
+        instance = self.get_object()
+        status_value = request.data.get("status")
+        if status_value not in {"pending", "in_progress", "completed", "cancelled"}:
+            return Response({"detail": "Invalid status"}, status=400)
+        instance.status = status_value
+        instance.save()
+        return Response(self.get_serializer(instance).data)
 
 class OperationsMetricsView(APIView):
     def get(self, request):

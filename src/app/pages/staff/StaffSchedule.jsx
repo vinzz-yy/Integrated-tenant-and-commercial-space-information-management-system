@@ -39,6 +39,11 @@ export function StaffSchedule() {
   
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
+  const [resultTitle, setResultTitle] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   // Form state for new appointment
   const [formData, setFormData] = useState({
@@ -58,8 +63,9 @@ export function StaffSchedule() {
     }
     
     const load = async () => {
-      const resp = await api.schedule.getAppointments();
-      setAppointments(resp.results || []);
+      const resp = await api.schedule.getAppointments({ tenant_id: user?.id });
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setAppointments(list);
     };
     load();
   }, [user, navigate]);
@@ -73,16 +79,62 @@ export function StaffSchedule() {
     }
     
     try {
-      const created = await api.schedule.createAppointment({ 
-        ...formData, 
-        status: 'scheduled' 
-      });
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+        status: 'scheduled',
+      };
+      const created = await api.schedule.createAppointment(payload);
       setAppointments([...appointments, created]);
       setIsCreateDialogOpen(false);
       resetForm();
+      setResultTitle('Adding Appointment Successful');
+      setResultMessage('The appointment has been scheduled successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
-      alert('Failed to create appointment. Please try again.');
+      setResultTitle('Failed Adding Appointment');
+      setResultMessage('Failed adding appointment. Please try again.');
+      setIsResultDialogOpen(true);
+    }
+  };
+  
+  const openEditDialog = (apt) => {
+    setSelectedAppointment(apt);
+    setFormData({
+      title: apt.title || '',
+      date: apt.date || '',
+      time: apt.time || '',
+      type: apt.type || 'meeting',
+      location: apt.location || '',
+      duration: apt.duration || '1 hour',
+    });
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleUpdateAppointment = async () => {
+    if (!selectedAppointment) return;
+    try {
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+      };
+      const updated = await api.schedule.updateAppointment(String(selectedAppointment.id), payload);
+      setAppointments(appointments.map(a => String(a.id) === String(selectedAppointment.id) ? updated : a));
+      setIsEditDialogOpen(false);
+      setSelectedAppointment(null);
+      setResultTitle('Updating Appointment Successful');
+      setResultMessage('The appointment has been updated successfully.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      setResultTitle('Failed Updating Appointment');
+      setResultMessage('Failed updating appointment. Please try again.');
+      setIsResultDialogOpen(true);
     }
   };
 
@@ -202,7 +254,7 @@ export function StaffSchedule() {
                       
                       {/* Action buttons */}
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(appointment)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -300,6 +352,67 @@ export function StaffSchedule() {
                 Cancel
               </Button>
               <Button onClick={handleCreateAppointment}>Create Appointment</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Edit Appointment Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Appointment</DialogTitle>
+              <DialogDescription>Update appointment details</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Time</Label>
+                  <Input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAppointment}>Update</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

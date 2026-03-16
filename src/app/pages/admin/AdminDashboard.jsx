@@ -11,7 +11,6 @@ import { Button } from '../../components/ui/button';
 import api from '../../services/api.js';
 import { 
   Users, 
-  FileCheck, 
   Calendar, 
   DollarSign, 
   Building, 
@@ -41,9 +40,12 @@ export function AdminDashboard() {
     totalTenants: 0,
     totalStaff: 0,
     totalRevenue: 0,
+    totalUnits: 0,
+    occupiedUnits: 0,
     occupancyRate: 0,
     pendingCompliance: 0,
     scheduledAppointments: 0,
+    revenueGrowth: 0,
   });
 
   // State for chart data and lists
@@ -59,70 +61,147 @@ export function AdminDashboard() {
       return;
     }
     
-    // Async function to load all dashboard data
-    const load = async () => {
+    const loadDashboardData = async () => {
       try {
-        // Fetch user statistics
-        const usersResp = await api.users.getUsers();
-        const totalUsers = usersResp.count || (usersResp.results?.length || 0);
-        const totalTenants = (usersResp.results || []).filter(u => u.role === 'tenant').length;
-        const totalStaff = (usersResp.results || []).filter(u => u.role === 'staff').length;
+        // Fetch all data in parallel for better performance
+        const [
+          usersResp,
+          paymentsResp,
+          unitsResp,
+          compResp,
+          apptResp,
+          revenueResp,
+          notifResp
+        ] = await Promise.allSettled([
+          api.users.getUsers(),
+          api.financial.getPayments(),
+          api.commercialSpace.getUnits(),
+          api.compliance.getDocuments({ status: 'pending' }),
+          api.schedule.getAppointments({ status: 'scheduled' }),
+          api.financial.getRevenueAnalytics({ period: '6months' }),
+          api.notifications.getNotifications({ read: false, limit: 5 })
+        ]);
 
-        // Fetch financial data
-        const paymentsResp = await api.financial.getPayments();
-        const totalRevenue = (paymentsResp.results || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+        // Process users data
+        if (usersResp.status === 'fulfilled') {
+          const usersData = usersResp.value;
+          const users = usersData.results || usersData || [];
+          const totalUsers = usersData.count || users.length;
+          const totalTenants = users.filter(u => u.role === 'tenant').length;
+          const totalStaff = users.filter(u => u.role === 'staff').length;
 
-        // Fetch commercial space data
-        const unitsResp = await api.commercialSpace.getUnits();
-        const units = unitsResp.results || [];
-        const occupied = units.filter(u => u.status === 'occupied').length;
-        const occupancyRate = units.length ? Math.round((occupied / units.length) * 100) : 0;
+          setStats(prev => ({
+            ...prev,
+            totalUsers,
+            totalTenants,
+            totalStaff
+          }));
+        }
 
-        // Fetch compliance data
-        const compResp = await api.compliance.getDocuments({ status: 'pending' });
-        const pendingCompliance = (compResp.results || []).length;
+        // Process financial data
+        if (paymentsResp.status === 'fulfilled') {
+          const payments = paymentsResp.value.results || paymentsResp.value || [];
+          const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          
+          // Calculate revenue growth (compare last month with previous month)
+          const sortedPayments = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+          const currentMonth = new Date().getMonth();
+          const lastMonthPayments = sortedPayments.filter(p => new Date(p.date).getMonth() === currentMonth);
+          const previousMonthPayments = sortedPayments.filter(p => new Date(p.date).getMonth() === currentMonth - 1);
+          
+          const lastMonthTotal = lastMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          const previousMonthTotal = previousMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          
+          const revenueGrowth = previousMonthTotal ? 
+            ((lastMonthTotal - previousMonthTotal) / previousMonthTotal * 100).toFixed(1) : 0;
 
-        // Fetch appointment data
-        const apptResp = await api.schedule.getAppointments({ status: 'scheduled' });
-        const scheduledAppointments = (apptResp.results || []).length;
+          setStats(prev => ({
+            ...prev,
+            totalRevenue,
+            revenueGrowth
+          }));
+        }
 
-        // Update stats state
-        setStats({
-          totalUsers, totalTenants, totalStaff, totalRevenue, occupancyRate, pendingCompliance, scheduledAppointments
-        });
+        // Process commercial space data
+        if (unitsResp.status === 'fulfilled') {
+          const units = unitsResp.value.results || unitsResp.value || [];
+          const totalUnits = units.length;
+          const occupiedUnits = units.filter(u => u.status === 'occupied' || u.status === 'leased').length;
+          const occupancyRate = totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
-        // Fetch revenue analytics for chart
-        const revenue = await api.financial.getRevenueAnalytics({ period: 'month' });
-        setRevenueData(revenue.data || []);
+          setStats(prev => ({
+            ...prev,
+            totalUnits,
+            occupiedUnits,
+            occupancyRate
+          }));
+        }
 
-        // Get upcoming appointments (first 3)
-        setAppointments((apptResp.results || []).slice(0, 3));
+        // Process compliance data
+        if (compResp.status === 'fulfilled') {
+          const pendingDocs = compResp.value.results || compResp.value || [];
+          setStats(prev => ({
+            ...prev,
+            pendingCompliance: pendingDocs.length
+          }));
+        }
 
-        // Get unread notifications
-        const notifResp = await api.notifications.getNotifications({ read: false });
-        setNotifications(notifResp.results || []);
+        // Process appointment data
+        if (apptResp.status === 'fulfilled') {
+          const appointmentsData = apptResp.value.results || apptResp.value || [];
+          setStats(prev => ({
+            ...prev,
+            scheduledAppointments: appointmentsData.length
+          }));
+          
+          // Get upcoming appointments (next 3)
+          const sortedAppointments = [...appointmentsData]
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 3);
+          setAppointments(sortedAppointments);
+        }
+
+        // Process revenue analytics
+        if (revenueResp.status === 'fulfilled') {
+          const revenueChartData = revenueResp.value.data || revenueResp.value || [];
+          setRevenueData(revenueChartData);
+        }
+
+        // Process notifications
+        if (notifResp.status === 'fulfilled') {
+          const notificationsData = notifResp.value.results || notifResp.value || [];
+          setNotifications(notificationsData);
+        }
+
       } catch (e) {
-        // Silently ignore errors for now (UI will show empty states)
+        console.error('Error loading dashboard data:', e);
+        // Silently fail - UI will show empty states
       }
     };
-    load();
+    
+    loadDashboardData();
   }, [user, navigate]);
 
   // Navigation handlers for cards
-  const handleTotalUsersClick = () => {
-    navigate('/admin/users');
+  const handleTotalUsersClick = () => navigate('/admin/users');
+  const handleMonthlyRevenueClick = () => navigate('/admin/financial');
+  const handleOccupancyRateClick = () => navigate('/admin/commercial-space');
+  const handlePendingItemsClick = () => navigate('/admin/compliance');
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
-  const handleMonthlyRevenueClick = () => {
-    navigate('/admin/financial');
-  };
-
-  const handleOccupancyRateClick = () => {
-    navigate('/admin/commercial-space');
-  };
-
-  const handlePendingItemsClick = () => {
-    navigate('/admin/compliance');
+  // Format date
+  const formatAppointmentDate = (dateString) => {
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-PH', options);
   };
 
   return (
@@ -172,12 +251,18 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${stats.totalRevenue.toLocaleString()}
+                {formatCurrency(stats.totalRevenue)}
               </div>
-              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +12% from last month
-              </p>
+              {stats.revenueGrowth !== 0 && (
+                <p className={`text-xs mt-1 flex items-center gap-1 ${
+                  stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  <TrendingUp className={`h-3 w-3 ${
+                    stats.revenueGrowth >= 0 ? '' : 'transform rotate-180'
+                  }`} />
+                  {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}% from last month
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -195,7 +280,7 @@ export function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
               <p className="text-xs text-gray-500 mt-1">
-                28 of 33 units occupied
+                {stats.occupiedUnits} of {stats.totalUnits || 0} units occupied
               </p>
             </CardContent>
           </Card>
@@ -226,31 +311,40 @@ export function AdminDashboard() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Revenue Overview</CardTitle>
-              <CardDescription>Monthly revenue and expenses</CardDescription>
+              <CardDescription>Monthly revenue and expenses (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    name="Revenue"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="expenses" 
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    name="Expenses"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={(value) => `₱${value/1000}k`} />
+                    <Tooltip 
+                      formatter={(value) => formatCurrency(value)}
+                      labelFormatter={(label) => `Month: ${label}`}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      name="Revenue"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      name="Expenses"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-gray-500">
+                  No revenue data available
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -259,33 +353,46 @@ export function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Upcoming Appointments</CardTitle>
-                <CardDescription>Next 3 scheduled appointments</CardDescription>
+                <CardDescription>
+                  {stats.scheduledAppointments} scheduled appointments
+                </CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate('/admin/schedule')}>
                 View All
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {appointments.map((appointment) => (
-                  <div 
-                    key={appointment.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
-                    onClick={() => navigate('/admin/schedule')}
-                  >
-                    <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{appointment.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {appointment.date} at {appointment.time}
-                      </p>
+              {appointments.length > 0 ? (
+                <div className="space-y-4">
+                  {appointments.map((appointment) => (
+                    <div 
+                      key={appointment.id} 
+                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                      onClick={() => navigate('/admin/schedule')}
+                    >
+                      <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{appointment.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatAppointmentDate(appointment.date)} at {appointment.time}
+                        </p>
+                        {appointment.tenant && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {appointment.tenant.name}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
+                        {appointment.status}
+                      </Badge>
                     </div>
-                    <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
-                      {appointment.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No upcoming appointments
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -298,38 +405,56 @@ export function AdminDashboard() {
                 <CardTitle>System Notifications</CardTitle>
                 <CardDescription>Recent alerts and updates</CardDescription>
               </div>
-              <Badge variant="destructive" className="rounded-full">
-                {notifications.filter(n => !n.read).length}
-              </Badge>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <Badge variant="destructive" className="rounded-full">
+                  {notifications.filter(n => !n.read).length}
+                </Badge>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {notifications.map((notification) => (
-                  <div 
-                    key={notification.id} 
-                    className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
-                    onClick={() => {
-                      // Navigate to relevant section based on notification type
-                      if (notification.type === 'success') {
-                        navigate('/admin/financial');
-                      } else if (notification.type === 'warning') {
-                        navigate('/admin/compliance');
-                      } else {
-                        navigate('/admin/operations');
-                      }
-                    }}
-                  >
-                    {/* Different icons for different notification types */}
-                    {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />}
-                    {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />}
-                    {notification.type === 'info' && <Clock className="h-5 w-5 text-blue-600 mt-0.5" />}
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{notification.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
+              {notifications.length > 0 ? (
+                <div className="space-y-4">
+                  {notifications.map((notification) => (
+                    <div 
+                      key={notification.id} 
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${
+                        !notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                      }`}
+                      onClick={() => {
+                        // Navigate to relevant section based on notification type
+                        if (notification.type === 'success') {
+                          navigate('/admin/financial');
+                        } else if (notification.type === 'warning') {
+                          navigate('/admin/compliance');
+                        } else {
+                          navigate('/admin/operations');
+                        }
+                      }}
+                    >
+                      {/* Different icons for different notification types */}
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />}
+                      {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />}
+                      {notification.type === 'info' && <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(notification.createdAt).toLocaleDateString('en-PH', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No new notifications
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

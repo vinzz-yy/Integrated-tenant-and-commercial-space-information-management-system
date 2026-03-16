@@ -2,6 +2,11 @@ import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { CircleIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * RadioGroup - Group of radio buttons for single selection
+ * Used on: Forms with mutually exclusive options
+ * Screens: Surveys, Settings with choices, Payment method selection
+ */
 function RadioGroup({ className, ...props }) {
   return (
     <RadioGroupPrimitive.Root
@@ -12,6 +17,10 @@ function RadioGroup({ className, ...props }) {
   );
 }
 
+/**
+ * RadioGroupItem - Individual radio button option
+ * Used on: Each selectable option in the group
+ */
 function RadioGroupItem({ className, ...props }) {
   return (
     <RadioGroupPrimitive.Item

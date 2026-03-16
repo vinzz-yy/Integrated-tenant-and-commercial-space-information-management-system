@@ -1,5 +1,10 @@
 import { cn } from "./utils";
 
+/**
+ * Table - Data table for displaying structured information
+ * Used on: Data grids, Reports, Lists with columns
+ * Screens: Admin panels, Dashboards, Reports, Data analysis
+ */
 function Table({ className, ...props }) {
   return (
     <div
@@ -15,6 +20,10 @@ function Table({ className, ...props }) {
   );
 }
 
+/**
+ * TableHeader - Header section of table
+ * Used on: Column titles and header rows
+ */
 function TableHeader({ className, ...props }) {
   return (
     <thead
@@ -25,6 +34,10 @@ function TableHeader({ className, ...props }) {
   );
 }
 
+/**
+ * TableBody - Body section of table
+ * Used on: Contains the data rows
+ */
 function TableBody({ className, ...props }) {
   return (
     <tbody
@@ -35,6 +48,10 @@ function TableBody({ className, ...props }) {
   );
 }
 
+/**
+ * TableFooter - Footer section of table
+ * Used on: Summary rows, totals
+ */
 function TableFooter({ className, ...props }) {
   return (
     <tfoot
@@ -48,6 +65,10 @@ function TableFooter({ className, ...props }) {
   );
 }
 
+/**
+ * TableRow - Individual row in table
+ * Used on: Each data row
+ */
 function TableRow({ className, ...props }) {
   return (
     <tr
@@ -61,6 +82,10 @@ function TableRow({ className, ...props }) {
   );
 }
 
+/**
+ * TableHead - Header cell in table
+ * Used on: Column title cells
+ */
 function TableHead({ className, ...props }) {
   return (
     <th
@@ -74,6 +99,10 @@ function TableHead({ className, ...props }) {
   );
 }
 
+/**
+ * TableCell - Data cell in table
+ * Used on: Individual data points
+ */
 function TableCell({ className, ...props }) {
   return (
     <td
@@ -87,6 +116,10 @@ function TableCell({ className, ...props }) {
   );
 }
 
+/**
+ * TableCaption - Caption/description for table
+ * Used on: Table title or description
+ */
 function TableCaption({ className, ...props }) {
   return (
     <caption

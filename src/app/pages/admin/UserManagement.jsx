@@ -34,8 +34,10 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
-import { Search, Plus, Edit, Trash2, Download } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Download, FileText, Table as TableIcon } from 'lucide-react';
 import api from '../../services/api.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../utils/export.js';
 
 export function UserManagement() {
   const { user } = useAuth();
@@ -58,6 +60,11 @@ export function UserManagement() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
+  const [resultTitle, setResultTitle] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
   
   // Form state for creating/editing users
   const [formData, setFormData] = useState({
@@ -71,6 +78,12 @@ export function UserManagement() {
     password: '',
   });
 
+  const normalizeUser = (u) => ({
+    ...u,
+    firstName: u.firstName ?? u.first_name ?? '',
+    lastName: u.lastName ?? u.last_name ?? '',
+  });
+
   // Load users when component mounts
   useEffect(() => {
     // Redirect if user is not an admin
@@ -79,11 +92,17 @@ export function UserManagement() {
       return;
     }
     
+    const normalizeUsers = (data) => {
+      const arr = Array.isArray(data) ? data : (data?.results || []);
+      return arr.map((u) => normalizeUser(u));
+    };
+    
     const load = async () => {
       try {
         const resp = await api.users.getUsers();
-        setUsers(resp.results || []);
-        setFilteredUsers(resp.results || []);
+        const list = normalizeUsers(resp);
+        setUsers(list);
+        setFilteredUsers(list);
       } catch (e) {
         // Set empty arrays on error
         setUsers([]);
@@ -119,12 +138,17 @@ export function UserManagement() {
     try {
       setIsCreating(true);
       const created = await api.users.createUser(formData);
-      setUsers([...users, created]);
+      setUsers([...users, normalizeUser(created)]);
       setIsCreateDialogOpen(false);
       resetForm();
+      setResultTitle('Adding User Successful');
+      setResultMessage('The user has been added successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error creating user:', error);
-      alert('Failed to create user. Please try again.');
+      setResultTitle('Failed Adding User');
+      setResultMessage('Failed adding user. Please try again.');
+      setIsResultDialogOpen(true);
     } finally {
       setIsCreating(false);
     }
@@ -137,7 +161,7 @@ export function UserManagement() {
     try {
       setIsUpdating(true);
       const updated = await api.users.updateUser(String(selectedUser.id), formData);
-      setUsers(users.map(u => String(u.id) === String(selectedUser.id) ? updated : u));
+      setUsers(users.map(u => String(u.id) === String(selectedUser.id) ? normalizeUser(updated) : u));
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -161,40 +185,43 @@ export function UserManagement() {
     }
   };
 
-  // Handle exporting users to CSV
-  const handleExport = async () => {
+  // Handle exporting users with format choice
+  const handleExport = async (format) => {
     try {
       setIsExporting(true);
       
       // Fetch all users data
-      const allUsers = await api.users.getUsers();
+      const allUsersResp = await api.users.getUsers();
+      const allUsers = Array.isArray(allUsersResp) ? allUsersResp : (allUsersResp?.results || []);
+      const rowsUsers = allUsers.map((user) => ({
+        ...user,
+        firstName: user.firstName ?? user.first_name ?? '',
+        lastName: user.lastName ?? user.last_name ?? '',
+      }));
       
-      // Convert to CSV format
       const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number'];
-      const csvContent = [
-        headers.join(','),
-        ...allUsers.results.map(user => [
-          user.id,
-          user.email,
-          user.firstName || '',
-          user.lastName || '',
-          user.role || '',
-          user.phone || '',
-          user.department || '',
-          user.unitNumber || ''
-        ].map(field => `"${field}"`).join(','))
-      ].join('\n');
-      
-      // Create download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'users_export.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const rows = rowsUsers.map(user => [
+        user.id,
+        user.email,
+        user.firstName || '',
+        user.lastName || '',
+        user.role || '',
+        user.phone || '',
+        user.department || '',
+        user.unitNumber || ''
+      ]);
+
+      if (format === 'csv') {
+        exportToCSV(headers, rows, 'users_export.csv');
+      } else if (format === 'excel') {
+        exportToExcel(headers, rows, 'users_export.xls', 'Users Export');
+      } else if (format === 'word') {
+        exportToWord(headers, rows, 'users_export.doc', 'Users Export');
+      } else if (format === 'docx') {
+        await exportToDocx(headers, rows, 'users_export.docx', 'Users Export');
+      } else if (format === 'pdf') {
+        printToPDF(headers, rows, 'Users Export');
+      }
     } catch (error) {
       console.error('Error exporting users:', error);
       alert('Failed to export users. Please try again.');
@@ -246,11 +273,36 @@ export function UserManagement() {
             </p>
           </div>
           <div className="flex gap-2">
-            {/* Export button */}
-            <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export'}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={isExporting}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? 'Exporting...' : 'Export'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF (Print)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('docx')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Word (.docx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('word')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Word (.doc)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                  <TableIcon className="h-4 w-4 mr-2" />
+                  Excel (.xls)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <TableIcon className="h-4 w-4 mr-2" />
+                  CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {/* Add user button */}
             <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -494,6 +546,20 @@ export function UserManagement() {
               <Button onClick={handleCreateUser} disabled={isCreating}>
                 {isCreating ? 'Creating...' : 'Create User'}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        
+
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

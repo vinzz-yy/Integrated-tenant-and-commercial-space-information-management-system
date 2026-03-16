@@ -1,6 +1,11 @@
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "./utils";
 
+/**
+ * Label - Text label for form inputs
+ * Used on: Describes form fields, improves accessibility
+ * Screens: All forms (Login, Register, Settings, Checkout)
+ */
 function Label({ className, ...props }) {
   return (
     <LabelPrimitive.Root

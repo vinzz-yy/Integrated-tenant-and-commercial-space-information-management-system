@@ -56,7 +56,8 @@ export function StaffCompliance() {
     
     const load = async () => {
       const resp = await api.compliance.getDocuments();
-      setDocuments(resp.results || []);
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setDocuments(list);
     };
     load();
   }, [user, navigate]);

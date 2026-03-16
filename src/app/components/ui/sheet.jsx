@@ -2,22 +2,43 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * Sheet - Side panel that slides in from screen edges
+ * Used on: Mobile menus, Detail views, Settings panels
+ * Screens: Mobile navigation, Shopping carts, Filter panels, Settings
+ */
 function Sheet(props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
+/**
+ * SheetTrigger - Button that opens the sheet
+ * Used on: Menu buttons, "View Details" buttons, Settings buttons
+ */
 function SheetTrigger(props) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
+/**
+ * SheetClose - Button that closes the sheet
+ * Used on: Close buttons inside sheet
+ */
 function SheetClose(props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
+/**
+ * SheetPortal - Renders sheet in a portal
+ * Used on: Internal - handles rendering outside component hierarchy
+ */
 function SheetPortal(props) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/**
+ * SheetOverlay - Semi-transparent background overlay
+ * Used on: Behind the sheet to dim the background
+ */
 function SheetOverlay({ className, ...props }) {
   return (
     <SheetPrimitive.Overlay
@@ -31,6 +52,10 @@ function SheetOverlay({ className, ...props }) {
   );
 }
 
+/**
+ * SheetContent - Main content container of the sheet
+ * Used on: Contains all sheet content
+ */
 function SheetContent({ className, children, side = "right", ...props }) {
   return (
     <SheetPortal>
@@ -61,6 +86,10 @@ function SheetContent({ className, children, side = "right", ...props }) {
   );
 }
 
+/**
+ * SheetHeader - Header section of the sheet
+ * Used on: Top section containing title
+ */
 function SheetHeader({ className, ...props }) {
   return (
     <div
@@ -71,6 +100,10 @@ function SheetHeader({ className, ...props }) {
   );
 }
 
+/**
+ * SheetFooter - Footer section with action buttons
+ * Used on: Bottom section with actions
+ */
 function SheetFooter({ className, ...props }) {
   return (
     <div
@@ -81,6 +114,10 @@ function SheetFooter({ className, ...props }) {
   );
 }
 
+/**
+ * SheetTitle - Title of the sheet
+ * Used on: Describes the sheet purpose
+ */
 function SheetTitle({ className, ...props }) {
   return (
     <SheetPrimitive.Title
@@ -91,6 +128,10 @@ function SheetTitle({ className, ...props }) {
   );
 }
 
+/**
+ * SheetDescription - Detailed message of the sheet
+ * Used on: Explains what the sheet contains
+ */
 function SheetDescription({ className, ...props }) {
   return (
     <SheetPrimitive.Description

@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import api from '../../services/api.js';
 
 export function TenantProfile() {
   const { user, updateUser } = useAuth();
@@ -75,13 +76,25 @@ export function TenantProfile() {
       return;
     }
     
-    // Update user info
-    updateUser(formData);
+    // Persist to backend then update local context
+    const saved = await api.auth.updateCurrentUser({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+    });
+    updateUser({
+      firstName: saved.first_name || formData.firstName,
+      lastName: saved.last_name || formData.lastName,
+      email: saved.email || formData.email,
+      phone: saved.phone || formData.phone,
+    });
     
     // Update avatar if changed
     if (avatarFile) {
       const newAvatarUrl = avatarPreview || user?.avatar;
-      updateUser({ ...formData, avatar: newAvatarUrl });
+      const savedAvatar = await api.auth.updateCurrentUser({ avatar: newAvatarUrl });
+      updateUser({ avatar: savedAvatar.avatar || newAvatarUrl });
     }
     
     // Reset avatar states

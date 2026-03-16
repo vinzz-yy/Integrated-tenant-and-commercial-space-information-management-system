@@ -2,6 +2,11 @@ import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-re
 import { cn } from "./utils";
 import { Button, buttonVariants } from "./button";
 
+/**
+ * Pagination - Navigate through multiple pages of content
+ * Used on: Lists with many items, search results, blog archives
+ * Screens: Blog listings, Product catalogs, Search results, Data tables
+ */
 function Pagination({ className, ...props }) {
   return (
     <nav
@@ -14,6 +19,10 @@ function Pagination({ className, ...props }) {
   );
 }
 
+/**
+ * PaginationContent - Container for pagination items
+ * Used on: List of page numbers and navigation buttons
+ */
 function PaginationContent({ className, ...props }) {
   return (
     <ul
@@ -24,10 +33,18 @@ function PaginationContent({ className, ...props }) {
   );
 }
 
+/**
+ * PaginationItem - Individual pagination element
+ * Used on: Each page number or navigation button
+ */
 function PaginationItem(props) {
   return <li data-slot="pagination-item" {...props} />;
 }
 
+/**
+ * PaginationLink - Clickable page number link
+ * Used on: Page number buttons
+ */
 function PaginationLink({ className, isActive, size = "icon", ...props }) {
   return (
     <a
@@ -46,6 +63,10 @@ function PaginationLink({ className, isActive, size = "icon", ...props }) {
   );
 }
 
+/**
+ * PaginationPrevious - Button to go to previous page
+ * Used on: Previous page navigation
+ */
 function PaginationPrevious({ className, ...props }) {
   return (
     <PaginationLink
@@ -60,6 +81,10 @@ function PaginationPrevious({ className, ...props }) {
   );
 }
 
+/**
+ * PaginationNext - Button to go to next page
+ * Used on: Next page navigation
+ */
 function PaginationNext({ className, ...props }) {
   return (
     <PaginationLink
@@ -74,6 +99,10 @@ function PaginationNext({ className, ...props }) {
   );
 }
 
+/**
+ * PaginationEllipsis - Indicates omitted page numbers
+ * Used on: Shows there are more pages not displayed
+ */
 function PaginationEllipsis({ className, ...props }) {
   return (
     <span

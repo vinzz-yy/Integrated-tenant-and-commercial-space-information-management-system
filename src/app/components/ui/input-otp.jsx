@@ -3,6 +3,11 @@ import { OTPInput, OTPInputContext } from "input-otp";
 import { MinusIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * InputOTP - One-time password input (verification codes)
+ * Used on: 2FA verification, Email/SMS code entry
+ * Screens: Login with 2FA, Password reset, Verification screens
+ */
 function InputOTP({ className, containerClassName, ...props }) {
   return (
     <OTPInput
@@ -17,6 +22,10 @@ function InputOTP({ className, containerClassName, ...props }) {
   );
 }
 
+/**
+ * InputOTPGroup - Group of OTP input slots
+ * Used on: Container for multiple input slots
+ */
 function InputOTPGroup({ className, ...props }) {
   return (
     <div
@@ -27,6 +36,10 @@ function InputOTPGroup({ className, ...props }) {
   );
 }
 
+/**
+ * InputOTPSlot - Individual character input in OTP
+ * Used on: Each digit/character input field
+ */
 function InputOTPSlot({ index, className, ...props }) {
   const inputOTPContext = React.useContext(OTPInputContext);
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
@@ -50,6 +63,10 @@ function InputOTPSlot({ index, className, ...props }) {
   );
 }
 
+/**
+ * InputOTPSeparator - Visual separator between OTP groups
+ * Used on: Between groups of digits (e.g., 123-456)
+ */
 function InputOTPSeparator(props) {
   return (
     <div data-slot="input-otp-separator" role="separator" {...props}>

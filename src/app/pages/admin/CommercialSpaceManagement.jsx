@@ -50,6 +50,11 @@ export function CommercialSpaceManagement() {
   
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
+  const [resultTitle, setResultTitle] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState(null);
   
   // Form state for creating new unit
   const [formData, setFormData] = useState({
@@ -72,8 +77,9 @@ export function CommercialSpaceManagement() {
     const load = async () => {
       try {
         const resp = await api.commercialSpace.getUnits();
-        setUnits(resp.results || []);
-        setFilteredUnits(resp.results || []);
+        const list = Array.isArray(resp) ? resp : (resp?.results || []);
+        setUnits(list);
+        setFilteredUnits(list);
       } catch (e) {
         // Set empty arrays on error
         setUnits([]);
@@ -90,7 +96,7 @@ export function CommercialSpaceManagement() {
     // Apply search filter (search by unit number or tenant name)
     if (searchQuery) {
       filtered = filtered.filter(u =>
-        (u.unitNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (u.unitNumber || u.number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (u.tenant_name || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -112,13 +118,60 @@ export function CommercialSpaceManagement() {
         type: formData.type.toLowerCase(),
         status: formData.status,
       });
-      // Add new unit to the list
-      const updated = [...units, created];
-      setUnits(updated);
+      // Refresh list from server to ensure fields and image URL are populated
+      const resp = await api.commercialSpace.getUnits();
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setUnits(list);
+      setFilteredUnits(list);
       setIsCreateDialogOpen(false);
+      setResultTitle('Adding Unit Successful');
+      setResultMessage('The unit has been added successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error creating unit:', error);
-      alert('Failed to create unit. Please try again.');
+      setResultTitle('Failed Adding Unit');
+      setResultMessage('Failed adding unit. Please try again.');
+      setIsResultDialogOpen(true);
+    }
+  };
+
+  const openEditDialog = (unit) => {
+    setSelectedUnit(unit);
+    setFormData({
+      unitNumber: unit.number || unit.unitNumber || '',
+      floor: Number(unit.floor) || 0,
+      size: Number(unit.size) || 0,
+      type: (unit.type || 'Retail'),
+      rentalRate: Number(unit.rental_rate || unit.rentalRate || 0),
+      status: unit.status || 'available',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUnit = async () => {
+    if (!selectedUnit) return;
+    try {
+      const payload = {
+        number: formData.unitNumber,
+        floor: formData.floor,
+        type: (formData.type || '').toLowerCase(),
+        status: formData.status,
+      };
+      const updated = await api.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      const resp = await api.commercialSpace.getUnits();
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setUnits(list);
+      setFilteredUnits(list);
+      setIsEditDialogOpen(false);
+      setSelectedUnit(null);
+      setResultTitle('Updating Unit Successful');
+      setResultMessage('The unit has been updated successfully.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error updating unit:', error);
+      setResultTitle('Failed Updating Unit');
+      setResultMessage('Failed updating unit. Please try again.');
+      setIsResultDialogOpen(true);
     }
   };
 
@@ -285,7 +338,7 @@ export function CommercialSpaceManagement() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(unit)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -366,6 +419,84 @@ export function CommercialSpaceManagement() {
                 Cancel
               </Button>
               <Button onClick={handleCreateUnit}>Create Unit</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Unit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Commercial Unit</DialogTitle>
+              <DialogDescription>Update unit details</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Unit Number</Label>
+                  <Input
+                    value={formData.unitNumber}
+                    onChange={(e) => setFormData({ ...formData, unitNumber: e.target.value })}
+                    placeholder="e.g., A-101"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Floor</Label>
+                  <Input
+                    type="number"
+                    value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="Food">Food</SelectItem>
+                      <SelectItem value="Service">Service</SelectItem>
+                      <SelectItem value="Office">Office</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="occupied">Occupied</SelectItem>
+                      <SelectItem value="reserved">Reserved</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateUnit}>Update Unit</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

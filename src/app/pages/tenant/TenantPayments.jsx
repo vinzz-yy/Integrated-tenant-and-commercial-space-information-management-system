@@ -13,8 +13,10 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { CreditCard, DollarSign } from 'lucide-react';
+import { CreditCard, DollarSign, Download, FileText, Table as TableIcon } from 'lucide-react';
 import api from '../../services/api.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { exportToCSV, exportToExcel, exportToWord, printToPDF } from '../../utils/export.js';
 
 export function TenantPayments() {
   const { user } = useAuth();
@@ -67,6 +69,23 @@ export function TenantPayments() {
   const outstanding = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const paidTotal = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
+  // Export combined invoices and payments
+  const handleExport = async (format) => {
+    const headers = ['Type', 'ID', 'Amount', 'Status', 'Date/Due'];
+    const rows = [
+      ...invoices.map(inv => ['Invoice', inv.id, inv.amount, inv.status, inv.dueDate]),
+      ...payments.map(pay => ['Payment', pay.id, pay.amount, pay.status || 'completed', pay.paymentDate]),
+    ];
+    if (format === 'csv') {
+      exportToCSV(headers, rows, 'tenant_billing.csv');
+    } else if (format === 'excel') {
+      exportToExcel(headers, rows, 'tenant_billing.xls', 'Billing & Payments');
+    } else if (format === 'word') {
+      exportToWord(headers, rows, 'tenant_billing.doc', 'Billing & Payments');
+    } else if (format === 'pdf') {
+      printToPDF(headers, rows, 'Billing & Payments');
+    }
+  };
   return (
     <Layout role="tenant">
       <div className="space-y-6">
@@ -113,8 +132,34 @@ export function TenantPayments() {
 
         {/* Invoices and payment history tabs */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <CardTitle>Billing & Payments</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF (Print)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('word')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Word (.doc)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                  <TableIcon className="h-4 w-4 mr-2" />
+                  Excel (.xls)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <TableIcon className="h-4 w-4 mr-2" />
+                  CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="invoices">

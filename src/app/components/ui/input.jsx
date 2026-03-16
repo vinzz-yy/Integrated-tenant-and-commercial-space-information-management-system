@@ -1,5 +1,10 @@
 import { cn } from "./utils";
 
+/**
+ * Input - Text input field for forms
+ * Used on: Text entry in all forms
+ * Screens: Login/Register, Search bars, Settings, Checkout
+ */
 function Input({ className, type, ...props }) {
   return (
     <input

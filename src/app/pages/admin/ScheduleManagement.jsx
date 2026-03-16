@@ -41,6 +41,12 @@ export function ScheduleManagement() {
   
   // Dialog state for creating new appointments
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
+  const [resultTitle, setResultTitle] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [staffUsers, setStaffUsers] = useState([]);
   
   // Form state for new appointment
   const [formData, setFormData] = useState({
@@ -64,7 +70,13 @@ export function ScheduleManagement() {
     const load = async () => {
       try {
         const resp = await api.schedule.getAppointments();
-        setAppointments(resp.results || []);
+        const list = Array.isArray(resp) ? resp : (resp?.results || []);
+        setAppointments(list);
+        try {
+          const usersResp = await api.users.getUsers();
+          const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
+          setStaffUsers(usersList.filter(u => (u.role || '').toLowerCase() === 'staff'));
+        } catch {}
       } catch (e) {
         // Set empty array on error to prevent undefined issues
         setAppointments([]);
@@ -76,17 +88,68 @@ export function ScheduleManagement() {
   // Handle creating a new appointment
   const handleCreateAppointment = async () => {
     try {
-      // Send request to create appointment
-      const created = await api.schedule.createAppointment(formData);
+      // Send only fields the backend accepts
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+        status: 'scheduled',
+        tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
+      };
+      const created = await api.schedule.createAppointment(payload);
       
       // Add new appointment to the list
       setAppointments([...appointments, created]);
       
       // Close the dialog
       setIsCreateDialogOpen(false);
+      setResultTitle('Adding Appointment Successful');
+      setResultMessage('The appointment has been scheduled successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
-      alert('Failed to create appointment. Please try again.');
+      setResultTitle('Failed Adding Appointment');
+      setResultMessage('Failed adding appointment. Please try again.');
+      setIsResultDialogOpen(true);
+    }
+  };
+  
+  const openEditDialog = (apt) => {
+    setSelectedAppointment(apt);
+    setFormData({
+      title: apt.title || '',
+      date: apt.date || '',
+      time: apt.time || '',
+      duration: apt.duration || '1 hour',
+      type: apt.type || 'meeting',
+      location: apt.location || '',
+      assignedTo: apt.tenant || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleUpdateAppointment = async () => {
+    if (!selectedAppointment) return;
+    try {
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
+      };
+      const updated = await api.schedule.updateAppointment(String(selectedAppointment.id), payload);
+      setAppointments(appointments.map(a => String(a.id) === String(selectedAppointment.id) ? updated : a));
+      setIsEditDialogOpen(false);
+      setSelectedAppointment(null);
+      setResultTitle('Updating Appointment Successful');
+      setResultMessage('The appointment has been updated successfully.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      setResultTitle('Failed Updating Appointment');
+      setResultMessage('Failed updating appointment. Please try again.');
+      setIsResultDialogOpen(true);
     }
   };
 
@@ -172,7 +235,26 @@ export function ScheduleManagement() {
                     
                     {/* Action buttons (Edit and Delete) */}
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Select
+                        value={appointment.status || 'scheduled'}
+                        onValueChange={async (value) => {
+                          try {
+                            const updated = await api.schedule.updateAppointment(String(appointment.id), { status: value });
+                            setAppointments(appointments.map(a => String(a.id) === String(appointment.id) ? updated : a));
+                          } catch (e) {}
+                        }}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="scheduled">Pending</SelectItem>
+                          <SelectItem value="in_progress">Ongoing</SelectItem>
+                          <SelectItem value="completed">Done</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(appointment)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -258,6 +340,23 @@ export function ScheduleManagement() {
                   placeholder="Meeting location"
                 />
               </div>
+              
+              {/* Assigned To select */}
+              <div className="space-y-2">
+                <Label>Assigned To</Label>
+                <Select value={String(formData.assignedTo || '')} onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffUsers.map(s => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {(s.firstName || s.first_name || '') + ' ' + (s.lastName || s.last_name || '') || s.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             {/* Dialog footer with action buttons */}
@@ -266,6 +365,67 @@ export function ScheduleManagement() {
                 Cancel
               </Button>
               <Button onClick={handleCreateAppointment}>Create</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Edit Appointment Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Appointment</DialogTitle>
+              <DialogDescription>Update appointment details</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Time</Label>
+                  <Input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAppointment}>Update</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogDescription>{resultMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

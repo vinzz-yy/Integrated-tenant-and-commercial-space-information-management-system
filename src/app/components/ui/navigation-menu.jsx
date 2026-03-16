@@ -3,6 +3,11 @@ import { cva } from "class-variance-authority";
 import { ChevronDownIcon } from "lucide-react";
 import { cn } from "./utils";
 
+/**
+ * NavigationMenu - Main navigation component for websites
+ * Used on: Site-wide navigation, header menus
+ * Screens: Landing pages, Marketing sites, Application headers
+ */
 function NavigationMenu({ className, children, viewport = true, ...props }) {
   return (
     <NavigationMenuPrimitive.Root
@@ -20,6 +25,10 @@ function NavigationMenu({ className, children, viewport = true, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuList - Container for navigation items
+ * Used on: List of main navigation links
+ */
 function NavigationMenuList({ className, ...props }) {
   return (
     <NavigationMenuPrimitive.List
@@ -33,6 +42,10 @@ function NavigationMenuList({ className, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuItem - Individual navigation item
+ * Used on: Each link in the navigation menu
+ */
 function NavigationMenuItem({ className, ...props }) {
   return (
     <NavigationMenuPrimitive.Item
@@ -47,6 +60,10 @@ const navigationMenuTriggerStyle = cva(
   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-accent data-[state=open]:text-accent-foreground data-[state=open]:focus:bg-accent data-[state=open]:bg-accent/50 focus-visible:ring-ring/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1",
 );
 
+/**
+ * NavigationMenuTrigger - Button that opens dropdown navigation
+ * Used on: Navigation items with submenus
+ */
 function NavigationMenuTrigger({ className, children, ...props }) {
   return (
     <NavigationMenuPrimitive.Trigger
@@ -63,6 +80,10 @@ function NavigationMenuTrigger({ className, children, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuContent - Dropdown content for navigation
+ * Used on: Submenu content under navigation items
+ */
 function NavigationMenuContent({ className, ...props }) {
   return (
     <NavigationMenuPrimitive.Content
@@ -77,6 +98,10 @@ function NavigationMenuContent({ className, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuViewport - Container for dropdown content
+ * Used on: Wrapper that handles positioning of dropdowns
+ */
 function NavigationMenuViewport({ className, ...props }) {
   return (
     <div className={cn("absolute top-full left-0 isolate z-50 flex justify-center")}>
@@ -92,6 +117,10 @@ function NavigationMenuViewport({ className, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuLink - Link within navigation
+ * Used on: Individual navigation links
+ */
 function NavigationMenuLink({ className, ...props }) {
   return (
     <NavigationMenuPrimitive.Link
@@ -105,6 +134,10 @@ function NavigationMenuLink({ className, ...props }) {
   );
 }
 
+/**
+ * NavigationMenuIndicator - Visual indicator for active menu
+ * Used on: Shows which menu item is currently active
+ */
 function NavigationMenuIndicator({ className, ...props }) {
   return (
     <NavigationMenuPrimitive.Indicator

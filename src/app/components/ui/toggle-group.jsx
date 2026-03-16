@@ -8,6 +8,11 @@ const ToggleGroupContext = React.createContext({
   variant: "default",
 });
 
+/**
+ * ToggleGroup - Group of related toggle buttons
+ * Used on: Multiple choice selections, View mode switchers
+ * Screens: Filter bars, View toggles (grid/list), Settings
+ */
 function ToggleGroup({ className, variant, size, children, ...props }) {
   return (
     <ToggleGroupPrimitive.Root
@@ -27,6 +32,10 @@ function ToggleGroup({ className, variant, size, children, ...props }) {
   );
 }
 
+/**
+ * ToggleGroupItem - Individual toggle button in group
+ * Used on: Each option in the toggle group
+ */
 function ToggleGroupItem({ className, children, variant, size, ...props }) {
   const context = React.useContext(ToggleGroupContext);
   return (

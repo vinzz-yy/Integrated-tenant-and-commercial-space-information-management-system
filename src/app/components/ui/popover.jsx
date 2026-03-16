@@ -1,14 +1,27 @@
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "./utils";
 
+/**
+ * Popover - Floating card that appears on click
+ * Used on: Contextual information, quick actions, forms in place
+ * Screens: Help tooltips, Settings panels, Date pickers, Filters
+ */
 function Popover(props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
+/**
+ * PopoverTrigger - Element that opens the popover
+ * Used on: Buttons, icons that need to show additional content
+ */
 function PopoverTrigger(props) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
+/**
+ * PopoverContent - Main content of the popover
+ * Used on: Contains the popover information or form
+ */
 function PopoverContent({ className, align = "center", sideOffset = 4, ...props }) {
   return (
     <PopoverPrimitive.Portal>
@@ -26,6 +39,10 @@ function PopoverContent({ className, align = "center", sideOffset = 4, ...props 
   );
 }
 
+/**
+ * PopoverAnchor - Positioning anchor for popover
+ * Used on: Internal - helps with positioning
+ */
 function PopoverAnchor(props) {
   return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
 }
