@@ -8,12 +8,17 @@ def patch_django_314():
     try:
         from django.template import context
         def patched_copy(self):
-            # In Python 3.14, copy.copy(super()) fails with AttributeError
-            # because super() doesn't support setting attributes.
-            # We bypass super() by copying the dict directly.
+            # In Python 3.14, copy.copy(super()) fails with AttributeError.
+            # We manually create the copy and transfer all necessary attributes.
             duplicate = self.__class__.__new__(self.__class__)
             duplicate.dicts = self.dicts[:]
+            
+            # Transfer standard Django Context/RequestContext attributes
+            for attr in ('autoescape', 'use_l10n', 'use_tz', 'template', 'request'):
+                if hasattr(self, attr):
+                    setattr(duplicate, attr, getattr(self, attr))
             return duplicate
+            
         context.BaseContext.__copy__ = patched_copy
         print("Python 3.14 Django patch applied.")
     except ImportError:

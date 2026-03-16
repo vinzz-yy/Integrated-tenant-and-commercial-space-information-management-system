@@ -19,6 +19,12 @@ email: admin
 password : admin123
 
 
+# to see the database Structure
+python manage.py dbshell
+or
+ cd backend
+python manage.py inspectdb
+
 React
 # In a NEW terminal window
 cd frontend
