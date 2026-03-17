@@ -202,6 +202,19 @@ class AppointmentsViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data.copy()
+        if request.user.profile.role != 'tenant':
+            has_tid = "tenant_id" in data
+            tid = data.pop("tenant_id", None)
+            if has_tid:
+                data["tenant"] = tid or None
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
 class UnitsViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all().order_by("-id")
     serializer_class = UnitSerializer

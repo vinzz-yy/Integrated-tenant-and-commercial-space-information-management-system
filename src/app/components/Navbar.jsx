@@ -125,13 +125,15 @@ export function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => navigate(`/${user.role}/profile`)}
-                      className="cursor-pointer text-xs sm:text-sm"
-                    >
-                      <User className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span className="truncate">My Profile</span>
-                    </DropdownMenuItem>
+                    {user.role !== 'admin' && (
+                      <DropdownMenuItem 
+                        onClick={() => navigate(`/${user.role}/profile`)}
+                        className="cursor-pointer text-xs sm:text-sm"
+                      >
+                        <User className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">My Profile</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem 
                       onClick={() => navigate(`/${user.role}`)}
                       className="cursor-pointer text-xs sm:text-sm"

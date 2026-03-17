@@ -39,10 +39,23 @@ class DocumentSerializer(serializers.ModelSerializer):
         extra_kwargs = {"tenant": {"write_only": True}}
 
 class AppointmentSerializer(serializers.ModelSerializer):
+    assignedTo = serializers.SerializerMethodField()
+    tenantId = serializers.IntegerField(source="tenant_id", read_only=True)
+
+    def get_assignedTo(self, obj):
+        try:
+            u = obj.tenant
+            if not u:
+                return "Unassigned"
+            name = f"{u.first_name or ''} {u.last_name or ''}".strip()
+            return name or u.email
+        except Exception:
+            return "Unassigned"
+
     class Meta:
         model = Appointment
-        fields = ["id", "tenant", "title", "date", "time", "location", "status"]
-        extra_kwargs = {"tenant": {"write_only": True}}
+        fields = ["id", "tenant", "tenantId", "assignedTo", "title", "date", "time", "location", "status"]
+        extra_kwargs = {"tenant": {"write_only": True, "required": False, "allow_null": True}}
 
 class UnitSerializer(serializers.ModelSerializer):
     unitNumber = serializers.CharField(source="unit_number", required=False)

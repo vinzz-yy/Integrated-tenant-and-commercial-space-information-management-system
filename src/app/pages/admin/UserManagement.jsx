@@ -84,6 +84,17 @@ export function UserManagement() {
     lastName: u.lastName ?? u.last_name ?? '',
   });
 
+  const sortUsersDesc = (list) => {
+    return [...list].sort((a, b) => {
+      const aNum = Number(a?.id);
+      const bNum = Number(b?.id);
+      const aFinite = Number.isFinite(aNum);
+      const bFinite = Number.isFinite(bNum);
+      if (aFinite && bFinite) return bNum - aNum;
+      return String(b?.id ?? '').localeCompare(String(a?.id ?? ''), undefined, { numeric: true });
+    });
+  };
+
   // Load users when component mounts
   useEffect(() => {
     // Redirect if user is not an admin
@@ -100,7 +111,7 @@ export function UserManagement() {
     const load = async () => {
       try {
         const resp = await api.users.getUsers();
-        const list = normalizeUsers(resp);
+        const list = sortUsersDesc(normalizeUsers(resp));
         setUsers(list);
         setFilteredUsers(list);
       } catch (e) {
@@ -138,7 +149,7 @@ export function UserManagement() {
     try {
       setIsCreating(true);
       const created = await api.users.createUser(formData);
-      setUsers([...users, normalizeUser(created)]);
+      setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
       resetForm();
       setResultTitle('Adding User Successful');
@@ -161,7 +172,11 @@ export function UserManagement() {
     try {
       setIsUpdating(true);
       const updated = await api.users.updateUser(String(selectedUser.id), formData);
-      setUsers(users.map(u => String(u.id) === String(selectedUser.id) ? normalizeUser(updated) : u));
+      setUsers((prev) =>
+        sortUsersDesc(
+          prev.map((u) => (String(u.id) === String(selectedUser.id) ? normalizeUser(updated) : u))
+        )
+      );
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -177,7 +192,7 @@ export function UserManagement() {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
         await api.users.deleteUser(String(userId));
-        setUsers(users.filter(u => String(u.id) !== String(userId)));
+        setUsers((prev) => prev.filter((u) => String(u.id) !== String(userId)));
       } catch (error) {
         console.error('Error deleting user:', error);
         alert('Failed to delete user. Please try again.');
@@ -193,11 +208,13 @@ export function UserManagement() {
       // Fetch all users data
       const allUsersResp = await api.users.getUsers();
       const allUsers = Array.isArray(allUsersResp) ? allUsersResp : (allUsersResp?.results || []);
-      const rowsUsers = allUsers.map((user) => ({
-        ...user,
-        firstName: user.firstName ?? user.first_name ?? '',
-        lastName: user.lastName ?? user.last_name ?? '',
-      }));
+      const rowsUsers = sortUsersDesc(
+        allUsers.map((user) => ({
+          ...user,
+          firstName: user.firstName ?? user.first_name ?? '',
+          lastName: user.lastName ?? user.last_name ?? '',
+        }))
+      );
       
       const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number'];
       const rows = rowsUsers.map(user => [
