@@ -27,7 +27,6 @@ Financial Management (typing’s or manual code of payment for tenant’s and ge
 commercial unit information (update and view)
 
 
-
 Tenant System
 Personal tenant dashboard
 Profile management (input or updating of personal details)
@@ -36,7 +35,6 @@ Schedule and appointment management (add and view) **appointments for the staff 
 Online payment portal
 Financial Management view the history of a payments
 assigned commercial unit details (view)
-
 
 
 Make sure you have installed:
