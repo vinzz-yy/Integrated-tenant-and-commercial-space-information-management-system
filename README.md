@@ -13,14 +13,14 @@ This system provides **role-based dashboards** for **Admin, Staff, and Tenants**
 
 Full administrative control over the entire system.
 
-* Real-time dashboard with **analytics and KPIs**
+* Real-time dashboard with **analytics **
 * Complete **User Management (CRUD)**
 * **Compliance Document Management** with approval workflow
 * **Appointment Scheduling System**
 * **Operations Request Tracking**
-* **Financial Management** (Invoices, Payments, Revenue Reports)
+* **Financial Management** (Invoices, Payments, Revenue Reports) view 
 * **Commercial Space Unit Management**
-* **Bulk User Import / Export**
+* ** Import / Export **
 * Advanced **Search and Filtering**
 
 ---
@@ -31,10 +31,10 @@ Operational support tools for staff members.
 
 * Staff **dashboard overview**
 * Profile management
-* **View compliance documents** (read-only)
+* **View compliance documents** (read-only and updated)
 * Schedule and appointment management
 * **Operation request handling**
-* View financial reports
+* typings of fiancial  and reports
 * Edit **commercial unit information**
 
 ---
@@ -46,7 +46,7 @@ Self-service portal for tenants.
 * Personal **tenant dashboard**
 * Profile and account management
 * **Upload compliance documents**
-* Book **appointments**
+* Book **appointments **
 * **Online payment portal**
 * Submit **maintenance requests**
 * View **assigned commercial unit details**
@@ -55,30 +55,6 @@ Self-service portal for tenants.
 
 # 🛠 Technology Stack
 
-### Frontend
-
-* **Framework:** React 18
-* **Routing:** React Router
-* **Styling:** Tailwind CSS
-* **UI Components:** Radix UI
-* **Forms:** React Hook Form
-* **Charts:** Recharts
-* **Icons:** Lucide
-
-### Backend
-
-* Django
-* Django REST Framework
-* JWT Authentication
-
-### Other Tools
-
-* Dark/Light Theme Support
-* Responsive Layout
-* API Integration Layer
-* Toast Notifications
-
----
 
 # 🚀 Installation
 
