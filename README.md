@@ -21,7 +21,7 @@ Full administrative control over the entire system.
 * **Financial Management** (Invoices, Payments, Revenue Reports) view 
 * **Commercial Space Unit Management**
 * ** Import / Export **
-* Advanced **Search and Filtering**
+ **Search and Filtering**
 
 ---
 
@@ -53,12 +53,7 @@ Self-service portal for tenants.
 
 ---
 
-# 🛠 Technology Stack
 
-
-# 🚀 Installation
-
-## Prerequisites
 
 Make sure you have installed:
 
@@ -127,38 +122,6 @@ Output files will be generated inside the **dist/** folder.
 
 ---
 
-# 🔑 User Roles
-
-## Admin
-
-* Full system access
-* Manage users
-* Approve compliance documents
-* Manage commercial spaces
-* Process invoices and payments
-* View analytics and reports
-
----
-
-## Staff
-
-* View compliance records
-* Manage schedules
-* Handle operation requests
-* Update commercial unit information
-* View financial reports
-
----
-
-## Tenant
-
-* Upload compliance documents
-* Book appointments
-* Pay invoices
-* Submit maintenance requests
-* View assigned commercial units
-
----
 
 # 🏗 Project Structure
 
@@ -264,37 +227,9 @@ Backend responsibilities include:
 
 ---
 
-# 🎨 UI/UX Features
-
-* Modern **dashboard interface**
-* Responsive layout (Mobile / Tablet / Desktop)
-* Dark mode support
-* Accessible UI components
-* Interactive charts and tables
-* Smooth animations and transitions
-
----
 
 
 
-# 🔒 Security
-
-* JWT Authentication
-* Role-based access control
-* Input validation
-* Secure API communication
-* File upload restrictions
-
----
-
-# 📈 Performance
-
-* Code splitting
-* Tree shaking
-* Optimized build using Vite
-* Lazy loading for pages
-
----
 
 # 🤝 Contributing
 
@@ -325,14 +260,5 @@ git push origin feature/new-feature
 
 Proprietary software developed for **LA Union Skymall Corporation**.
 
----
-
-# 🙏 Acknowledgments
-
-* Tailwind CSS
-* Radix UI
-* Recharts
-* React Router
-* Lucide
 
 
