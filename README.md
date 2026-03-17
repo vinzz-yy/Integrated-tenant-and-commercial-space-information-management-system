@@ -11,45 +11,41 @@ This system provides **role-based dashboards** for **Admin, Staff, and Tenants**
 
 ## 👨‍💼 Admin System
 
-Full administrative control over the entire system.
 
-* Real-time dashboard with **analytics **
-* Complete **User Management (CRUD)**
-* **Compliance Document Management** with approval workflow
-* **Appointment Scheduling System**
-* **Operations Request Tracking**
-* **Financial Management** (Invoices, Payments, Revenue Reports) view 
-* **Commercial Space Unit Management**
-* ** Import / Export **
-* **Search and Filtering**
+* Real-time dashboard with **analytics  ** 
+* Complete **User Management (CRUD)** both tenant and staff
+* **Compliance Document Management** with approval for documents of tenants
+* **Appointment Scheduling System** for staff
+* **Operations Request Tracking**  for tenants
+* **Financial Management** ( Payments,Reports) view and added to dashboard analytics
+* **Commercial Space Unit Management**  for staff inquire or rent
+* ** Import / Export ** data 
+* **Search and Filtering** 
 
 ---
 
 ## 🧑‍💻 Staff System
 
-Operational support tools for staff members.
 
-* Staff **dashboard overview**
-* Profile management
-* **View compliance documents** (read-only and updated)
-* Schedule and appointment management
-* **Operation request handling**
-* typings of fiancial  and reports
-* Edit **commercial unit information**
+* Staff **dashboard overview** 
+* Profile management (input or updating of personal details)
+* **View compliance documents** (read and updated)
+* Schedule and appointment management (add and view)
+* **Operation request handling** (inspection of maintenance for tenants and request of a tenants)
+*  **Financial Management** typings of payment of a tenants manual   and reports 
+*  **commercial unit information** (update and view )
 
 ---
 
 ## 🏢 Tenant System
 
-Self-service portal for tenants.
-
-* Personal **tenant dashboard**
-* Profile and account management
-* **Upload compliance documents**
-* Book **appointments **
+* Personal **tenant dashboard** 
+* Profile management (input or updating of personal details)
+* **Upload compliance documents** (dti, and more)
+* Schedule and appointment management (add and view) **appointments for the staff if have any concern **
 * **Online payment portal**
-* Submit **maintenance requests**
-* View **assigned commercial unit details**
+*  **Financial Management** view the history of a payments 
+*  **assigned commercial unit details**  (view) 
 
 ---
 
