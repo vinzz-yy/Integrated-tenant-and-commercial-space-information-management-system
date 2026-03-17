@@ -3,7 +3,7 @@
 
 # Integrated Tenant & Commercial Space Information Management System
 
-A **modern web-based property management system** designed to manage tenants, commercial spaces, compliance documents, scheduling, financial transactions, and operational requests for **LA Union Skymall Corporation**.
+A **web-based property management system** designed to manage tenants, commercial spaces, compliance documents, scheduling, financial transactions, and operational requests for **LA Union Skymall Corporation**.
 
 This system provides **role-based dashboards** for **Admin, Staff, and Tenants**, enabling efficient mall and property management through a centralized platform.
 
