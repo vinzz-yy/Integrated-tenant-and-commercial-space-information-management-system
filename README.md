@@ -21,7 +21,7 @@ Full administrative control over the entire system.
 * **Financial Management** (Invoices, Payments, Revenue Reports) view 
 * **Commercial Space Unit Management**
 * ** Import / Export **
- **Search and Filtering**
+* **Search and Filtering**
 
 ---
 
