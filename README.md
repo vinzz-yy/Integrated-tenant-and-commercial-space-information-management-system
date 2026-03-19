@@ -1,54 +1,40 @@
+LA Union Skymall Corporation
+Integrated Tenant & Commercial Space Information Management System
+A web-based property management system designed to manage tenants, commercial spaces, compliance documents, scheduling, financial transactions, and operational requests for LA Union Skymall Corporation.
+This system provides role-based dashboards for Admin, Staff, and Tenants, enabling efficient mall and property management through a centralized platform.
+ Key Features
 
-# LA Union Skymall Corporation
+ Admin System
 
-# Integrated Tenant & Commercial Space Information Management System
-
-A **web-based property management system** designed to manage tenants, commercial spaces, compliance documents, scheduling, financial transactions, and operational requests for **LA Union Skymall Corporation**.
-
-This system provides **role-based dashboards** for **Admin, Staff, and Tenants**, enabling efficient mall and property management through a centralized platform.
-
-# 🌟 Key Features
-
-## 👨‍💼 Admin System
-
-
-* Real-time dashboard with **analytics  ** 
-* Complete **User Management (CRUD)** both tenant and staff
-* **Compliance Document Management** with approval for documents of tenants
-* **Appointment Scheduling System** for staff
-* **Operations Request Tracking**  for tenants
-* **Financial Management** ( Payments,Reports) view and added to dashboard analytics
-* **Commercial Space Unit Management**  for staff inquire or rent
-* ** Import / Export ** data 
-* **Search and Filtering** 
-
----
-
-## 🧑‍💻 Staff System
+Real-time dashboard with **analytics **
+Complete User Management (CRUD) both tenant and staff
+Compliance Document Management with approval for documents of tenants
+Appointment Scheduling System for staff
+Operations Request Tracking for tenants
+Financial Management (History of Payments, Reports) view and added to dashboard analytics
+Commercial Space Unit Management (add, edit, view)
+** Import / Export ** data
+Search and Filtering
 
 
-* Staff **dashboard overview** 
-* Profile management (input or updating of personal details)
-* **View compliance documents** (read and updated)
-* Schedule and appointment management (add and view)
-* **Operation request handling** (inspection of maintenance for tenants and request of a tenants)
-*  **Financial Management** typings of payment of a tenants manual   and reports 
-*  **commercial unit information** (update and view )
+ Staff System
+Staff dashboard overview
+Profile management (input or updating of personal details)
+View compliance documents (read and updated)
+Schedule and appointment management (add and view) from admin and tenants
+Operation request (inspection of maintenance for tenants and request of a tenants)
+Financial Management (typing’s or manual code of payment for tenant’s and generate reports)
+commercial unit information (update and view)
 
----
 
-## 🏢 Tenant System
-
-* Personal **tenant dashboard** 
-* Profile management (input or updating of personal details)
-* **Upload compliance documents** (dti, and more)
-* Schedule and appointment management (add and view) **appointments for the staff if have any concern **
-* **Online payment portal**
-*  **Financial Management** view the history of a payments 
-*  **assigned commercial unit details**  (view) 
-
----
-
+Tenant System
+Personal tenant dashboard
+Profile management (input or updating of personal details)
+Upload compliance documents (dti, and more)
+Schedule and appointment management (add and view) **appointments for the staff if have any concern **
+Online payment portal
+Financial Management view the history of a payments
+assigned commercial unit details (view)
 
 
 Make sure you have installed:
