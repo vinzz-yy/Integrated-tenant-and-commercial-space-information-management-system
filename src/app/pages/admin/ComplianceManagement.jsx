@@ -1,41 +1,20 @@
-// ComplianceManagement.jsx - Admin panel for managing tenant compliance documents
-// Allows admins to view, filter, review, and update compliance document status
+
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Textarea } from '../../components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Textarea } from '../../components/ui/textarea.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Search, FileText, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function ComplianceManagement() {
   const { user } = useAuth();
@@ -65,7 +44,7 @@ export function ComplianceManagement() {
     
     const load = async () => {
       try {
-        const resp = await api.compliance.getDocuments();
+        const resp = await connection.compliance.getDocuments();
         const list = Array.isArray(resp) ? resp : (resp?.results || []);
         setDocuments(list);
         setFilteredDocuments(list);
@@ -112,7 +91,7 @@ export function ComplianceManagement() {
     
     try {
       // Update document status via API
-      await api.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+      await connection.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
       
       // Update local state with the new status
       setDocuments(documents.map(doc => 

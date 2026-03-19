@@ -1,19 +1,17 @@
-// TenantCompliance.jsx - Tenant compliance document management
-// Allows tenants to upload and manage their compliance documents
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Upload, FileText } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { toast } from 'sonner';
 
@@ -38,7 +36,7 @@ export function TenantCompliance() {
       if (!user?.id) return;
       try {
         setLoading(true);
-        const resp = await api.compliance.getDocuments({ tenant_id: user?.id });
+        const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
         setDocuments(resp.results || []);
       } catch (err) {
         toast.error('Failed to load documents');
@@ -64,12 +62,12 @@ export function TenantCompliance() {
     data.append('tenant_id', String(user?.id || ''));
     
     try {
-      await api.compliance.uploadDocument(data);
+      await connection.compliance.uploadDocument(data);
       toast.success('Document uploaded');
       setIsUploadDialogOpen(false);
       
       // Refresh document list
-      const resp = await api.compliance.getDocuments({ tenant_id: user?.id });
+      const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
       setDocuments(resp.results || []);
       
       // Reset form

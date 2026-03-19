@@ -1,18 +1,16 @@
-// TenantCommercialSpace.jsx - Tenant view for commercial spaces
-// Allows tenants to view their assigned unit and browse available units in the marketplace
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Building, MapPin, Maximize, Calendar, DollarSign, Home, Search, Eye, Grid, List, X } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { toast } from 'sonner';
 
@@ -45,10 +43,10 @@ export function TenantCommercialSpace() {
         setLoading(true);
         
         // Fetch tenant's assigned unit
-        const mine = await api.commercialSpace.getUnits({ tenant_id: user?.id });
+        const mine = await connection.commercialSpace.getUnits({ tenant_id: user?.id });
         
         // Fetch all units
-        const all = await api.commercialSpace.getUnits();
+        const all = await connection.commercialSpace.getUnits();
         
         // Get first unit assigned to tenant (assuming one unit per tenant)
         const my = (mine.results || [])[0] || null;
@@ -254,7 +252,7 @@ export function TenantCommercialSpace() {
                               Monthly Rental Rate
                             </p>
                             <p className="text-3xl font-bold text-blue-600 mt-1">
-                              ${(myUnit.rentalRate || myUnit.monthlyRent || 0).toLocaleString()}
+                              ₱{(myUnit.rentalRate || myUnit.monthlyRent || 0).toLocaleString()}
                               <span className="text-sm font-normal text-gray-500 ml-1">/month</span>
                             </p>
                           </div>

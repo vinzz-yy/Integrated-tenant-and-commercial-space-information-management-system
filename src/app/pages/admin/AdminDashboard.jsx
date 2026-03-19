@@ -1,33 +1,15 @@
-// AdminDashboard.jsx - Main dashboard for admin users showing system overview
-// This component displays key metrics, charts, and notifications for administrators
+
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import api from '../../services/api.js';
-import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Building, 
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-} from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-} from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import connection from '../../connected/connection.js';
+import {  Users, Calendar, DollarSign, Building, TrendingUp,AlertCircle,CheckCircle,Clock,} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,} from 'recharts';
 
 export function AdminDashboard() {
   // Get current user from auth context and navigation hook
@@ -73,13 +55,13 @@ export function AdminDashboard() {
           revenueResp,
           notifResp
         ] = await Promise.allSettled([
-          api.users.getUsers(),
-          api.financial.getPayments(),
-          api.commercialSpace.getUnits(),
-          api.compliance.getDocuments({ status: 'pending' }),
-          api.schedule.getAppointments({ status: 'scheduled' }),
-          api.financial.getRevenueAnalytics({ period: '6months' }),
-          api.notifications.getNotifications({ read: false, limit: 5 })
+          connection.users.getUsers(),
+          connection.financial.getPayments(),
+          connection.commercialSpace.getUnits(),
+          connection.compliance.getDocuments({ status: 'pending' }),
+          connection.schedule.getAppointments({ status: 'scheduled' }),
+          connection.financial.getRevenueAnalytics({ period: '6months' }),
+          connection.notifications.getNotifications({ read: false, limit: 5 })
         ]);
 
         // Process users data

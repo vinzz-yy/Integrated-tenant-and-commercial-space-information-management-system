@@ -1,15 +1,13 @@
-// Login.jsx - Enhanced user login page
-// Features: Form validation, remember me, demo credentials, loading states, and animations
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card.jsx';
+import { Input } from '../components/ui/input.jsx';
+import { Label } from '../components/ui/label.jsx';
+import { Checkbox } from '../components/ui/checkbox.jsx';
+import { Alert, AlertDescription } from '../components/ui/alert.jsx';
 import { Eye, EyeOff, Loader2, Building2, UserCog, User } from 'lucide-react';
 
 

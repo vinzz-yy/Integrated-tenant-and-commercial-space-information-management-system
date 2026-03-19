@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Document, Appointment, Unit, MaintenanceRequest, Notification, Payment, Invoice
+from .models import Document, Appointment, Unit, MaintenanceRequest, Notification, Payment
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='profile.role', read_only=True)
@@ -96,12 +96,20 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = ["id", "message", "created_at", "read"]
 
 class PaymentSerializer(serializers.ModelSerializer):
+    tenant_name = serializers.SerializerMethodField()
+    tenant_id = serializers.IntegerField(source='user.id', read_only=True)
+
+    def get_tenant_name(self, obj):
+        try:
+            user = obj.user
+            if not user:
+                return "Unassigned"
+            name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+            return name or user.email
+        except Exception:
+            return "Unassigned"
+
     class Meta:
         model = Payment
-        fields = ["id", "amount", "created_at"]
-
-class InvoiceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Invoice
-        fields = ["id", "user", "amount", "status", "due_date", "created_at"]
-        extra_kwargs = {"user": {"write_only": True}}
+        fields = ["id", "amount", "payment_method", "description", "status", "payment_date", "created_at", "tenant_name", "tenant_id", "user"]
+        extra_kwargs = {"user": {"required": False, "allow_null": True}}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -72,30 +73,24 @@ class ComplianceDocument(models.Model):
 class Payment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments', blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_method = models.CharField(max_length=32, default='cash')
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=16, choices=[('pending','pending'),('completed','completed'),('failed','failed')], default='completed')
+    payment_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def to_dict(self):
         return {
             'id': str(self.id),
             'amount': float(self.amount),
-            'created_at': self.created_at.isoformat(),
-        }
-
-class Invoice(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invoices', blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status = models.CharField(max_length=16, choices=[('unpaid','unpaid'),('paid','paid'),('overdue','overdue')], default='unpaid')
-    due_date = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            'amount': float(self.amount),
+            'payment_method': self.payment_method,
+            'description': self.description,
             'status': self.status,
-            'due_date': self.due_date.isoformat() if self.due_date else None,
+            'payment_date': self.payment_date.isoformat(),
             'created_at': self.created_at.isoformat(),
         }
+
+
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)

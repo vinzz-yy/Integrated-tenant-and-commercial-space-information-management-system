@@ -1,15 +1,13 @@
-// StaffOperations.jsx - Staff view for operation requests
-// Displays operation requests assigned to the staff member
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import api from '../../services/api.js';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
+import connection from '../../connected/connection.js';
 
 export function StaffOperations() {
   const { user } = useAuth();
@@ -34,7 +32,7 @@ export function StaffOperations() {
   // Load operation requests
   useEffect(() => {
     const load = async () => {
-      const resp = await api.operations.getRequests();
+      const data = await connection.operations.getRequests();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setRequests(list);
     };

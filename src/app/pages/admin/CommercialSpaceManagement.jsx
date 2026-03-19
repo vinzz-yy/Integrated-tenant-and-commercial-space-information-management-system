@@ -1,40 +1,18 @@
-// CommercialSpaceManagement.jsx - Admin panel for managing commercial units
-// Allows admins to view, filter, create, and delete commercial spaces
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
+import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
+import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function CommercialSpaceManagement() {
   const { user } = useAuth();
@@ -76,7 +54,7 @@ export function CommercialSpaceManagement() {
     
     const load = async () => {
       try {
-        const resp = await api.commercialSpace.getUnits();
+        const resp = await connection.commercialSpace.getUnits();
         const list = Array.isArray(resp) ? resp : (resp?.results || []);
         setUnits(list);
         setFilteredUnits(list);
@@ -112,14 +90,14 @@ export function CommercialSpaceManagement() {
   // Handler for creating a new unit
   const handleCreateUnit = async () => {
     try {
-      const created = await api.commercialSpace.createUnit({
+      const created = await connection.commercialSpace.createUnit({
         number: formData.unitNumber,
         floor: formData.floor,
         type: formData.type.toLowerCase(),
         status: formData.status,
       });
       // Refresh list from server to ensure fields and image URL are populated
-      const resp = await api.commercialSpace.getUnits();
+      const resp = await connection.commercialSpace.getUnits();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setUnits(list);
       setFilteredUnits(list);
@@ -157,8 +135,8 @@ export function CommercialSpaceManagement() {
         type: (formData.type || '').toLowerCase(),
         status: formData.status,
       };
-      const updated = await api.commercialSpace.updateUnit(String(selectedUnit.id), payload);
-      const resp = await api.commercialSpace.getUnits();
+      const updated = await connection.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      const resp = await connection.commercialSpace.getUnits();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setUnits(list);
       setFilteredUnits(list);
@@ -179,7 +157,7 @@ export function CommercialSpaceManagement() {
   const handleDeleteUnit = async (id) => {
     if (confirm('Are you sure you want to delete this unit?')) {
       try {
-        await api.commercialSpace.deleteUnit(String(id));
+        await connection.commercialSpace.deleteUnit(String(id));
         // Remove deleted unit from state
         setUnits(units.filter(u => String(u.id) !== String(id)));
       } catch (error) {

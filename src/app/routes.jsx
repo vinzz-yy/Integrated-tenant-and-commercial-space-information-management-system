@@ -21,7 +21,7 @@ import { TenantAppointments } from "./pages/tenant/TenantAppointments.jsx";
 import { TenantPayments } from "./pages/tenant/TenantPayments.jsx";
 import { TenantMaintenance } from "./pages/tenant/TenantMaintenance.jsx";
 import { TenantCommercialSpace } from "./pages/tenant/TenantCommercialSpace.jsx";
-import { Login } from "../app/pages/Login.jsx";
+import { Login } from "./pages/Login.jsx";
 
 export const router = createBrowserRouter([
   {

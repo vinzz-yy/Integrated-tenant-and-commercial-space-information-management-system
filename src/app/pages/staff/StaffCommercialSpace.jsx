@@ -1,33 +1,18 @@
-// StaffCommercialSpace.jsx - Staff view for managing commercial units
-// Allows staff to view and update commercial unit information
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Edit, Save } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function StaffCommercialSpace() {
   const { user } = useAuth();
@@ -59,8 +44,8 @@ export function StaffCommercialSpace() {
   // Load all commercial units
   useEffect(() => {
     const load = async () => {
-      const resp = await api.commercialSpace.getUnits();
-      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      const data = await connection.commercialSpace.getUnits();
+      const list = Array.isArray(data) ? data : (data?.results || []);
       setUnits(list);
     };
     load();
@@ -104,9 +89,9 @@ export function StaffCommercialSpace() {
       if (formData.leaseEnd) payload.leaseEndDate = formData.leaseEnd;
       if (formData.tenantName) payload.tenantName = formData.tenantName;
       // Send update
-      await api.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      await connection.commercialSpace.updateUnit(String(selectedUnit.id), payload);
       // Refresh units list
-      const refreshed = await api.commercialSpace.getUnits();
+      const refreshed = await connection.commercialSpace.getUnits();
       const list = Array.isArray(refreshed) ? refreshed : (refreshed?.results || []);
       setUnits(list);
       setIsEditDialogOpen(false);
@@ -272,6 +257,50 @@ export function StaffCommercialSpace() {
                     value={formData.tenantName}
                     onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
                     placeholder="Tenant name (if occupied)"
+                  />
+                </div>
+
+                {/* Size */}
+                <div className="space-y-2">
+                  <Label htmlFor="size">Size (sqm)</Label>
+                  <Input
+                    id="size"
+                    value={formData.size}
+                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                    placeholder="e.g., 100"
+                  />
+                </div>
+                
+                {/* Monthly Rent */}
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyRent">Monthly Rent</Label>
+                  <Input
+                    id="monthlyRent"
+                    value={formData.monthlyRent}
+                    onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
+                    placeholder="e.g., 50000"
+                  />
+                </div>
+                
+                {/* Lease Start */}
+                <div className="space-y-2">
+                  <Label htmlFor="leaseStart">Lease Start Date</Label>
+                  <Input
+                    id="leaseStart"
+                    type="date"
+                    value={formData.leaseStart}
+                    onChange={(e) => setFormData({ ...formData, leaseStart: e.target.value })}
+                  />
+                </div>
+                
+                {/* Lease End */}
+                <div className="space-y-2">
+                  <Label htmlFor="leaseEnd">Lease End Date</Label>
+                  <Input
+                    id="leaseEnd"
+                    type="date"
+                    value={formData.leaseEnd}
+                    onChange={(e) => setFormData({ ...formData, leaseEnd: e.target.value })}
                   />
                 </div>
               </div>

@@ -6,7 +6,7 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import UserProfile, Document, Appointment, Unit, MaintenanceRequest, Notification, Payment, Invoice
+from .models import UserProfile, Document, Appointment, Unit, MaintenanceRequest, Notification, Payment
 from .serializers import (
     UserSerializer,
     DocumentSerializer,
@@ -15,7 +15,6 @@ from .serializers import (
     MaintenanceRequestSerializer,
     NotificationSerializer,
     PaymentSerializer,
-    InvoiceSerializer,
 )
 
 class LoginView(APIView):
@@ -299,118 +298,13 @@ class NotificationsViewSet(viewsets.ModelViewSet):
 class OperationsRequestsViewSet(viewsets.ModelViewSet):
     queryset = MaintenanceRequest.objects.all().order_by("-created_at")
     serializer_class = MaintenanceRequestSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        user = getattr(self.request, "user", None)
-        role = getattr(getattr(user, "profile", None), "role", None)
-        if role == "tenant":
-            return qs.filter(tenant=user)
-        tenant_id = self.request.query_params.get("tenant_id")
-        if tenant_id:
-            return qs.filter(tenant_id=tenant_id)
-        if getattr(user, "is_staff", False) or role == "admin":
-            return qs
-        return MaintenanceRequest.objects.none()
-
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        user = request.user
-        role = getattr(getattr(user, "profile", None), "role", None)
-        if role == "tenant":
-            data["tenant"] = user.id
-        else:
-            tid = data.pop("tenant_id", None)
-            data["tenant"] = tid or user.id
-        if "status" not in data:
-            data["status"] = "pending"
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        data = request.data.copy()
-        tid = data.pop("tenant_id", None)
-        if tid:
-            data["tenant"] = tid
-        serializer = self.get_serializer(instance, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=["patch"], url_path="set-status")
-    def set_status(self, request, pk=None):
-        instance = self.get_object()
-        status_value = request.data.get("status")
-        if status_value not in {"pending", "in_progress", "completed", "cancelled"}:
-            return Response({"detail": "Invalid status"}, status=400)
-        instance.status = status_value
-        instance.save()
-        return Response(self.get_serializer(instance).data)
-
-class OperationsMetricsView(APIView):
-    def get(self, request):
-        return Response({"requests_open": MaintenanceRequest.objects.filter(status="open").count()})
-
-class ActivityLogsView(APIView):
-    def get(self, request):
-        return Response({"logs": []})
-
-class FinancialInvoicesViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.all().order_by("-created_at")
-    serializer_class = InvoiceSerializer
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.profile.role == 'tenant':
-            qs = qs.filter(user=user)
-        return qs
-
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        if request.user.profile.role == 'tenant':
-            data["user"] = request.user.id
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class FinancialPaymentsViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all().order_by("-created_at")
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
         user = self.request.user
-        if user.profile.role == 'tenant':
-            qs = qs.filter(user=user)
-        return qs
-
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        if request.user.profile.role == 'tenant':
-            data["user"] = request.user.id
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    permission_classes = [permissions.IsAuthenticated]
-
-class RevenueAnalyticsView(APIView):
-    def get(self, request):
-        return Response({"monthly": []})
-
-class ProfitLossReportView(APIView):
-    def get(self, request):
-        return Response({"profit": 0, "loss": 0})
-
-class TasksView(APIView):
-    def get(self, request):
-        return Response({"results": []})
+        if getattr(user.profile, 'role', '') == 'tenant':
+            return self.queryset.filter(user=user)
+        return self.queryset

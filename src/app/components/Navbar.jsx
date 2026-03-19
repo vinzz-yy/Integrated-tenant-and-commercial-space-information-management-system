@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
-import { Button } from './ui/button';
+import { Button } from './ui/button.jsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from './ui/dropdown-menu.jsx';
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+} from './ui/dialog.jsx';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar.jsx';
 import { Sun, Moon, User, LogOut, Building2, LayoutDashboard } from 'lucide-react';
 
 export function Navbar() {

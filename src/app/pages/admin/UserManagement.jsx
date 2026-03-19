@@ -1,43 +1,21 @@
-// UserManagement.jsx - Admin user management page
-// Allows administrators to view, create, edit, delete, and export system users
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Search, Plus, Edit, Trash2, Download, FileText, Table as TableIcon } from 'lucide-react';
-import api from '../../services/api.js';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
-import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../utils/export.js';
+import connection from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
 
 export function UserManagement() {
   const { user } = useAuth();
@@ -110,7 +88,7 @@ export function UserManagement() {
     
     const load = async () => {
       try {
-        const resp = await api.users.getUsers();
+        const resp = await connection.users.getUsers();
         const list = sortUsersDesc(normalizeUsers(resp));
         setUsers(list);
         setFilteredUsers(list);
@@ -148,7 +126,7 @@ export function UserManagement() {
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
-      const created = await api.users.createUser(formData);
+      const created = await connection.users.createUser(formData);
       setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
       resetForm();
@@ -171,7 +149,7 @@ export function UserManagement() {
     
     try {
       setIsUpdating(true);
-      const updated = await api.users.updateUser(String(selectedUser.id), formData);
+      const updated = await connection.users.updateUser(String(selectedUser.id), formData);
       setUsers((prev) =>
         sortUsersDesc(
           prev.map((u) => (String(u.id) === String(selectedUser.id) ? normalizeUser(updated) : u))
@@ -191,7 +169,7 @@ export function UserManagement() {
   const handleDeleteUser = async (userId) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
-        await api.users.deleteUser(String(userId));
+        await connection.users.deleteUser(String(userId));
         setUsers((prev) => prev.filter((u) => String(u.id) !== String(userId)));
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -206,7 +184,7 @@ export function UserManagement() {
       setIsExporting(true);
       
       // Fetch all users data
-      const allUsersResp = await api.users.getUsers();
+      const allUsersResp = await connection.users.getUsers();
       const allUsers = Array.isArray(allUsersResp) ? allUsersResp : (allUsersResp?.results || []);
       const rowsUsers = sortUsersDesc(
         allUsers.map((user) => ({

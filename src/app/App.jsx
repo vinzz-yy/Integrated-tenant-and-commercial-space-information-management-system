@@ -1,8 +1,8 @@
 import { RouterProvider } from 'react-router';
-import { router } from './routes';
+import { router } from './routes.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
-import { Toaster } from './components/ui/sonner';
+import { Toaster } from './components/ui/sonner.jsx';
 
 function App() {
   return (

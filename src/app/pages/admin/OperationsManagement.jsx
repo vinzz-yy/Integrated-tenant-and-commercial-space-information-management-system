@@ -1,41 +1,19 @@
-// OperationsManagement.jsx - Admin panel for managing operational requests
-// Allows admins to view, filter, and create operational requests (maintenance, security, etc.)
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
-import { Textarea } from '../../components/ui/textarea';
-import { Label } from '../../components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Textarea } from '../../components/ui/textarea.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
+import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
+import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
 import { Search, Plus } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function OperationsManagement() {
   const { user } = useAuth();
@@ -82,12 +60,12 @@ export function OperationsManagement() {
     }
     
     const load = async () => {
-      const resp = await api.operations.getRequests();
+      const resp = await connection.operations.getRequests();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setRequests(list);
       setFilteredRequests(list);
       try {
-        const usersResp = await api.users.getUsers();
+        const usersResp = await connection.users.getUsers();
         const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
         setStaffUsers(usersList.filter(u => (u.role || '').toLowerCase() === 'staff'));
       } catch {}
@@ -124,7 +102,7 @@ export function OperationsManagement() {
         status: 'pending',
         tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
       };
-      const created = await api.operations.createRequest(payload);
+      const created = await connection.operations.createRequest(payload);
       setRequests([...requests, created]);
       setIsCreateDialogOpen(false);
       setResultTitle('Adding Request Successful');
@@ -275,7 +253,7 @@ export function OperationsManagement() {
                         value={request.status || 'pending'}
                         onValueChange={async (value) => {
                           try {
-                            const updated = await api.operations.updateRequest(String(request.id), { status: value });
+                            const updated = await connection.operations.updateRequest(String(request.id), { status: value });
                             setRequests(requests.map(r => String(r.id) === String(request.id) ? updated : r));
                           } catch (e) {}
                         }}

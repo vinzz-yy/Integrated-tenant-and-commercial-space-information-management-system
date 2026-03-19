@@ -1,15 +1,13 @@
-// TenantDashboard.jsx - Main dashboard for tenant users
-// Displays tenant's unit info, invoices, and maintenance requests
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
 import { Calendar, FileCheck, CreditCard, Wrench, Building, ArrowRight } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function TenantDashboard() {
   const { user } = useAuth();
@@ -29,11 +27,11 @@ export function TenantDashboard() {
     const load = async () => {
       try {
         // Fetch invoices for this tenant
-        const inv = await api.financial.getInvoices({ tenant_id: user?.id });
+        const inv = await connection.financial.getInvoices({ tenant_id: user?.id });
         setInvoices(inv.results || []);
         
         // Fetch maintenance requests for this tenant
-        const req = await api.maintenance.getRequests({ tenant_id: user?.id });
+        const req = await connection.maintenance.getRequests({ tenant_id: user?.id });
         setRequests(req.results || []);
       } catch (e) {
         setInvoices([]); 

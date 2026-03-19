@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(undefined);
 
-import api from '../services/api.js';
+import connection from '../connected/connection.js';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanPassword = String(password || '').trim();
-    const res = await api.auth.login(cleanEmail, cleanPassword);
+    const res = await connection.auth.login(cleanEmail, cleanPassword);
     const token = res.access;
     const rawUser = res.user;
     const profile = {

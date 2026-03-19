@@ -191,6 +191,12 @@ export const financialAPI = {
     const queryString = new URLSearchParams(params).toString();
     return apiRequest(`/financial/payments/?${queryString}`);
   },
+  createPayment: async (paymentData) => {
+    return apiRequest('/financial/payments/', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  },
   processPayment: async (paymentData) => {
     return apiRequest('/financial/payments/', {
       method: 'POST',

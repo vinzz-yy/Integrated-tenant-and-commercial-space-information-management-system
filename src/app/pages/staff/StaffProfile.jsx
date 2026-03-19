@@ -1,16 +1,14 @@
-// StaffProfile.jsx - Staff profile management page
-// Allows staff members to view and update their personal information and profile photo
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import api from '../../services/api.js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
+import connection from '../../connected/connection.js';
 
 export function StaffProfile() {
   const { user, updateUser } = useAuth();
@@ -78,7 +76,7 @@ export function StaffProfile() {
     }
     
     // Persist to backend then update local context
-    const saved = await api.auth.updateCurrentUser({
+    const saved = await connection.auth.updateCurrentUser({
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
@@ -96,7 +94,7 @@ export function StaffProfile() {
     // Update avatar if changed
     if (avatarFile) {
       const newAvatarUrl = avatarPreview || user?.avatar;
-      const savedAvatar = await api.auth.updateCurrentUser({ avatar: newAvatarUrl });
+      const savedAvatar = await connection.auth.updateCurrentUser({ avatar: newAvatarUrl });
       updateUser({ avatar: savedAvatar.avatar || newAvatarUrl });
     }
     

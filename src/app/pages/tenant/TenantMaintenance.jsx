@@ -1,20 +1,18 @@
-// TenantMaintenance.jsx - Tenant maintenance request management
-// Allows tenants to submit and track maintenance requests for their unit
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Badge } from '../../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Textarea } from '../../components/ui/textarea.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Plus, Wrench } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function TenantMaintenance() {
   const { user } = useAuth();
@@ -40,7 +38,7 @@ export function TenantMaintenance() {
   // Load tenant's maintenance requests
   useEffect(() => {
     const load = async () => {
-      const resp = await api.maintenance.getRequests({ tenant_id: user?.id });
+      const resp = await connection.maintenance.getRequests({ tenant_id: user?.id });
       setRequests(resp.results || []);
     };
     load();
@@ -57,7 +55,7 @@ export function TenantMaintenance() {
       data.append('tenant_id', String(user?.id || ''));
       if (formData.file) data.append('file', formData.file);
       
-      await api.maintenance.createRequest(data);
+      await connection.maintenance.createRequest(data);
       setIsCreateDialogOpen(false);
       
       // Refresh requests list

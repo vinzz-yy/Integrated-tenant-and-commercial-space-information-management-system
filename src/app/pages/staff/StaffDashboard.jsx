@@ -1,14 +1,12 @@
-// StaffDashboard.jsx - Main dashboard for staff users
-// Displays staff's tasks, appointments, and pending reviews
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
 import { Calendar, ClipboardList } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function StaffDashboard() {
   const { user } = useAuth();
@@ -29,11 +27,11 @@ export function StaffDashboard() {
     const load = async () => {
       try {
         // Fetch appointments and requests in parallel
-        const appts = await api.schedule.getAppointments({ tenant_id: user?.id });
+        const appts = await connection.schedule.getAppointments({ tenant_id: user?.id });
         const apptList = Array.isArray(appts) ? appts : (appts?.results || []);
         setAppointments(apptList);
         
-        const reqs = await api.operations.getRequests({ tenant_id: user?.id });
+        const reqs = await connection.operations.getRequests({ tenant_id: user?.id });
         const reqList = Array.isArray(reqs) ? reqs : (reqs?.results || []);
         setRequests(reqList);
       } catch (e) {

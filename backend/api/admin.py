@@ -9,7 +9,6 @@ from .models import (
     Notification,
     Document,
     Unit,
-    Invoice,
 )
 
 admin.site.site_header = "Skymall Backend"
@@ -24,7 +23,6 @@ admin.site.register(Appointment)
 admin.site.register(ComplianceDocument)
 admin.site.register(Document)
 admin.site.register(Payment)
-admin.site.register(Invoice)
 admin.site.register(Notification)
 
 # To customize the default User admin, you can uncomment and modify this:

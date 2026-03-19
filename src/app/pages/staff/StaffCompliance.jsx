@@ -1,40 +1,18 @@
-// StaffCompliance.jsx - Staff view for managing compliance documents
-// Allows staff to view and review tenant compliance documents
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Textarea } from '../../components/ui/textarea.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { FileText, Download, CheckCircle, XCircle, Clock } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function StaffCompliance() {
   const { user } = useAuth();
@@ -55,7 +33,7 @@ export function StaffCompliance() {
     }
     
     const load = async () => {
-      const resp = await api.compliance.getDocuments();
+      const data = await connection.compliance.getDocuments();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setDocuments(list);
     };

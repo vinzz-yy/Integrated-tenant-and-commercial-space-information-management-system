@@ -1,34 +1,23 @@
-// FinancialManagement.jsx - Admin panel for managing financial records
-// Displays invoices, payments, revenue charts, and allows exporting financial reports
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Download, TrendingUp, FileText, Table as TableIcon } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../../services/api.js';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
-import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../utils/export.js';
+import connection from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
 
 export function FinancialManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   // State for financial data
-  const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
 
@@ -43,17 +32,14 @@ export function FinancialManagement() {
     const load = async () => {
       try {
         // Fetch invoices, payments, and revenue analytics in parallel
-        const inv = await api.financial.getInvoices();
-        setInvoices(inv.results || []);
-        
-        const pay = await api.financial.getPayments();
+        const [pay, revenue] = await Promise.all([
+          connection.financial.getPayments(),
+          connection.financial.getRevenueAnalytics({ period: 'month' })
+        ]);
         setPayments(pay.results || []);
-        
-        const revenue = await api.financial.getRevenueAnalytics({ period: 'month' });
         setRevenueData(revenue.data || []);
       } catch (e) {
         // Set empty arrays on error
-        setInvoices([]); 
         setPayments([]); 
         setRevenueData([]);
       }
@@ -63,21 +49,21 @@ export function FinancialManagement() {
 
   // Calculate financial summaries
   const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  const unpaidAmount = invoices.filter(inv => inv.status === 'unpaid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const paidAmount = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
+  const unpaidAmount = payments.filter(p => p.status !== 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
 
   // Handle exporting financial report with format choice
   const handleExportReport = async (format) => {
     try {
       // Fetch all financial data
-      const allInvoices = await api.financial.getInvoices();
-      const allPayments = await api.financial.getPayments();
-      
-      const headers = ['Type', 'ID', 'Amount (PHP)', 'Status', 'Date'];
-      const rows = [
-        ...(allInvoices.results || []).map(inv => ['Invoice', inv.id, inv.amount, inv.status, inv.created_at]),
-        ...(allPayments.results || []).map(pay => ['Payment', pay.id, pay.amount, 'completed', pay.created_at]),
-      ];
+      const [allPayments] = await Promise.all([
+          connection.financial.getPayments(),
+        ]);
+        
+        const headers = ['ID', 'Amount (PHP)', 'Status', 'Date'];
+        const rows = [
+          ...(allPayments.results || []).map(pay => [pay.id, pay.amount, 'completed', pay.created_at]),
+        ];
 
       if (format === 'csv') {
         exportToCSV(headers, rows, 'financial_report.csv');
@@ -96,6 +82,21 @@ export function FinancialManagement() {
     }
   };
 
+  // Receipt generation logic
+  const handleViewReceipt = (payment) => {
+    const headers = ['Receipt Item', 'Value'];
+    const rows = [
+      ['Payment ID', payment.id],
+      ['Tenant', payment.tenant_name],
+      ['Amount', `₱${payment.amount.toLocaleString('en-PH')}`],
+      ['Date', payment.payment_date],
+      ['Method', payment.payment_method],
+      ['Status', payment.status],
+      ['Description', payment.description || 'N/A']
+    ];
+    printToPDF(headers, rows, `Receipt - ${payment.id}`);
+  };
+
   return (
     <Layout role="admin">
       <div className="space-y-6">
@@ -106,7 +107,7 @@ export function FinancialManagement() {
               Financial Management
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage invoices, payments, and financial reports
+              Manage payments, and financial reports
             </p>
           </div>
           <DropdownMenu>
@@ -150,66 +151,42 @@ export function FinancialManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +8.2% from last month
-              </p>
+              <div className="text-2xl font-bold">₱{totalRevenue.toLocaleString('en-PH')}</div>
+              
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Paid Invoices
+                Paid Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">₱{paidAmount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-green-600">₱{paidAmount.toLocaleString('en-PH')}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Unpaid Invoices
+                Unpaid Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">₱{unpaidAmount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-orange-600">₱{unpaidAmount.toLocaleString('en-PH')}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Invoices
+                Total Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{invoices.length}</div>
+              <div className="text-2xl font-bold">{payments.length}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Revenue chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profit & Loss</CardTitle>
-              <CardDescription>Revenue vs Expenses (PHP)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Amount']} />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue" />
-                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Financial records table with tabs */}
         <Card>
@@ -217,71 +194,41 @@ export function FinancialManagement() {
             <CardTitle>Financial Records</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="invoices">
-              <TabsList>
-                <TabsTrigger value="invoices">Invoices</TabsTrigger>
-                <TabsTrigger value="payments">Payments</TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="payments">
               
-              {/* Invoices tab */}
-              <TabsContent value="invoices" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice ID</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Amount (PHP)</TableHead>
-                      <TableHead>Issue Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">{invoice.id}</TableCell>
-                        <TableCell>{invoice.tenantName}</TableCell>
-                        <TableCell>{invoice.unitNumber}</TableCell>
-                        <TableCell>₱{(invoice.amount || 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-sm">{invoice.issueDate}</TableCell>
-                        <TableCell className="text-sm">{invoice.dueDate}</TableCell>
-                        <TableCell>
-                          <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'}>
-                            {invoice.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-
+              
               {/* Payments tab */}
               <TabsContent value="payments" className="mt-4">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Payment ID</TableHead>
-                      <TableHead>Invoice ID</TableHead>
                       <TableHead>Tenant</TableHead>
                       <TableHead>Amount (PHP)</TableHead>
                       <TableHead>Payment Date</TableHead>
                       <TableHead>Method</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {payments.map((payment) => (
                       <TableRow key={payment.id}>
                         <TableCell className="font-medium">{payment.id}</TableCell>
-                        <TableCell>{payment.invoiceId}</TableCell>
-                        <TableCell>{payment.tenantName}</TableCell>
-                        <TableCell>₱{(payment.amount || 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-sm">{payment.paymentDate}</TableCell>
-                        <TableCell className="text-sm">{payment.paymentMethod}</TableCell>
+                        <TableCell>{payment.tenant_name}</TableCell>
+                        <TableCell>₱{(payment.amount || 0).toLocaleString('en-PH')}</TableCell>
+                        <TableCell className="text-sm">{payment.payment_date}</TableCell>
+                        <TableCell>{payment.payment_method}</TableCell>
                         <TableCell>
-                          <Badge>{payment.status}</Badge>
+                          <Badge variant={payment.status === 'completed' ? 'default' : 'destructive'}>
+                            {payment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewReceipt(payment)}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Receipt
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

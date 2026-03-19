@@ -1,19 +1,17 @@
-// TenantAppointments.jsx - Tenant appointment management page
-// Allows tenants to view and book appointments
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Calendar } from '../../components/ui/calendar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Textarea } from '../../components/ui/textarea.jsx';
+import { Calendar } from '../../components/ui/calendar.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { toast } from 'sonner';
 
@@ -38,7 +36,7 @@ export function TenantAppointments() {
       if (!user?.id) return;
       try {
         setLoading(true);
-        const resp = await api.schedule.getAppointments({ tenant_id: user?.id });
+        const resp = await connection.schedule.getAppointments({ tenant_id: user?.id });
         setAppointments(resp.results || []);
       } catch (err) {
         toast.error('Failed to load appointments');
@@ -58,7 +56,7 @@ export function TenantAppointments() {
     }
     
     try {
-      const created = await api.schedule.createAppointment({
+      const created = await connection.schedule.createAppointment({
         date: formData.date,
         time: formData.time,
         title: formData.purpose,

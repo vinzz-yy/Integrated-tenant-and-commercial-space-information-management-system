@@ -1,33 +1,18 @@
-// StaffSchedule.jsx - Staff schedule management page
-// Allows staff to view, create, and manage their appointments
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Calendar } from '../../components/ui/calendar';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { Button } from '../../components/ui/button.jsx';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Input } from '../../components/ui/input.jsx';
+import { Label } from '../../components/ui/label.jsx';
+import { Calendar } from '../../components/ui/calendar.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Calendar as CalendarIcon, Edit, Trash2, Plus } from 'lucide-react';
-import api from '../../services/api.js';
+import connection from '../../connected/connection.js';
 
 export function StaffSchedule() {
   const { user } = useAuth();
@@ -63,7 +48,7 @@ export function StaffSchedule() {
     }
     
     const load = async () => {
-      const resp = await api.schedule.getAppointments({ tenant_id: user?.id });
+      const resp = await connection.schedule.getAppointments({ tenant_id: user?.id });
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setAppointments(list);
     };
@@ -86,7 +71,7 @@ export function StaffSchedule() {
         location: formData.location,
         status: 'scheduled',
       };
-      const created = await api.schedule.createAppointment(payload);
+      const created = await connection.schedule.createAppointment(payload);
       setAppointments([...appointments, created]);
       setIsCreateDialogOpen(false);
       resetForm();
@@ -123,7 +108,7 @@ export function StaffSchedule() {
         time: formData.time,
         location: formData.location,
       };
-      const updated = await api.schedule.updateAppointment(String(selectedAppointment.id), payload);
+      const updated = await connection.schedule.updateAppointment(String(selectedAppointment.id), payload);
       setAppointments(appointments.map(a => String(a.id) === String(selectedAppointment.id) ? updated : a));
       setIsEditDialogOpen(false);
       setSelectedAppointment(null);
@@ -141,7 +126,7 @@ export function StaffSchedule() {
   // Handle deleting an appointment
   const handleDeleteAppointment = async (id) => {
     try {
-      await api.schedule.deleteAppointment(String(id));
+      await connection.schedule.deleteAppointment(String(id));
       setAppointments(appointments.filter(apt => String(apt.id) !== String(id)));
     } catch (error) {
       console.error('Error deleting appointment:', error);
