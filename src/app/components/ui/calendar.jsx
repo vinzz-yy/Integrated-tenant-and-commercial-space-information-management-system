@@ -3,11 +3,7 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
 
-/**
- * Calendar - Date selection interface
- * Used on: Date pickers, Booking forms, Event scheduling
- * Screens: Booking pages, Event creation, Date filters, Dashboards
- */
+// calendar
 function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
   return (
     <DayPicker

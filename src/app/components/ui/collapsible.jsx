@@ -1,18 +1,11 @@
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
-/**
- * Collapsible - Expandable/collapsible content section
- * Used on: FAQ sections, Sidebar menus, Filter panels
- * Screens: Documentation, Settings, Sidebars, Mobile menus
- */
+// collapsible
 function Collapsible(props) {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }
 
-/**
- * CollapsibleTrigger - Button that toggles collapsible content
- * Used on: Header/button that expands/collapses content
- */
+// collapsible-trigger
 function CollapsibleTrigger(props) {
   return (
     <CollapsiblePrimitive.CollapsibleTrigger
@@ -22,10 +15,7 @@ function CollapsibleTrigger(props) {
   );
 }
 
-/**
- * CollapsibleContent - Content that can be collapsed/expanded
- * Used on: The collapsible content area
- */
+// collapsible-content
 function CollapsibleContent(props) {
   return (
     <CollapsiblePrimitive.CollapsibleContent

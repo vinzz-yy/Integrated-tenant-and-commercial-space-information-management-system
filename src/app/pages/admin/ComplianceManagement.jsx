@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -141,10 +139,10 @@ export function ComplianceManagement() {
         {/* Header section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-gray-900">
               Compliance Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Track and manage tenant compliance documents
             </p>
           </div>
@@ -154,7 +152,7 @@ export function ComplianceManagement() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Documents
               </CardTitle>
             </CardHeader>
@@ -164,7 +162,7 @@ export function ComplianceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Approved
               </CardTitle>
             </CardHeader>
@@ -176,7 +174,7 @@ export function ComplianceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Review
               </CardTitle>
             </CardHeader>
@@ -188,7 +186,7 @@ export function ComplianceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Expiring Soon
               </CardTitle>
             </CardHeader>

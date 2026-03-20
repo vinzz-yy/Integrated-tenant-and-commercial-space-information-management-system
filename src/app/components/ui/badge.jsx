@@ -23,11 +23,7 @@ const badgeVariants = cva(
   },
 );
 
-/**
- * Badge - Small status or label indicator
- * Used on: Status indicators (Active/Pending/Completed), Tags, Labels
- * Screens: Task lists, Email inboxes, Product cards, Profile pages
- */
+// badge
 function Badge({ className, variant, asChild = false, ...props }) {
   const Comp = asChild ? Slot : "span";
   return (

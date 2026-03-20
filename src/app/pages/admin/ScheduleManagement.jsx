@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -395,31 +394,32 @@ export function ScheduleManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Scheduling</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900">Scheduling</h1>
+            <p className="text-gray-600 mt-1">
               Manage appointments and schedules
             </p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Appointment
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Appointment
+            </Button>
+            {selectedIds.length > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={handleBulkDelete}
+                className="w-fit"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete ({selectedIds.length})
+              </Button>
+            )}
+          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {selectedIds.length > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete ({selectedIds.length})
-                </Button>
-              )}
-            </div>
-          </div>
-
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
           <TabsContent value="appointments">
             <Card className="mt-4">
               <CardHeader>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -33,7 +32,7 @@ export function StaffOperations() {
   useEffect(() => {
     const load = async () => {
       const data = await connection.operations.getRequests();
-      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      const list = Array.isArray(data) ? data : (data?.results || []);
       setRequests(list);
     };
     load();

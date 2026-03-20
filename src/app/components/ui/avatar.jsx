@@ -1,11 +1,7 @@
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { cn } from "./utils";
 
-/**
- * Avatar - User profile image component
- * Used on: User profile pictures, Comment sections, Team member lists
- * Screens: Profile pages, Dashboard headers, Comments, Team pages
- */
+// avatar
 function Avatar({ className, ...props }) {
   return (
     <AvatarPrimitive.Root
@@ -19,10 +15,7 @@ function Avatar({ className, ...props }) {
   );
 }
 
-/**
- * AvatarImage - The actual image of the avatar
- * Used on: Displaying user's profile picture
- */
+// avatar-image
 function AvatarImage({ className, ...props }) {
   return (
     <AvatarPrimitive.Image
@@ -33,10 +26,7 @@ function AvatarImage({ className, ...props }) {
   );
 }
 
-/**
- * AvatarFallback - Placeholder when image fails to load
- * Used on: Shows user initials or icon when no image available
- */
+// avatar-fallback
 function AvatarFallback({ className, ...props }) {
   return (
     <AvatarPrimitive.Fallback

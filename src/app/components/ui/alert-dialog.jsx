@@ -2,38 +2,26 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
 
-/**
- * AlertDialog - Modal dialog for important confirmations (destructive actions)
- * Used on: Delete confirmation screens, Critical action confirmations
- */
+// alert-dialog
 function AlertDialog(props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-/**
- * AlertDialogTrigger - Button that opens the alert dialog
- * Used on: Delete buttons, destructive action buttons
- */
+// alert-dialog-trigger
 function AlertDialogTrigger(props) {
   return (
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
   );
 }
 
-/**
- * AlertDialogPortal - Renders dialog in a portal
- * Used on: Internal - handles rendering outside component hierarchy
- */
+// alert-dialog-portal
 function AlertDialogPortal(props) {
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
   );
 }
 
-/**
- * AlertDialogOverlay - Semi-transparent background overlay
- * Used on: Behind the dialog to dim the background
- */
+// alert-dialog-overlay
 function AlertDialogOverlay({ className, ...props }) {
   return (
     <AlertDialogPrimitive.Overlay
@@ -47,10 +35,7 @@ function AlertDialogOverlay({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogContent - Main content container of the alert
- * Used on: Contains the alert message and actions
- */
+// alert-dialog-content
 function AlertDialogContent({ className, ...props }) {
   return (
     <AlertDialogPortal>
@@ -67,10 +52,7 @@ function AlertDialogContent({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogHeader - Header section of the alert
- * Used on: Top section containing title
- */
+// alert-dialog-header
 function AlertDialogHeader({ className, ...props }) {
   return (
     <div
@@ -81,10 +63,7 @@ function AlertDialogHeader({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogFooter - Footer section with action buttons
- * Used on: Bottom section with confirm/cancel buttons
- */
+// alert-dialog-footer
 function AlertDialogFooter({ className, ...props }) {
   return (
     <div
@@ -98,10 +77,7 @@ function AlertDialogFooter({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogTitle - Title of the alert dialog
- * Used on: Describes the alert purpose
- */
+// alert-dialog-title
 function AlertDialogTitle({ className, ...props }) {
   return (
     <AlertDialogPrimitive.Title
@@ -112,10 +88,7 @@ function AlertDialogTitle({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogDescription - Detailed message of the alert
- * Used on: Explains what will happen
- */
+// alert-dialog-description
 function AlertDialogDescription({ className, ...props }) {
   return (
     <AlertDialogPrimitive.Description
@@ -126,10 +99,7 @@ function AlertDialogDescription({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogAction - Primary action button (usually destructive)
- * Used on: Confirm button for destructive actions
- */
+// alert-dialog-action
 function AlertDialogAction({ className, ...props }) {
   return (
     <AlertDialogPrimitive.Action
@@ -139,10 +109,7 @@ function AlertDialogAction({ className, ...props }) {
   );
 }
 
-/**
- * AlertDialogCancel - Cancel button
- * Used on: Dismiss the alert without action
- */
+// alert-dialog-cancel
 function AlertDialogCancel({ className, ...props }) {
   return (
     <AlertDialogPrimitive.Cancel

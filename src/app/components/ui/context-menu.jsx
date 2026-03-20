@@ -2,57 +2,38 @@ import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import { cn } from "./utils";
 
-/**
- * ContextMenu - Right-click menu for contextual actions
- * Used on: Right-click actions in advanced interfaces
- * Screens: File managers, Code editors, Data grids, Admin panels
- */
+// context-menu
 function ContextMenu(props) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
 }
 
-/**
- * ContextMenuTrigger - Element that triggers context menu on right-click
- * Used on: Elements that have context menu actions
- */
+// context-menu-trigger
 function ContextMenuTrigger(props) {
   return (
     <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />
   );
 }
 
-/**
- * ContextMenuGroup - Group of related menu items
- * Used on: Categorizing menu options
- */
+// context-menu-group
 function ContextMenuGroup(props) {
   return (
     <ContextMenuPrimitive.Group data-slot="context-menu-group" {...props} />
   );
 }
 
-/**
- * ContextMenuPortal - Renders menu in portal
- * Used on: Internal - handles rendering outside component hierarchy
- */
+// context-menu-portal
 function ContextMenuPortal(props) {
   return (
     <ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />
   );
 }
 
-/**
- * ContextMenuSub - Nested submenu
- * Used on: Menu items with additional options
- */
+// context-menu-sub
 function ContextMenuSub(props) {
   return <ContextMenuPrimitive.Sub data-slot="context-menu-sub" {...props} />;
 }
 
-/**
- * ContextMenuRadioGroup - Group of radio items
- * Used on: Mutually exclusive options in menu
- */
+// context-menu-radio-group
 function ContextMenuRadioGroup(props) {
   return (
     <ContextMenuPrimitive.RadioGroup
@@ -62,10 +43,7 @@ function ContextMenuRadioGroup(props) {
   );
 }
 
-/**
- * ContextMenuSubTrigger - Button that opens submenu
- * Used on: Menu item that expands into submenu
- */
+// context-menu-sub-trigger
 function ContextMenuSubTrigger({ className, inset, children, ...props }) {
   return (
     <ContextMenuPrimitive.SubTrigger
@@ -83,10 +61,7 @@ function ContextMenuSubTrigger({ className, inset, children, ...props }) {
   );
 }
 
-/**
- * ContextMenuSubContent - Content of submenu
- * Used on: Submenu items container
- */
+// context-menu-sub-content
 function ContextMenuSubContent({ className, ...props }) {
   return (
     <ContextMenuPrimitive.SubContent
@@ -100,10 +75,7 @@ function ContextMenuSubContent({ className, ...props }) {
   );
 }
 
-/**
- * ContextMenuContent - Main menu content container
- * Used on: Contains all context menu items
- */
+// context-menu-content
 function ContextMenuContent({ className, ...props }) {
   return (
     <ContextMenuPrimitive.Portal>
@@ -119,10 +91,7 @@ function ContextMenuContent({ className, ...props }) {
   );
 }
 
-/**
- * ContextMenuItem - Individual menu item
- * Used on: Each action in the context menu
- */
+// context-menu-item
 function ContextMenuItem({ className, inset, variant = "default", ...props }) {
   return (
     <ContextMenuPrimitive.Item
@@ -138,10 +107,7 @@ function ContextMenuItem({ className, inset, variant = "default", ...props }) {
   );
 }
 
-/**
- * ContextMenuCheckboxItem - Checkbox item in menu
- * Used on: Toggleable options in context menu
- */
+// context-menu-checkbox-item
 function ContextMenuCheckboxItem({ className, children, checked, ...props }) {
   return (
     <ContextMenuPrimitive.CheckboxItem
@@ -163,10 +129,7 @@ function ContextMenuCheckboxItem({ className, children, checked, ...props }) {
   );
 }
 
-/**
- * ContextMenuRadioItem - Radio item in menu
- * Used on: Single selection options in context menu
- */
+// context-menu-radio-item
 function ContextMenuRadioItem({ className, children, ...props }) {
   return (
     <ContextMenuPrimitive.RadioItem
@@ -187,10 +150,7 @@ function ContextMenuRadioItem({ className, children, ...props }) {
   );
 }
 
-/**
- * ContextMenuLabel - Label for menu section
- * Used on: Category headers in context menu
- */
+// context-menu-label
 function ContextMenuLabel({ className, inset, ...props }) {
   return (
     <ContextMenuPrimitive.Label
@@ -205,10 +165,7 @@ function ContextMenuLabel({ className, inset, ...props }) {
   );
 }
 
-/**
- * ContextMenuSeparator - Visual divider between menu items
- * Used on: Separating different menu sections
- */
+// context-menu-separator
 function ContextMenuSeparator({ className, ...props }) {
   return (
     <ContextMenuPrimitive.Separator
@@ -219,10 +176,7 @@ function ContextMenuSeparator({ className, ...props }) {
   );
 }
 
-/**
- * ContextMenuShortcut - Keyboard shortcut display
- * Used on: Shows keyboard shortcuts next to menu items
- */
+// context-menu-shortcut
 function ContextMenuShortcut({ className, ...props }) {
   return (
     <span

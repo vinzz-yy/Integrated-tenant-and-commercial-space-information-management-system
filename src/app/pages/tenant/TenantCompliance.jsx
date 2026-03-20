@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -84,7 +83,7 @@ export function TenantCompliance() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">My Documents</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Upload and manage compliance documents
             </p>
           </div>

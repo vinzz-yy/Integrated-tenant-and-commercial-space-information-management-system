@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -59,7 +58,7 @@ export function TenantMaintenance() {
       setIsCreateDialogOpen(false);
       
       // Refresh requests list
-      const resp = await api.maintenance.getRequests({ tenant_id: user?.id });
+      const resp = await connection.maintenance.getRequests({ tenant_id: user?.id });
       setRequests(resp.results || []);
     } catch (error) {
       console.error('Error submitting maintenance request:', error);
@@ -94,7 +93,7 @@ export function TenantMaintenance() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Maintenance Requests</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Submit and track maintenance requests for Unit {user?.unitNumber}
             </p>
           </div>
@@ -108,7 +107,7 @@ export function TenantMaintenance() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Requests
               </CardTitle>
             </CardHeader>
@@ -118,7 +117,7 @@ export function TenantMaintenance() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Pending
               </CardTitle>
             </CardHeader>
@@ -130,7 +129,7 @@ export function TenantMaintenance() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Completed
               </CardTitle>
             </CardHeader>
@@ -156,7 +155,7 @@ export function TenantMaintenance() {
                     <Wrench className="h-5 w-5 text-orange-600 mt-0.5" />
                     <div>
                       <h3 className="font-semibold">{request.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-sm text-gray-600 mt-1">
                         {request.description}
                       </p>
                       <div className="flex items-center gap-4 mt-2">

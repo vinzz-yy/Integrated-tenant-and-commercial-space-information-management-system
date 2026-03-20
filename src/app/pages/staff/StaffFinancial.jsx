@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -202,7 +201,7 @@ export function StaffFinancial() {
       <div className="space-y-6">
         {/* Header with export and add button */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Financial Overview
           </h1>
           <div className="flex items-center gap-2">

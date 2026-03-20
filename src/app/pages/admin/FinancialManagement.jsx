@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -103,10 +102,10 @@ export function FinancialManagement() {
         {/* Header with export button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-gray-900">
               Financial Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Manage payments, and financial reports
             </p>
           </div>
@@ -146,7 +145,7 @@ export function FinancialManagement() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Revenue
               </CardTitle>
             </CardHeader>
@@ -157,7 +156,7 @@ export function FinancialManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Paid Payment
               </CardTitle>
             </CardHeader>
@@ -167,7 +166,7 @@ export function FinancialManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Unpaid Payment
               </CardTitle>
             </CardHeader>
@@ -177,7 +176,7 @@ export function FinancialManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Payment
               </CardTitle>
             </CardHeader>

@@ -2,43 +2,27 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "./utils";
 
-/**
- * Dialog - Modal window for focused interactions
- * Used on: Forms that require attention, Confirmations, Detailed views
- * Screens: Create/Edit forms, Detail views, Confirmations, Settings
- */
+// dialog
 function Dialog(props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
-/**
- * DialogTrigger - Button that opens the dialog
- * Used on: Buttons that trigger modal dialogs
- */
+// dialog-trigger
 function DialogTrigger(props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-/**
- * DialogPortal - Renders dialog in a portal
- * Used on: Internal - handles rendering outside component hierarchy
- */
+// dialog-portal
 function DialogPortal(props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
-/**
- * DialogClose - Button that closes the dialog
- * Used on: Cancel/Close buttons inside dialog
- */
+// dialog-close
 function DialogClose(props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
-/**
- * DialogOverlay - Semi-transparent background overlay
- * Used on: Behind the dialog to dim the background
- */
+// dialog-overlay
 function DialogOverlay({ className, ...props }) {
   return (
     <DialogPrimitive.Overlay
@@ -52,10 +36,7 @@ function DialogOverlay({ className, ...props }) {
   );
 }
 
-/**
- * DialogContent - Main content container of the dialog
- * Used on: Contains all dialog content and close button
- */
+// dialog-content
 function DialogContent({ className, children, ...props }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -78,10 +59,7 @@ function DialogContent({ className, children, ...props }) {
   );
 }
 
-/**
- * DialogHeader - Header section of the dialog
- * Used on: Top section containing title
- */
+// dialog-header
 function DialogHeader({ className, ...props }) {
   return (
     <div
@@ -92,10 +70,7 @@ function DialogHeader({ className, ...props }) {
   );
 }
 
-/**
- * DialogFooter - Footer section with action buttons
- * Used on: Bottom section with primary/cancel buttons
- */
+// dialog-footer
 function DialogFooter({ className, ...props }) {
   return (
     <div
@@ -109,10 +84,7 @@ function DialogFooter({ className, ...props }) {
   );
 }
 
-/**
- * DialogTitle - Title of the dialog
- * Used on: Describes the dialog purpose
- */
+// dialog-title
 function DialogTitle({ className, ...props }) {
   return (
     <DialogPrimitive.Title
@@ -123,10 +95,7 @@ function DialogTitle({ className, ...props }) {
   );
 }
 
-/**
- * DialogDescription - Detailed message of the dialog
- * Used on: Explains what the dialog is for
- */
+// dialog-description
 function DialogDescription({ className, ...props }) {
   return (
     <DialogPrimitive.Description

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -160,10 +159,10 @@ export function StaffSchedule() {
         {/* Header with create button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-gray-900">
               My Schedule
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Manage your appointments and meetings
             </p>
           </div>
@@ -209,9 +208,9 @@ export function StaffSchedule() {
               <div className="space-y-4">
                 {filteredAppointments.length > 0 ? (
                   filteredAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div key={appointment.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                       {/* Date icon */}
-                      <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex flex-col items-center justify-center">
+                      <div className="flex-shrink-0 w-16 h-16 bg-blue-100 rounded-lg flex flex-col items-center justify-center">
                         <CalendarIcon className="h-6 w-6 text-blue-600" />
                         <span className="text-xs font-medium text-blue-600 mt-1">
                           {new Date(appointment.date).toLocaleDateString('en-US', { day: 'numeric' })}
@@ -221,7 +220,7 @@ export function StaffSchedule() {
                       {/* Appointment details */}
                       <div className="flex-1">
                         <h3 className="font-semibold">{appointment.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-gray-600 mt-1">
                           {appointment.date} at {appointment.time}
                         </p>
                         <p className="text-sm text-gray-500 mt-1">

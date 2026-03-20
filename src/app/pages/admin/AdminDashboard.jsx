@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -67,8 +65,8 @@ export function AdminDashboard() {
         // Process users data
         if (usersResp.status === 'fulfilled') {
           const usersData = usersResp.value;
-          const users = usersData.results || usersData || [];
-          const totalUsers = usersData.count || users.length;
+          const users = Array.isArray(usersData) ? usersData : (usersData?.results || []);
+          const totalUsers = usersData?.count || users.length;
           const totalTenants = users.filter(u => u.role === 'tenant').length;
           const totalStaff = users.filter(u => u.role === 'staff').length;
 
@@ -82,7 +80,8 @@ export function AdminDashboard() {
 
         // Process financial data
         if (paymentsResp.status === 'fulfilled') {
-          const payments = paymentsResp.value.results || paymentsResp.value || [];
+          const paymentsData = paymentsResp.value;
+          const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.results || []);
           const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
           
           // Calculate revenue growth (compare last month with previous month)
@@ -106,8 +105,9 @@ export function AdminDashboard() {
 
         // Process commercial space data
         if (unitsResp.status === 'fulfilled') {
-          const units = unitsResp.value.results || unitsResp.value || [];
-          const totalUnits = units.length;
+          const unitsData = unitsResp.value;
+          const units = Array.isArray(unitsData) ? unitsData : (unitsData?.results || []);
+          const totalUnits = unitsData?.count || units.length;
           const occupiedUnits = units.filter(u => u.status === 'occupied' || u.status === 'leased').length;
           const occupancyRate = totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
@@ -121,7 +121,8 @@ export function AdminDashboard() {
 
         // Process compliance data
         if (compResp.status === 'fulfilled') {
-          const pendingDocs = compResp.value.results || compResp.value || [];
+          const compData = compResp.value;
+          const pendingDocs = Array.isArray(compData) ? compData : (compData?.results || []);
           setStats(prev => ({
             ...prev,
             pendingCompliance: pendingDocs.length
@@ -130,7 +131,8 @@ export function AdminDashboard() {
 
         // Process appointment data
         if (apptResp.status === 'fulfilled') {
-          const appointmentsData = apptResp.value.results || apptResp.value || [];
+          const apptData = apptResp.value;
+          const appointmentsData = Array.isArray(apptData) ? apptData : (apptData?.results || []);
           setStats(prev => ({
             ...prev,
             scheduledAppointments: appointmentsData.length
@@ -145,13 +147,19 @@ export function AdminDashboard() {
 
         // Process revenue analytics
         if (revenueResp.status === 'fulfilled') {
-          const revenueChartData = revenueResp.value.data || revenueResp.value || [];
-          setRevenueData(revenueChartData);
+          const revenueDataValue = revenueResp.value;
+          const revenueChartData = Array.isArray(revenueDataValue) 
+            ? revenueDataValue 
+            : (revenueDataValue?.data || revenueDataValue?.results || []);
+          
+          // Ensure it's an array before setting state
+          setRevenueData(Array.isArray(revenueChartData) ? revenueChartData : []);
         }
 
         // Process notifications
         if (notifResp.status === 'fulfilled') {
-          const notificationsData = notifResp.value.results || notifResp.value || [];
+          const notifData = notifResp.value;
+          const notificationsData = Array.isArray(notifData) ? notifData : (notifData?.results || []);
           setNotifications(notificationsData);
         }
 
@@ -191,10 +199,10 @@ export function AdminDashboard() {
       <div className="space-y-8">
         {/* Header section with welcome message */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Admin Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             Welcome back, {user?.firstName}! Here's your system overview.
           </p>
         </div>
@@ -207,7 +215,7 @@ export function AdminDashboard() {
             onClick={handleTotalUsersClick}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Users
               </CardTitle>
               <Users className="h-4 w-4 text-blue-600" />
@@ -226,7 +234,7 @@ export function AdminDashboard() {
             onClick={handleMonthlyRevenueClick}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Monthly Revenue
               </CardTitle>
               <DollarSign className="h-4 w-4 text-green-600" />
@@ -254,7 +262,7 @@ export function AdminDashboard() {
             onClick={handleOccupancyRateClick}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Occupancy Rate
               </CardTitle>
               <Building className="h-4 w-4 text-purple-600" />
@@ -273,7 +281,7 @@ export function AdminDashboard() {
             onClick={handlePendingItemsClick}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Items
               </CardTitle>
               <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -349,7 +357,7 @@ export function AdminDashboard() {
                   {appointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                       onClick={() => navigate('/admin/schedule')}
                     >
                       <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -399,8 +407,8 @@ export function AdminDashboard() {
                   {notifications.map((notification) => (
                     <div 
                       key={notification.id} 
-                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${
-                        !notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
+                        !notification.read ? 'bg-blue-50' : ''
                       }`}
                       onClick={() => {
                         // Navigate to relevant section based on notification type

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -11,7 +10,7 @@ import { Badge } from '../../components/ui/badge.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function CommercialSpaceManagement() {
@@ -32,6 +31,7 @@ export function CommercialSpaceManagement() {
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
   
   // Form state for creating new unit
@@ -126,6 +126,11 @@ export function CommercialSpaceManagement() {
     setIsEditDialogOpen(true);
   };
 
+  const openViewDialog = (unit) => {
+    setSelectedUnit(unit);
+    setIsViewDialogOpen(true);
+  };
+
   const handleUpdateUnit = async () => {
     if (!selectedUnit) return;
     try {
@@ -184,10 +189,10 @@ export function CommercialSpaceManagement() {
         {/* Header with title and add button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-gray-900">
               Commercial Space Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Manage all commercial units and tenants
             </p>
           </div>
@@ -201,7 +206,7 @@ export function CommercialSpaceManagement() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Total Units
               </CardTitle>
             </CardHeader>
@@ -211,7 +216,7 @@ export function CommercialSpaceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Occupied
               </CardTitle>
             </CardHeader>
@@ -223,7 +228,7 @@ export function CommercialSpaceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Available
               </CardTitle>
             </CardHeader>
@@ -235,7 +240,7 @@ export function CommercialSpaceManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Occupancy Rate
               </CardTitle>
             </CardHeader>
@@ -290,38 +295,42 @@ export function CommercialSpaceManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Unit Number</TableHead>
-                  <TableHead>Floor</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Tenant</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[15%]">Unit Number</TableHead>
+                  <TableHead className="w-[10%]">Floor</TableHead>
+                  <TableHead className="w-[15%]">Type</TableHead>
+                  <TableHead className="w-[15%]">Status</TableHead>
+                  <TableHead className="w-[30%]">Tenant</TableHead>
+                  <TableHead className="text-right w-[15%]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUnits.map((unit) => (
                   <TableRow key={unit.id}>
-                    <TableCell className="font-medium">{unit.number || unit.unitNumber}</TableCell>
+                    <TableCell className="font-medium truncate">{unit.number || unit.unitNumber}</TableCell>
                     <TableCell>{unit.floor}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{unit.type}</Badge>
+                      <Badge variant="outline" className="capitalize">{unit.type}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(unit.status)}>
+                      <Badge variant={getStatusVariant(unit.status)} className="capitalize">
                         {unit.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm truncate">
                       {unit.tenant_name || '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(unit)}>
-                          <Edit className="h-4 w-4" />
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openViewDialog(unit)}>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(unit)}>
+                          <Edit className="h-4 w-4 text-blue-600" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => handleDeleteUnit(unit.id)}
                         >
                           <Trash2 className="h-4 w-4 text-red-600" />
@@ -397,6 +406,81 @@ export function CommercialSpaceManagement() {
                 Cancel
               </Button>
               <Button onClick={handleCreateUnit}>Create Unit</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Unit Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Commercial Unit Details</DialogTitle>
+              <DialogDescription>View full details of the selected unit</DialogDescription>
+            </DialogHeader>
+            {selectedUnit && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-gray-500 text-xs">Unit Number</Label>
+                    <p className="font-semibold text-lg">{selectedUnit.number || selectedUnit.unitNumber}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <Label className="text-gray-500 text-xs">Floor</Label>
+                    <p className="font-semibold text-lg">{selectedUnit.floor}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-gray-500 text-xs">Type</Label>
+                    <div>
+                      <Badge variant="outline" className="capitalize">{selectedUnit.type}</Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <Label className="text-gray-500 text-xs">Status</Label>
+                    <div>
+                      <Badge variant={getStatusVariant(selectedUnit.status)} className="capitalize">
+                        {selectedUnit.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                   <Label className="text-gray-500 text-xs">Current Tenant</Label>
+                   <p className="font-medium text-gray-900 mt-1">
+                     {selectedUnit.tenant_name || 'No tenant assigned'}
+                   </p>
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                   {selectedUnit.size && (
+                     <div className="space-y-1">
+                       <Label className="text-gray-500 text-xs">Size</Label>
+                       <p className="font-medium">{selectedUnit.size} sqm</p>
+                     </div>
+                   )}
+                   {(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate) && (
+                     <div className="space-y-1 text-right">
+                       <Label className="text-gray-500 text-xs">Monthly Rent</Label>
+                       <p className="font-semibold text-blue-600">
+                         ₱{Number(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate).toLocaleString()}
+                       </p>
+                     </div>
+                   )}
+                 </div>
+
+                 {selectedUnit.amenities && (
+                   <div className="pt-4 border-t">
+                     <Label className="text-gray-500 text-xs">Amenities</Label>
+                     <p className="text-sm text-gray-600 mt-1">{selectedUnit.amenities}</p>
+                   </div>
+                 )}
+               </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

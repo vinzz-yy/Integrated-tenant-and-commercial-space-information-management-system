@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -56,8 +55,8 @@ export function TenantDashboard() {
       <div className="space-y-8">
         {/* Header with welcome message */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tenant Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900">Tenant Dashboard</h1>
+          <p className="text-gray-600 mt-1">
             Welcome, {user?.firstName}! Unit {user?.unitNumber}
           </p>
         </div>
@@ -65,9 +64,9 @@ export function TenantDashboard() {
         {/* Stats cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* My Unit Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMyUnitClick}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200" onClick={handleMyUnitClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 My Unit
                 <Building className="h-4 w-4 text-blue-600" />
               </CardTitle>
@@ -82,9 +81,9 @@ export function TenantDashboard() {
           </Card>
 
           {/* Pending Payments Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handlePendingPaymentsClick}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200" onClick={handlePendingPaymentsClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Pending Payments
                 <CreditCard className="h-4 w-4 text-green-600" />
               </CardTitle>
@@ -101,9 +100,9 @@ export function TenantDashboard() {
           </Card>
 
           {/* Maintenance Requests Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleMaintenanceRequestsClick}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200" onClick={handleMaintenanceRequestsClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Maintenance Requests
                 <Wrench className="h-4 w-4 text-orange-600" />
               </CardTitle>
@@ -117,9 +116,9 @@ export function TenantDashboard() {
           </Card>
 
           {/* Documents Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-800" onClick={handleDocumentsClick}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-blue-200" onClick={handleDocumentsClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Documents
                 <FileCheck className="h-4 w-4 text-purple-600" />
               </CardTitle>
@@ -151,7 +150,7 @@ export function TenantDashboard() {
                 {invoices.slice(0, 3).map((invoice) => (
                   <div 
                     key={invoice.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => navigate('/tenant/payments')}
                   >
                     <div className="flex items-start gap-3">
@@ -189,7 +188,7 @@ export function TenantDashboard() {
                 {requests.slice(0, 3).map((request) => (
                   <div 
                     key={request.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => navigate('/tenant/maintenance')}
                   >
                     <Wrench className="h-5 w-5 text-orange-600 mt-0.5" />

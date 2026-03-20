@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -122,10 +121,10 @@ export function StaffCommercialSpace() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Commercial Units
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             View and edit commercial space units
           </p>
         </div>
@@ -171,7 +170,7 @@ export function StaffCommercialSpace() {
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditDialog(unit)}
-                        className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                        className="hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Update

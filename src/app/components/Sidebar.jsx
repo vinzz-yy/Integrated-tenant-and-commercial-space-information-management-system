@@ -1,18 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { cn } from './ui/utils';
-import {
-  LayoutDashboard,
-  Users,
-  FileCheck,
-  Calendar,
-  Settings,
-  DollarSign,
-  Building,
-  ClipboardList,
-  CreditCard,
-  Wrench,
-  UserCog,
-} from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck, Calendar, Settings, DollarSign, Building, ClipboardList, CreditCard, Wrench, UserCog } from 'lucide-react';
 
 // Admin menu items organized by section
 const adminMenuItems = {
@@ -30,6 +18,7 @@ const adminMenuItems = {
   ]
 };
 
+// Staff menu items organized by section
 const staffMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/staff' },
@@ -45,6 +34,7 @@ const staffMenuItems = {
   ]
 };
 
+// Tenant menu items organized by section
 const tenantMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/tenant' },
@@ -60,15 +50,18 @@ const tenantMenuItems = {
   ]
 };
 
+// Sidebar component that renders navigation menu based on user role
 export function Sidebar({ role }) {
   const location = useLocation();
 
+  // Select menu items based on user role
   const menuItems = role === 'admin'
     ? adminMenuItems
     : role === 'staff'
     ? staffMenuItems
     : tenantMenuItems;
 
+  // Helper function to render a menu section with title
   const renderMenuSection = (items, sectionTitle) => {
     if (!items || items.length === 0) return null;
     
@@ -76,7 +69,7 @@ export function Sidebar({ role }) {
       <div className="space-y-1">
         {sectionTitle && (
           <div className="px-4 py-2">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {sectionTitle}
             </h3>
           </div>
@@ -91,8 +84,8 @@ export function Sidebar({ role }) {
               className={cn(
                 'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-100'
               )}
             >
               <Icon className="h-5 w-5" />
@@ -105,19 +98,13 @@ export function Sidebar({ role }) {
   };
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-900 border-r h-[calc(100vh-4rem)] sticky top-16 flex flex-col">
-      <nav className="p-4 space-y-6 flex-1 overflow-y-auto">
-        {/* MANAGEMENT Section */}
-        {renderMenuSection(menuItems.management, 'MANAGEMENT')}
-        
-        {/* SYSTEM Section */}
-        {menuItems.system && menuItems.system.length > 0 && (
-          <>
-            <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
-            {renderMenuSection(menuItems.system, 'SYSTEM')}
-          </>
-        )}
-      </nav>
+    <aside className="w-64 bg-white border-r h-[calc(100vh-64px)] sticky top-16 hidden md:block overflow-y-auto">
+      <div className="p-4 space-y-6">
+        {/* Render Management section */}
+        {renderMenuSection(menuItems.management, 'Management')}
+        {/* Render System section */}
+        {renderMenuSection(menuItems.system, 'System')}
+      </div>
     </aside>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -54,10 +53,10 @@ export function StaffDashboard() {
       <div className="space-y-8">
         {/* Header with welcome message */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Staff Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             Welcome back, {user?.firstName}! Here's your work overview.
           </p>
         </div>
@@ -67,7 +66,7 @@ export function StaffDashboard() {
           {/* My Tasks Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleMyTasksClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 My Tasks
               </CardTitle>
             </CardHeader>
@@ -80,7 +79,7 @@ export function StaffDashboard() {
           {/* Appointments Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleAppointmentsTodayClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Appointments
               </CardTitle>
             </CardHeader>
@@ -93,7 +92,7 @@ export function StaffDashboard() {
           {/* Pending Reviews Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handlePendingReviewsClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Reviews
               </CardTitle>
             </CardHeader>
@@ -106,7 +105,7 @@ export function StaffDashboard() {
           {/* Active Requests Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleActiveRequestsClick}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 Active Requests
               </CardTitle>
             </CardHeader>
@@ -135,7 +134,7 @@ export function StaffDashboard() {
                 {appointments.slice(0, 3).map((appointment) => (
                   <div 
                     key={appointment.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                     onClick={() => navigate('/staff/schedule')}
                   >
                     <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -167,7 +166,7 @@ export function StaffDashboard() {
                 {requests.slice(0, 3).map((request) => (
                   <div 
                     key={request.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                     onClick={() => navigate('/staff/operations')}
                   >
                     <ClipboardList className="h-5 w-5 text-orange-600 mt-0.5" />

@@ -12,11 +12,7 @@ function useCarouselContext() {
 
 const CarouselContext = React.createContext(null);
 
-/**
- * Carousel - Slideshow component for cycling through elements
- * Used on: Image galleries, Product showcases, Testimonials
- * Screens: Homepage, Product pages, Portfolio, Landing pages
- */
+// carousel
 function Carousel({ orientation = "horizontal", opts, setApi, plugins, className, children, ...props }) {
   const [carouselRef, api] = useEmblaCarousel(
     {
@@ -94,10 +90,7 @@ function Carousel({ orientation = "horizontal", opts, setApi, plugins, className
   );
 }
 
-/**
- * CarouselContent - Container for carousel items
- * Used on: Wrapper that handles scrolling
- */
+// carousel-content
 function CarouselContent({ className, ...props }) {
   const { carouselRef, orientation } = useCarouselContext();
   return (
@@ -114,10 +107,7 @@ function CarouselContent({ className, ...props }) {
   );
 }
 
-/**
- * CarouselItem - Individual slide in the carousel
- * Used on: Each piece of content in the carousel
- */
+// carousel-item
 function CarouselItem({ className, ...props }) {
   const { orientation } = useCarouselContext();
   return (
@@ -135,10 +125,7 @@ function CarouselItem({ className, ...props }) {
   );
 }
 
-/**
- * CarouselPrevious - Button to go to previous slide
- * Used on: Left navigation button
- */
+// carousel-previous
 function CarouselPrevious({ className, variant = "outline", size = "icon", ...props }) {
   const { orientation, scrollPrev, canScrollPrev } = useCarouselContext();
   return (
@@ -163,10 +150,7 @@ function CarouselPrevious({ className, variant = "outline", size = "icon", ...pr
   );
 }
 
-/**
- * CarouselNext - Button to go to next slide
- * Used on: Right navigation button
- */
+// carousel-next
 function CarouselNext({ className, variant = "outline", size = "icon", ...props }) {
   const { orientation, scrollNext, canScrollNext } = useCarouselContext();
   return (

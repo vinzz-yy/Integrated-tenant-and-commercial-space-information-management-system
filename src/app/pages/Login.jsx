@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router';
@@ -9,7 +8,6 @@ import { Label } from '../components/ui/label.jsx';
 import { Checkbox } from '../components/ui/checkbox.jsx';
 import { Alert, AlertDescription } from '../components/ui/alert.jsx';
 import { Eye, EyeOff, Loader2, Building2, UserCog, User } from 'lucide-react';
-
 
 export function Login() {
   const { login } = useAuth();
@@ -101,7 +99,7 @@ export function Login() {
 
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       {/* Animated background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -110,7 +108,7 @@ export function Login() {
       </div>
 
       {/* Login card */}
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 shadow-2xl border-0">
+      <Card className="w-full max-w-md relative backdrop-blur-sm bg-white/90 shadow-2xl border-0">
         <CardHeader className="space-y-1 text-center">
           {/* Logo/Icon */}
           <div className="flex justify-center mb-4">
@@ -121,7 +119,7 @@ export function Login() {
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Commercial Space Manager
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600">
             Sign in to access your dashboard
           </CardDescription>
         </CardHeader>
@@ -165,7 +163,7 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none"
+                  className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none"
                 >
                  
                 </button>
@@ -219,8 +217,8 @@ export function Login() {
         
         </CardContent>
 
-        <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          <p>© 2024 Commercial Space Manager. All rights reserved.</p>
+        <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
+          <p>© 2026 Commercial Space Manager. All rights reserved.</p>
           <p className="text-xs">
             By signing in, you agree to our{' '}
             <a href="#" className="text-blue-600 hover:underline">Terms</a>

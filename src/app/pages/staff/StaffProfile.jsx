@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -109,8 +108,8 @@ export function StaffProfile() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-gray-600 mt-1">
             Manage your personal information
           </p>
         </div>
@@ -125,7 +124,7 @@ export function StaffProfile() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Avatar section */}
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24 border-2 border-gray-200 dark:border-gray-700">
+                <Avatar className="h-24 w-24 border-2 border-gray-200">
                   <AvatarImage 
                     src={avatarPreview || user?.avatar} 
                     alt={user?.firstName}

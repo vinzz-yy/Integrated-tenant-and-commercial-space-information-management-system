@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import connection from '../connected/connection.js';
 
 const AuthContext = createContext(undefined);
 
-import connection from '../connected/connection.js';
-
+// Auth provider component
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Check stored auth on mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('user');
@@ -17,6 +18,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Login user
   const login = async (email, password) => {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanPassword = String(password || '').trim();
@@ -35,6 +37,7 @@ export function AuthProvider({ children }) {
     return profile;
   };
 
+  // Logout user
   const logout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -42,6 +45,7 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
   };
 
+  // Update user data
   const updateUser = (userData) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
@@ -57,6 +61,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Use auth hook
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

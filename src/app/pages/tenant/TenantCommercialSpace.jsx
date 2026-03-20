@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -95,13 +94,13 @@ export function TenantCommercialSpace() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'available':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40';
+        return 'bg-green-100 text-green-700 hover:bg-green-200';
       case 'occupied':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/40';
+        return 'bg-blue-100 text-blue-700 hover:bg-blue-200';
       case 'maintenance':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/40';
+        return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700';
+        return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
     }
   };
 
@@ -115,10 +114,10 @@ export function TenantCommercialSpace() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Commercial Spaces
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             View your assigned unit and browse available commercial spaces
           </p>
         </div>
@@ -146,7 +145,7 @@ export function TenantCommercialSpace() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <CardTitle className="text-sm font-medium text-gray-600">
                         Unit Number
                       </CardTitle>
                     </CardHeader>
@@ -157,7 +156,7 @@ export function TenantCommercialSpace() {
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <CardTitle className="text-sm font-medium text-gray-600">
                         Floor
                       </CardTitle>
                     </CardHeader>
@@ -168,7 +167,7 @@ export function TenantCommercialSpace() {
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <CardTitle className="text-sm font-medium text-gray-600">
                         Size
                       </CardTitle>
                     </CardHeader>
@@ -179,7 +178,7 @@ export function TenantCommercialSpace() {
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <CardTitle className="text-sm font-medium text-gray-600">
                         Monthly Rent
                       </CardTitle>
                     </CardHeader>
@@ -203,11 +202,11 @@ export function TenantCommercialSpace() {
                       {/* Left column - Basic info */}
                       <div className="space-y-6">
                         <div className="flex items-start gap-4">
-                          <div className="bg-blue-100 dark:bg-blue-900/20 p-3 rounded-lg">
+                          <div className="bg-blue-100 p-3 rounded-lg">
                             <Building className="h-6 w-6 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-500">
                               Unit Type
                             </p>
                             <p className="text-xl font-semibold mt-1">{myUnit.type}</p>
@@ -215,11 +214,11 @@ export function TenantCommercialSpace() {
                         </div>
 
                         <div className="flex items-start gap-4">
-                          <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg">
+                          <div className="bg-green-100 p-3 rounded-lg">
                             <MapPin className="h-6 w-6 text-green-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-500">
                               Location
                             </p>
                             <p className="text-xl font-semibold mt-1">
@@ -229,11 +228,11 @@ export function TenantCommercialSpace() {
                         </div>
 
                         <div className="flex items-start gap-4">
-                          <div className="bg-purple-100 dark:bg-purple-900/20 p-3 rounded-lg">
+                          <div className="bg-purple-100 p-3 rounded-lg">
                             <Maximize className="h-6 w-6 text-purple-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-500">
                               Total Area
                             </p>
                             <p className="text-xl font-semibold mt-1">{myUnit.size}</p>
@@ -244,11 +243,11 @@ export function TenantCommercialSpace() {
                       {/* Right column - Financial info */}
                       <div className="space-y-6">
                         <div className="flex items-start gap-4">
-                          <div className="bg-orange-100 dark:bg-orange-900/20 p-3 rounded-lg">
+                          <div className="bg-orange-100 p-3 rounded-lg">
                             <DollarSign className="h-6 w-6 text-orange-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-500">
                               Monthly Rental Rate
                             </p>
                             <p className="text-3xl font-bold text-blue-600 mt-1">
@@ -259,11 +258,11 @@ export function TenantCommercialSpace() {
                         </div>
 
                         <div className="flex items-start gap-4">
-                          <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded-lg">
+                          <div className="bg-red-100 p-3 rounded-lg">
                             <Home className="h-6 w-6 text-red-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-500">
                               Status
                             </p>
                             <div className="mt-1">
@@ -290,40 +289,40 @@ export function TenantCommercialSpace() {
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Start date */}
-                      <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 rounded-xl">
+                      <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <Calendar className="h-5 w-5 text-blue-600" />
-                          <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <p className="text-sm font-medium text-gray-600">
                             Start Date
                           </p>
                         </div>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                        <p className="text-xl font-bold text-blue-700">
                           {formatDate(myUnit.leaseStartDate || myUnit.lease_start_date)}
                         </p>
                       </div>
 
                       {/* End date */}
-                      <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 rounded-xl">
+                      <div className="p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <Calendar className="h-5 w-5 text-purple-600" />
-                          <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <p className="text-sm font-medium text-gray-600">
                             End Date
                           </p>
                         </div>
-                        <p className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                        <p className="text-xl font-bold text-purple-700">
                           {formatDate(myUnit.leaseEndDate || myUnit.lease_end_date)}
                         </p>
                       </div>
 
                       {/* Security deposit */}
-                      <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 rounded-xl">
+                      <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <DollarSign className="h-5 w-5 text-green-600" />
-                          <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <p className="text-sm font-medium text-gray-600">
                             Security Deposit
                           </p>
                         </div>
-                        <p className="text-xl font-bold text-green-700 dark:text-green-400">
+                        <p className="text-xl font-bold text-green-700">
                           ${(myUnit.securityDeposit || myUnit.security_deposit || 0).toLocaleString()}
                         </p>
                       </div>
@@ -388,7 +387,7 @@ export function TenantCommercialSpace() {
                   {searchQuery && (
                     <button
                       onClick={clearSearch}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -460,7 +459,7 @@ export function TenantCommercialSpace() {
                       {filteredUnits.map((unit) => (
                         <div
                           key={unit.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex-1 grid grid-cols-5 gap-4">
                             <div>

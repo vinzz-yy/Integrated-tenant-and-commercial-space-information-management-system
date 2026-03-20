@@ -1,11 +1,14 @@
-// Lightweight client-side export helpers: CSV, Excel (.xls via HTML), Word (.doc via HTML), Word (.docx via library), and Print to PDF
+// Client-side export: CSV, Excel, Word, DOCX, PDF
 import { Document, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType } from 'docx';
+
+// Build HTML table with styling
 const buildTableHTML = (headers, rows, title = '') => {
   const thead = `<thead><tr>${headers.map(h => `<th style="padding:8px;border:1px solid #ccc;text-align:left;background:#f8f8f8">${String(h)}</th>`).join('')}</tr></thead>`;
   const tbody = `<tbody>${rows.map(r => `<tr>${r.map(c => `<td style="padding:8px;border:1px solid #ccc;text-align:left">${String(c ?? '')}</td>`).join('')}</tr>`).join('')}</tbody>`;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title></head><body><h2 style="font-family:sans-serif">${title}</h2><table style="border-collapse:collapse;font-family:sans-serif">${thead}${tbody}</table></body></html>`;
 };
 
+// Download any blob/file
 const downloadBlob = (content, mimeType, filename) => {
   const blob = typeof content === 'string' ? new Blob([content], { type: mimeType }) : content;
   const url = URL.createObjectURL(blob);
@@ -18,6 +21,7 @@ const downloadBlob = (content, mimeType, filename) => {
   URL.revokeObjectURL(url);
 };
 
+// Export as CSV
 export const exportToCSV = (headers, rows, filename = 'export.csv') => {
   const escapeCSV = (val) => {
     const s = String(val ?? '');
@@ -29,16 +33,19 @@ export const exportToCSV = (headers, rows, filename = 'export.csv') => {
   downloadBlob(csv, 'text/csv;charset=utf-8;', filename);
 };
 
+// Export as Excel (.xls)
 export const exportToExcel = (headers, rows, filename = 'export.xls', title = 'Export') => {
   const html = buildTableHTML(headers, rows, title);
   downloadBlob(html, 'application/vnd.ms-excel', filename);
 };
 
+// Export as Word (.doc)
 export const exportToWord = (headers, rows, filename = 'export.doc', title = 'Export') => {
   const html = buildTableHTML(headers, rows, title);
   downloadBlob(html, 'application/msword', filename);
 };
 
+// Export as Word (.docx) using docx library
 export const exportToDocx = async (headers, rows, filename = 'export.docx', title = 'Export') => {
   const headerRow = new TableRow({
     children: headers.map(h => new TableCell({ children: [new Paragraph(String(h))] })),
@@ -64,6 +71,7 @@ export const exportToDocx = async (headers, rows, filename = 'export.docx', titl
   downloadBlob(blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename);
 };
 
+// Print as PDF (opens print dialog)
 export const printToPDF = (headers, rows, title = 'Export') => {
   const html = buildTableHTML(headers, rows, title);
   const iframe = document.createElement('iframe');

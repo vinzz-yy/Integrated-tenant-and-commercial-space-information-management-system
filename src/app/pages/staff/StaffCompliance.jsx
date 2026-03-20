@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -34,7 +33,7 @@ export function StaffCompliance() {
     
     const load = async () => {
       const data = await connection.compliance.getDocuments();
-      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      const list = Array.isArray(data) ? data : (data?.results || []);
       setDocuments(list);
     };
     load();
@@ -101,10 +100,10 @@ export function StaffCompliance() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Compliance Documents
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 mt-1">
             View tenant compliance documents
           </p>
         </div>
