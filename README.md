@@ -118,15 +118,15 @@ src
  │   │
  │   ├── context
  │   │   ├── AuthContext.jsx
- │   │   └── ThemeContext.jsx
+ │   │  
  │   │
  │   ├── pages
  │   │   ├── admin
  │   │   ├── staff
  │   │   └── tenant
  │   │
- │   ├── services
- │   │   └── api.js
+ │   ├── connected
+ │   │   └── connection.js
  │   │
  │   └── routes.jsx
  │
