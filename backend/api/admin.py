@@ -1,18 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import (
-    UserProfile,
-    CommercialUnit,
-    Appointment,
-    ComplianceDocument,
-    Payment,
-    Notification,
-    Document,
-    Unit,
-)
+from .models import (UserProfile,CommercialUnit,Appointment,ComplianceDocument,Payment,Notification,Document,Unit,)
 
-admin.site.site_header = "Skymall Backend"
-admin.site.site_title = "Skymall Admin Portal"
+admin.site.site_header = "Integrated Tenant and Commercial Space Management "
+admin.site.site_title = "Integrated Tenant and Commercial Space Management Admin Portal"
 admin.site.index_title = "Welcome to Skymall Administration"
 admin.site.site_url = 'http://localhost:5173/login'
 
