@@ -204,7 +204,7 @@ class AppointmentsViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         role = getattr(getattr(user, "profile", None), "role", None)
-        if role == 'tenant' or role == 'staff':
+        if role == 'tenant':
             qs = qs.filter(tenant=user)
         else:
             tenant_id = self.request.query_params.get("tenant_id")

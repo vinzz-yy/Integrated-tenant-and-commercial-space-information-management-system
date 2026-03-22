@@ -127,6 +127,7 @@ class Document(models.Model):
     document_type = models.CharField(max_length=64)  
     file = models.FileField(upload_to='documents/', blank=True, null=True) 
     status = models.CharField(max_length=16, choices=[('pending','pending'),('approved','approved'),('rejected','rejected')], default='pending') 
+    notes = models.TextField(blank=True, null=True)
     upload_date = models.DateTimeField(auto_now_add=True)  
     expiry_date = models.DateField(blank=True, null=True)  
 

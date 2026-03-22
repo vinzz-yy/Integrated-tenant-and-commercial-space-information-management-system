@@ -22,7 +22,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     tenantName = serializers.SerializerMethodField()
     documentType = serializers.CharField(source="document_type", read_only=True)
     fileName = serializers.SerializerMethodField()
-    uploadDate = serializers.DateField(source="upload_date", read_only=True)
+    uploadDate = serializers.DateTimeField(source="upload_date", read_only=True)
     expiryDate = serializers.DateField(source="expiry_date", required=False)
 
     def get_fileName(self, obj):

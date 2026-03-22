@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { cn } from './ui/utils';
-import { LayoutDashboard, Users, FileCheck, Calendar, Settings, DollarSign, Building, ClipboardList, CreditCard, Wrench, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck, Calendar, Settings, PhilippinePeso, Building, ClipboardList, CreditCard, Wrench, UserCog } from 'lucide-react';
 
 // Admin menu items organized by section
 const adminMenuItems = {
@@ -8,7 +8,7 @@ const adminMenuItems = {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Users, label: 'User Profiles', path: '/admin/users' },
     { icon: Building, label: 'Commercial Space', path: '/admin/commercial-space' },
-    { icon: DollarSign, label: 'Financials', path: '/admin/financial' },
+    { icon: PhilippinePeso, label: 'Financials', path: '/admin/financial' },
     { icon: FileCheck, label: 'Compliance', path: '/admin/compliance' },
     { icon: Calendar, label: 'Scheduling', path: '/admin/schedule' },
     { icon: Settings, label: 'Operations', path: '/admin/operations' },
@@ -23,7 +23,7 @@ const staffMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/staff' },
     { icon: UserCog, label: 'My Profile', path: '/staff/profile' },
-    { icon: DollarSign, label: 'Financial', path: '/staff/financial' },
+    { icon: PhilippinePeso, label: 'Financial', path: '/staff/financial' },
     { icon: Building, label: 'Commercial Space', path: '/staff/commercial-space' },
     { icon: FileCheck, label: 'Compliance', path: '/staff/compliance' },
     { icon: Calendar, label: 'Schedule', path: '/staff/schedule' },

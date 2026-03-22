@@ -90,7 +90,7 @@ export function TenantDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                ${unpaidTotal.toLocaleString()}
+                ₱{unpaidTotal.toLocaleString()}
               </div>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 {unpaidInvoices.length} unpaid invoice(s)
@@ -161,7 +161,7 @@ export function TenantDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">${(invoice.amount || 0).toLocaleString()}</p>
+                      <p className="font-semibold">₱{(invoice.amount || 0).toLocaleString()}</p>
                       <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'} className="mt-1">
                         {invoice.status}
                       </Badge>

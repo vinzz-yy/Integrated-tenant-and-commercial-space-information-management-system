@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 export function TenantCompliance() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   // State for documents
   const [documents, setDocuments] = useState([]);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -36,7 +36,7 @@ export function TenantCompliance() {
       try {
         setLoading(true);
         const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
-        setDocuments(resp.results || []);
+        setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
       } catch (err) {
         toast.error('Failed to load documents');
       } finally {
@@ -53,26 +53,27 @@ export function TenantCompliance() {
       toast.warning('Please select a type and file');
       return;
     }
-    
+
     // Create FormData for file upload
     const data = new FormData();
     data.append('file', formData.file);
     data.append('document_type', formData.documentType);
-    data.append('tenant_id', String(user?.id || ''));
-    
+    data.append('tenant', String(user?.id || ''));
+
     try {
       await connection.compliance.uploadDocument(data);
       toast.success('Document uploaded');
       setIsUploadDialogOpen(false);
-      
+
       // Refresh document list
       const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
-      setDocuments(resp.results || []);
-      
+      setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
+
       // Reset form
       setFormData({ documentType: '', file: null });
     } catch (err) {
-      toast.error('Upload failed');
+      console.error("Upload error: ", err);
+      toast.error(err.message || 'Upload failed');
     }
   };
 
@@ -115,23 +116,45 @@ export function TenantCompliance() {
                 </div>
               ) : (
                 // Document list
-                documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                documents.map((doc) => {
+                  const url = doc.fileUrl || doc.file_url || doc.file || '';
+                  const fullUrl = url.startsWith('/') ? `http://localhost:8000${url}` : url;
+                  const isImage = String(url).match(/\.(jpeg|jpg|gif|png)$/i);
+                  
+                  let badgeVariant = 'secondary';
+                  let statusText = doc.status || 'pending';
+                  if (statusText === 'approved' || statusText === 'accepted') { badgeVariant = 'default'; statusText = 'Accepted'; }
+                  else if (statusText === 'rejected') { badgeVariant = 'destructive'; statusText = 'Rejected'; }
+                  else if (statusText === 'pending') { statusText = 'Under Validation'; }
+                  
+                  return (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start gap-4">
+                      {isImage ? (
+                        <div className="w-16 h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0 border">
+                          <img src={fullUrl} alt={doc.documentType || doc.document_type} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0 border">
+                          <FileText className="h-6 w-6 text-blue-600" />
+                        </div>
+                      )}
                       <div>
                         <p className="font-medium">{doc.documentType || doc.document_type}</p>
-                        <p className="text-sm text-gray-500 mt-1">{doc.fileName || doc.file_name}</p>
+                        <a href={fullUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline mt-1 block">
+                          {doc.fileName || doc.file_name || 'View Document'}
+                        </a>
                         <p className="text-xs text-gray-500 mt-1">
-                          Uploaded: {doc.uploadDate || doc.upload_date} • Expires: {doc.expiryDate || doc.expiry_date}
+                          Uploaded: {new Date(doc.uploadDate || doc.upload_date).toLocaleDateString()}
+                          {doc.expiryDate && ` • Expires: ${new Date(doc.expiryDate).toLocaleDateString()}`}
                         </p>
                       </div>
                     </div>
-                    <Badge variant={(doc.status || '').includes('approved') ? 'default' : 'secondary'}>
-                      {(doc.status || '').replace('_', ' ')}
+                    <Badge variant={badgeVariant} className="capitalize">
+                      {statusText}
                     </Badge>
                   </div>
-                ))
+                )})
               )}
             </div>
           </CardContent>
@@ -148,8 +171,8 @@ export function TenantCompliance() {
               {/* Document type select */}
               <div className="space-y-2">
                 <Label>Document Type</Label>
-                <Select 
-                  value={formData.documentType} 
+                <Select
+                  value={formData.documentType}
                   onValueChange={(value) => setFormData({ ...formData, documentType: value })}
                 >
                   <SelectTrigger>
@@ -160,18 +183,32 @@ export function TenantCompliance() {
                     <SelectItem value="Insurance Certificate">Insurance Certificate</SelectItem>
                     <SelectItem value="Fire Safety Certificate">Fire Safety Certificate</SelectItem>
                     <SelectItem value="Health Permit">Health Permit</SelectItem>
+                    <SelectItem value="Valid ID">Valid ID</SelectItem>
+                    <SelectItem value="Storefront Photo">Storefront Photo</SelectItem>
+                    <SelectItem value="Other Image">Other Image</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* File input */}
               <div className="space-y-2">
                 <Label>File</Label>
                 <Input
                   type="file"
-                  accept=".pdf,.jpg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,image/*"
                   onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
                 />
+
+                {/* Image Preview */}
+                {formData.file && formData.file.type.startsWith('image/') && (
+                  <div className="mt-4 rounded-md overflow-hidden border bg-gray-50 flex items-center justify-center p-2">
+                    <img
+                      src={URL.createObjectURL(formData.file)}
+                      alt="Preview"
+                      className="max-w-full h-auto max-h-48 object-contain"
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>

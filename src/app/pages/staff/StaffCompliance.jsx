@@ -80,7 +80,7 @@ export function StaffCompliance() {
     if (!selectedDocument) return;
     
     // Update document status via API
-    await api.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+    await connection.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
     
     // Update local state
     setDocuments(documents.map(doc => 
@@ -114,15 +114,13 @@ export function StaffCompliance() {
             <CardTitle>Compliance Documents ({documents.length})</CardTitle>
             <CardDescription>All tenant compliance documents</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Tenant</TableHead>
                   <TableHead>Document Type</TableHead>
-                  <TableHead>File Name</TableHead>
                   <TableHead>Upload Date</TableHead>
-                  <TableHead>Expiry Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -132,14 +130,7 @@ export function StaffCompliance() {
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">{doc.tenantName}</TableCell>
                     <TableCell>{doc.documentType}</TableCell>
-                    <TableCell className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        {doc.fileName}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-sm">{doc.uploadDate}</TableCell>
-                    <TableCell className="text-sm">{doc.expiryDate}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(doc.status)} className="flex items-center gap-1 w-fit">
                         {getStatusIcon(doc.status)}
@@ -188,6 +179,32 @@ export function StaffCompliance() {
                   <p className="text-sm text-gray-600">Document: {selectedDocument.documentType}</p>
                   <p className="text-sm text-gray-600">File: {selectedDocument.fileName}</p>
                 </div>
+
+                {/* Document Preview */}
+                {(selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file) && (() => {
+                  const url = selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file;
+                  const fullUrl = url.startsWith('/') ? `http://localhost:8000${url}` : url;
+                  return (
+                    <div className="mt-2 border rounded-md overflow-hidden bg-gray-50 flex items-center justify-center p-2 min-h-32 max-h-64">
+                      {String(url).match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                        <img 
+                          src={fullUrl} 
+                          alt="Document Preview" 
+                          className="max-w-full h-full object-contain"
+                        />
+                      ) : (
+                        <a 
+                          href={fullUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline flex items-center gap-2"
+                        >
+                          <FileText className="h-5 w-5" /> View/Download Document
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
                 
                 {/* Status selector */}
                 <div className="space-y-2">
@@ -197,8 +214,8 @@ export function StaffCompliance() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Accepted</SelectItem>
+                      <SelectItem value="pending">Under Validation</SelectItem>
                       <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>

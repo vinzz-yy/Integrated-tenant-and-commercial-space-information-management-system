@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import connection from '../../connected/connection.js';
-import {  Users, Calendar, DollarSign, Building, TrendingUp,AlertCircle,CheckCircle,Clock,} from 'lucide-react';
+import {  Users, Calendar, PhilippinePeso, Building, TrendingUp,AlertCircle,CheckCircle,Clock,} from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,} from 'recharts';
 
 export function AdminDashboard() {
@@ -237,7 +237,7 @@ export function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Monthly Revenue
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <PhilippinePeso className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">

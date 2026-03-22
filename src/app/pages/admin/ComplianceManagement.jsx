@@ -163,7 +163,7 @@ export function ComplianceManagement() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Approved
+                Accepted
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -175,7 +175,7 @@ export function ComplianceManagement() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Pending Review
+                Under Validation
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -222,8 +222,8 @@ export function ComplianceManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Accepted</SelectItem>
+                  <SelectItem value="pending">Under Validation</SelectItem>
                   <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
                 </SelectContent>
               </Select>
@@ -237,15 +237,13 @@ export function ComplianceManagement() {
             <CardTitle>Compliance Documents ({filteredDocuments.length})</CardTitle>
             <CardDescription>All tenant compliance documents</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Tenant</TableHead>
                   <TableHead>Document Type</TableHead>
-                  <TableHead>File Name</TableHead>
                   <TableHead>Upload Date</TableHead>
-                  <TableHead>Expiry Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -255,14 +253,7 @@ export function ComplianceManagement() {
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">{doc.tenantName}</TableCell>
                     <TableCell>{doc.documentType}</TableCell>
-                    <TableCell className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        {doc.fileName}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-sm">{doc.uploadDate}</TableCell>
-                    <TableCell className="text-sm">{doc.expiryDate}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(doc.status)} className="flex items-center gap-1 w-fit">
                         {getStatusIcon(doc.status)}
@@ -307,6 +298,32 @@ export function ComplianceManagement() {
                   <p className="text-sm text-gray-600">Document: {selectedDocument.documentType}</p>
                   <p className="text-sm text-gray-600">File: {selectedDocument.fileName}</p>
                 </div>
+
+                {/* Document Preview */}
+                {(selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file) && (() => {
+                  const url = selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file;
+                  const fullUrl = url.startsWith('/') ? `http://localhost:8000${url}` : url;
+                  return (
+                    <div className="mt-2 border rounded-md overflow-hidden bg-gray-50 flex items-center justify-center p-2 min-h-32 max-h-64">
+                      {String(url).match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                        <img 
+                          src={fullUrl} 
+                          alt="Document Preview" 
+                          className="max-w-full h-full object-contain"
+                        />
+                      ) : (
+                        <a 
+                          href={fullUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline flex items-center gap-2"
+                        >
+                          <FileText className="h-5 w-5" /> View/Download Document
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
                 
                 {/* Status selector */}
                 <div className="space-y-2">
@@ -316,8 +333,8 @@ export function ComplianceManagement() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Accepted</SelectItem>
+                      <SelectItem value="pending">Under Validation</SelectItem>
                       <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>

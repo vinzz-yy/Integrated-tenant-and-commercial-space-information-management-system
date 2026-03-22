@@ -34,7 +34,20 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const data = error.response?.data;
-    const message = (data && (data.detail || data.message)) || 'Request failed';
+    let message = error.response?.statusText || 'Request failed';
+    if (data) {
+      if (typeof data === 'string') message = `Server Error: ${error.response?.status}`;
+      else if (data.detail) message = data.detail;
+      else if (data.message) message = data.message;
+      else if (typeof data === 'object') {
+        const firstKey = Object.keys(data)[0];
+        if (firstKey && Array.isArray(data[firstKey])) {
+          message = `${firstKey}: ${data[firstKey][0]}`;
+        } else if (firstKey && typeof data[firstKey] === 'string') {
+          message = data[firstKey];
+        }
+      }
+    }
     return Promise.reject(new Error(message));
   }
 );
@@ -77,7 +90,9 @@ export const userAPI = {
   bulkImport: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/users/bulk-import/', formData);
+    return axios.post(`${API_BASE_URL}/users/bulk-import/`, formData, {
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    }).then(res => res.data);
   },
 };
 
@@ -88,7 +103,9 @@ export const complianceAPI = {
     api.get('/compliance/documents/', { params }),
   
   uploadDocument: async (data) => 
-    api.post('/compliance/documents/', data),
+    axios.post(`${API_BASE_URL}/compliance/documents/`, data, {
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    }).then(res => res.data),
   
   updateDocumentStatus: async (id, status, notes) => 
     api.patch(`/compliance/documents/${id}/`, { status, notes }),

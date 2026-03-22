@@ -1,19 +1,41 @@
+// ScheduleManagement.jsx - Admin schedule management page
+// Allows administrators to view, create, and manage appointments and schedules
+
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
-import { Button } from '../../components/ui/button.jsx';
-import { Input } from '../../components/ui/input.jsx';
-import { Label } from '../../components/ui/label.jsx';
-import { Badge } from '../../components/ui/badge.jsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-
-import { Checkbox } from '../../components/ui/checkbox.jsx';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
 import api from '../../connected/connection.js';
 
@@ -67,8 +89,7 @@ export function ScheduleManagement() {
 
   const parseDateOnly = (dateStr) => {
     if (!dateStr) return null;
-    const normalized = String(dateStr).slice(0, 10);
-    const [y, m, d] = normalized.split('-').map((v) => Number(v));
+    const [y, m, d] = String(dateStr).split('-').map((v) => Number(v));
     if (!y || !m || !d) return null;
     const dt = new Date(y, m - 1, d);
     return Number.isNaN(dt.getTime()) ? null : dt;
@@ -394,32 +415,34 @@ export function ScheduleManagement() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Scheduling</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Scheduling</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage appointments and schedules
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Appointment
-            </Button>
-            {selectedIds.length > 0 && (
-              <Button 
-                variant="destructive" 
-                onClick={handleBulkDelete}
-                className="w-fit"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete ({selectedIds.length})
-              </Button>
-            )}
-          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedIds.length})
+                </Button>
+              )}
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Appointment
+              </Button>
+            </div>
+          </div>
+
           <TabsContent value="appointments">
             <Card className="mt-4">
               <CardHeader>
@@ -445,10 +468,10 @@ export function ScheduleManagement() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Date: All</SelectItem>
-                        <SelectItem value="today">Date: Today</SelectItem>
                         <SelectItem value="this_week">Date: This Week</SelectItem>
                         <SelectItem value="this_month">Date: This Month</SelectItem>
+                        <SelectItem value="today">Date: Today</SelectItem>
+                        <SelectItem value="all">Date: All</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>

@@ -20,6 +20,7 @@ export function CommercialSpaceManagement() {
   // State for managing units data
   const [units, setUnits] = useState([]);
   const [filteredUnits, setFilteredUnits] = useState([]);
+  const [tenants, setTenants] = useState([]);
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,9 +43,10 @@ export function CommercialSpaceManagement() {
     type: 'Retail',
     rentalRate: 0,
     status: 'available',
+    tenantId: 'none',
   });
 
-  // Initial load - fetch all units
+  // Initial load - fetch all units and users
   useEffect(() => {
     // Redirect if not admin
     if (user?.role !== 'admin') {
@@ -54,10 +56,20 @@ export function CommercialSpaceManagement() {
     
     const load = async () => {
       try {
-        const resp = await connection.commercialSpace.getUnits();
-        const list = Array.isArray(resp) ? resp : (resp?.results || []);
+        const [unitsData, usersData] = await Promise.all([
+          connection.commercialSpace.getUnits(),
+          connection.users.getUsers()
+        ]);
+        
+        const list = Array.isArray(unitsData) ? unitsData : (unitsData?.results || []);
         setUnits(list);
         setFilteredUnits(list);
+        
+        const usersList = Array.isArray(usersData) ? usersData : (usersData?.results || []);
+        setTenants(usersList.filter(u => 
+          (u.role || '').toLowerCase() === 'tenant' || 
+          (u.role || '').toLowerCase() === 'user'
+        ));
       } catch (e) {
         // Set empty arrays on error
         setUnits([]);
@@ -122,6 +134,7 @@ export function CommercialSpaceManagement() {
       type: (unit.type || 'Retail'),
       rentalRate: Number(unit.rental_rate || unit.rentalRate || 0),
       status: unit.status || 'available',
+      tenantId: unit.tenant_id ? String(unit.tenant_id) : 'none',
     });
     setIsEditDialogOpen(true);
   };
@@ -140,7 +153,20 @@ export function CommercialSpaceManagement() {
         type: (formData.type || '').toLowerCase(),
         status: formData.status,
       };
-      const updated = await connection.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      
+      // Assign tenant natively through payload
+      if (formData.tenantId && formData.tenantId !== 'none') {
+        payload.tenant = parseInt(formData.tenantId, 10);
+        const selectedTenant = tenants.find(t => String(t.id) === String(formData.tenantId));
+        if (selectedTenant) {
+          payload.tenant_name = (`${selectedTenant.first_name || ''} ${selectedTenant.last_name || ''}`).trim() || selectedTenant.username || selectedTenant.email;
+        }
+      } else {
+        payload.tenant = null;
+        payload.tenant_name = '';
+      }
+
+      const updated = await connection.commercialSpace.updateUnit(String(selectedUnit.id), payload);      
       const resp = await connection.commercialSpace.getUnits();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setUnits(list);
@@ -540,6 +566,29 @@ export function CommercialSpaceManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Assigned Tenant</Label>
+                <Select
+                  value={formData.tenantId}
+                  onValueChange={(value) => setFormData({ ...formData, tenantId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a tenant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Tenant</SelectItem>
+                    {tenants.map(t => {
+                      const fullName = `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.username;
+                      return (
+                        <SelectItem key={t.id} value={String(t.id)}>
+                          {fullName}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

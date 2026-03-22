@@ -19,6 +19,7 @@ export function StaffCommercialSpace() {
   
   // State for storing units data
   const [units, setUnits] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
@@ -27,9 +28,8 @@ export function StaffCommercialSpace() {
     unitNumber: '',
     floor: '',
     size: '',
-    type: '',
     status: '',
-    tenantName: '',
+    tenantId: 'none',
     monthlyRent: '',
     leaseStart: '',
     leaseEnd: '',
@@ -40,12 +40,26 @@ export function StaffCommercialSpace() {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
 
-  // Load all commercial units
+  // Load all commercial units and users
   useEffect(() => {
     const load = async () => {
-      const data = await connection.commercialSpace.getUnits();
-      const list = Array.isArray(data) ? data : (data?.results || []);
-      setUnits(list);
+      try {
+        const [unitsData, usersData] = await Promise.all([
+          connection.commercialSpace.getUnits(),
+          connection.users.getUsers()
+        ]);
+        
+        const list = Array.isArray(unitsData) ? unitsData : (unitsData?.results || []);
+        setUnits(list);
+        
+        const usersList = Array.isArray(usersData) ? usersData : (usersData?.results || []);
+        setTenants(usersList.filter(u => 
+          (u.role || '').toLowerCase() === 'tenant' || 
+          (u.role || '').toLowerCase() === 'user'
+        ));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
     };
     load();
   }, []);
@@ -59,8 +73,8 @@ export function StaffCommercialSpace() {
       size: String(unit.size || ''),
       type: unit.type || '',
       status: unit.status || '',
-      tenantName: unit.tenant_name || '',
-      monthlyRent: String(unit.monthlyRent || ''),
+      tenantId: unit.tenant_id ? String(unit.tenant_id) : 'none',
+      monthlyRent: String(unit.monthlyRent || unit.rental_rate || ''),
       leaseStart: unit.leaseStart || '',
       leaseEnd: unit.leaseEnd || '',
     });
@@ -86,9 +100,22 @@ export function StaffCommercialSpace() {
       if (formData.monthlyRent) payload.monthlyRent = parseFloat(formData.monthlyRent);
       if (formData.leaseStart) payload.leaseStartDate = formData.leaseStart;
       if (formData.leaseEnd) payload.leaseEndDate = formData.leaseEnd;
-      if (formData.tenantName) payload.tenantName = formData.tenantName;
+      
+      // Assign tenant natively through payload
+      if (formData.tenantId && formData.tenantId !== 'none') {
+        payload.tenant = parseInt(formData.tenantId, 10);
+        const selectedTenant = tenants.find(t => String(t.id) === String(formData.tenantId));
+        if (selectedTenant) {
+          payload.tenantName = (`${selectedTenant.first_name || ''} ${selectedTenant.last_name || ''}`).trim() || selectedTenant.username || selectedTenant.email;
+        }
+      } else {
+        payload.tenant = null;
+        payload.tenantName = '';
+      }
+
       // Send update
       await connection.commercialSpace.updateUnit(String(selectedUnit.id), payload);
+      
       // Refresh units list
       const refreshed = await connection.commercialSpace.getUnits();
       const list = Array.isArray(refreshed) ? refreshed : (refreshed?.results || []);
@@ -251,12 +278,25 @@ export function StaffCommercialSpace() {
                 {/* Tenant Name */}
                 <div className="space-y-2">
                   <Label htmlFor="tenantName">Tenant Name</Label>
-                  <Input
-                    id="tenantName"
-                    value={formData.tenantName}
-                    onChange={(e) => setFormData({ ...formData, tenantName: e.target.value })}
-                    placeholder="Tenant name (if occupied)"
-                  />
+                  <Select
+                    value={formData.tenantId}
+                    onValueChange={(value) => setFormData({ ...formData, tenantId: value })}
+                  >
+                    <SelectTrigger id="tenantName">
+                      <SelectValue placeholder="Select a tenant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Tenant</SelectItem>
+                      {tenants.map(t => {
+                        const fullName = `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.username;
+                        return (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            {fullName}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Size */}
