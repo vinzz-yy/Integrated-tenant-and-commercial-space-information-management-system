@@ -152,7 +152,7 @@ export const operationsAPI = {
     api.get('/operations/metrics/'),
 };
 
- // Gumawa ng invoice
+ // Payment
  
 export const financialAPI = {
   getInvoices: async (params = {}) => 

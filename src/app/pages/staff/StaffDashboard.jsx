@@ -42,12 +42,6 @@ export function StaffDashboard() {
     load();
   }, [user, navigate]);
 
-  // Navigation handlers for quick access
-  const handleMyTasksClick = () => navigate('/staff/operations');
-  const handleAppointmentsTodayClick = () => navigate('/staff/schedule');
-  const handlePendingReviewsClick = () => navigate('/staff/compliance');
-  const handleActiveRequestsClick = () => navigate('/staff/operations');
-
   return (
     <Layout role="staff">
       <div className="space-y-8">
@@ -61,10 +55,10 @@ export function StaffDashboard() {
           </p>
         </div>
 
-        {/* Stats cards grid - each card shows a key metric and navigates to relevant page */}
+        {/* Stats cards grid - each card shows a key metric */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* My Tasks Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleMyTasksClick}>
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 My Tasks
@@ -77,7 +71,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Appointments Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleAppointmentsTodayClick}>
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Appointments
@@ -90,7 +84,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Pending Reviews Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handlePendingReviewsClick}>
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Reviews
@@ -103,7 +97,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Active Requests Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={handleActiveRequestsClick}>
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Active Requests
@@ -134,8 +128,7 @@ export function StaffDashboard() {
                 {appointments.slice(0, 3).map((appointment) => (
                   <div 
                     key={appointment.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                    onClick={() => navigate('/staff/schedule')}
+                    className="flex items-start gap-3 p-3 border rounded-lg"
                   >
                     <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
@@ -166,8 +159,7 @@ export function StaffDashboard() {
                 {requests.slice(0, 3).map((request) => (
                   <div 
                     key={request.id} 
-                    className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                    onClick={() => navigate('/staff/operations')}
+                    className="flex items-start gap-3 p-3 border rounded-lg"
                   >
                     <ClipboardList className="h-5 w-5 text-orange-600 mt-0.5" />
                     <div className="flex-1">

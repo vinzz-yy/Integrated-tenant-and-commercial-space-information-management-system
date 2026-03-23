@@ -1,24 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Button } from './ui/button.jsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu.jsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog.jsx';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar.jsx';
-import { User, LogOut, Building2, LayoutDashboard } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
-// Navbar component that displays the top navigation bar with user menu
+// Navbar component — logo only, user profile has moved to the Sidebar
 export function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-
-  // Handle user logout
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    setIsLogoutModalOpen(false);
-  };
+  const { user } = useAuth();
 
   // Get dashboard link based on user role
   const getDashboardLink = () => {
@@ -26,150 +12,26 @@ export function Navbar() {
     return `/${user.role}`;
   };
 
-  // Get badge color based on user role
-  const getRoleBadgeColor = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-700';
-      case 'staff':
-        return 'bg-blue-100 text-blue-700';
-      case 'tenant':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   return (
-    <>
-      {/* Main navigation bar */}
-      <nav className="border-b bg-white sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
-        <div className="mx-auto w-full px-2 sm:px-4 lg:px-6">
-          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
-            {/* Logo Section - Fixed width to prevent wrapping */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 min-w-fit">
-              <div className="bg-blue-600 rounded-lg p-1 sm:p-1.5 flex-shrink-0">
-                <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <Link to={getDashboardLink()} className="flex flex-col flex-shrink-0">
-                <span className="font-semibold text-sm sm:text-base text-gray-900 leading-tight whitespace-nowrap">
-                  LA Union Sky Mall
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-gray-500 leading-tight whitespace-nowrap hidden xs:inline">
-                  Integrated Tenant & Commercial Space Management
-                </span>
-              </Link>
-            </div>
-
-            {/* Right Section - User menu */}
-            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-              {user && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="flex items-center gap-1 sm:gap-3 px-1.5 sm:px-2 py-1 sm:py-1.5 h-auto hover:bg-gray-100 rounded-full flex-shrink-0"
-                    >
-                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-gray-200 flex-shrink-0">
-                        <AvatarImage src={user.avatar} alt={user.firstName} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600 text-[10px] sm:text-xs">
-                          {user.firstName?.[0]}{user.lastName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {/* User info - Hidden on very small screens to prevent overflow */}
-                      <div className="hidden lg:flex flex-col items-start min-w-0 max-w-[150px]">
-                        <span className="text-xs sm:text-sm font-medium text-gray-900 truncate w-full">
-                          {user.firstName} {user.lastName}
-                        </span>
-                        <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full truncate max-w-full ${getRoleBadgeColor(user.role)}`}>
-                          {user.role}
-                        </span>
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  
-                  {/* Dropdown menu content */}
-                  <DropdownMenuContent align="end" className="w-48 sm:w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-xs sm:text-sm font-medium leading-none truncate">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-[10px] sm:text-xs leading-none text-gray-500 truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    
-                    {/* Profile link for non-admin users */}
-                    {user.role !== 'admin' && (
-                      <DropdownMenuItem 
-                        onClick={() => navigate(`/${user.role}/profile`)}
-                        className="cursor-pointer text-xs sm:text-sm"
-                      >
-                        <User className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">My Profile</span>
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {/* Dashboard link */}
-                    <DropdownMenuItem 
-                      onClick={() => navigate(`/${user.role}`)}
-                      className="cursor-pointer text-xs sm:text-sm"
-                    >
-                      <LayoutDashboard className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span className="truncate">Dashboard</span>
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator />
-                    
-                    {/* Logout option */}
-                    <DropdownMenuItem 
-                      onClick={() => setIsLogoutModalOpen(true)}
-                      className="cursor-pointer text-red-600 focus:text-red-600 text-xs sm:text-sm"
-                    >
-                      <LogOut className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span className="truncate">Logout</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+    <nav className="border-b bg-white sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
+      <div className="mx-auto w-full px-2 sm:px-4 lg:px-6">
+        <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3">
+          {/* Logo */}
+          <div className="bg-blue-600 rounded-lg p-1 sm:p-1.5 flex-shrink-0">
+            <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-        </div>
-      </nav>
 
-      {/* Logout confirmation modal */}
-      <Dialog open={isLogoutModalOpen} onOpenChange={setIsLogoutModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Confirm Logout</DialogTitle>
-            <DialogDescription className="text-base pt-2">
-              Are you sure you want to log out of your account?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsLogoutModalOpen(false)}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleLogout}
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
-            >
-              Logout
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          {/* Brand name & subtitle */}
+          <Link to={getDashboardLink()} className="flex flex-col flex-shrink-0">
+            <span className="font-semibold text-sm sm:text-base text-gray-900 leading-tight whitespace-nowrap">
+              LA Union Sky Mall
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-gray-500 leading-tight whitespace-nowrap hidden xs:inline">
+              Integrated Tenant & Commercial Space Management
+            </span>
+          </Link>
+        </div>
+      </div>
+    </nav>
   );
 }

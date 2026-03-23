@@ -24,6 +24,17 @@ export function StaffCompliance() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
 
+  // Format date to show only date (no time)
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   // Redirect if not staff and load documents
   useEffect(() => {
     if (user?.role !== 'staff') {
@@ -130,7 +141,7 @@ export function StaffCompliance() {
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">{doc.tenantName}</TableCell>
                     <TableCell>{doc.documentType}</TableCell>
-                    <TableCell className="text-sm">{doc.uploadDate}</TableCell>
+                    <TableCell className="text-sm">{formatDate(doc.uploadDate)}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(doc.status)} className="flex items-center gap-1 w-fit">
                         {getStatusIcon(doc.status)}

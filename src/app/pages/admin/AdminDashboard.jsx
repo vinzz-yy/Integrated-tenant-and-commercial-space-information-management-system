@@ -172,12 +172,6 @@ export function AdminDashboard() {
     loadDashboardData();
   }, [user, navigate]);
 
-  // Navigation handlers for cards
-  const handleTotalUsersClick = () => navigate('/admin/users');
-  const handleMonthlyRevenueClick = () => navigate('/admin/financial');
-  const handleOccupancyRateClick = () => navigate('/admin/commercial-space');
-  const handlePendingItemsClick = () => navigate('/admin/compliance');
-
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
@@ -203,17 +197,14 @@ export function AdminDashboard() {
             Admin Dashboard
           </h1>
           <p className="text-gray-600 mt-1">
-            Welcome back, {user?.firstName}! Here's your system overview.
+            Welcome back, admin! Here's your system overview.
           </p>
         </div>
 
         {/* Stats cards grid - each card shows a key metric */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Users Card */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            onClick={handleTotalUsersClick}
-          >
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total Users
@@ -229,10 +220,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Monthly Revenue Card */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            onClick={handleMonthlyRevenueClick}
-          >
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Monthly Revenue
@@ -257,10 +245,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Occupancy Rate Card */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            onClick={handleOccupancyRateClick}
-          >
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Occupancy Rate
@@ -276,10 +261,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Pending Items Card */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            onClick={handlePendingItemsClick}
-          >
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Items
@@ -357,8 +339,7 @@ export function AdminDashboard() {
                   {appointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                      onClick={() => navigate('/admin/schedule')}
+                      className="flex items-start gap-3 p-3 border rounded-lg"
                     >
                       <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div className="flex-1 min-w-0">
@@ -407,21 +388,10 @@ export function AdminDashboard() {
                   {notifications.map((notification) => (
                     <div 
                       key={notification.id} 
-                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
+                      className={`flex items-start gap-3 p-3 border rounded-lg ${
                         !notification.read ? 'bg-blue-50' : ''
                       }`}
-                      onClick={() => {
-                        // Navigate to relevant section based on notification type
-                        if (notification.type === 'success') {
-                          navigate('/admin/financial');
-                        } else if (notification.type === 'warning') {
-                          navigate('/admin/compliance');
-                        } else {
-                          navigate('/admin/operations');
-                        }
-                      }}
                     >
-                      {/* Different icons for different notification types */}
                       {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />}
                       {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />}
                       {notification.type === 'info' && <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />}

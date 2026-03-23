@@ -1,8 +1,13 @@
-import { Link, useLocation } from 'react-router';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { cn } from './ui/utils';
-import { LayoutDashboard, Users, FileCheck, Calendar, Settings, PhilippinePeso, Building, ClipboardList, CreditCard, Wrench, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck, Calendar, Settings, PhilippinePeso, Building, ClipboardList, CreditCard, Wrench, UserCog, LogOut, ChevronRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext.jsx';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog.jsx';
+import { Button } from './ui/button.jsx';
 
-// Admin menu items organized by section
+// Menu configurations by role
 const adminMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -18,7 +23,6 @@ const adminMenuItems = {
   ]
 };
 
-// Staff menu items organized by section
 const staffMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/staff' },
@@ -34,7 +38,6 @@ const staffMenuItems = {
   ]
 };
 
-// Tenant menu items organized by section
 const tenantMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/tenant' },
@@ -50,21 +53,37 @@ const tenantMenuItems = {
   ]
 };
 
-// Sidebar component that renders navigation menu based on user role
+const getRoleBadgeColor = (role) => {
+  switch (role) {
+    case 'admin': return 'bg-purple-100 text-purple-700';
+    case 'staff': return 'bg-blue-100 text-blue-700';
+    case 'tenant': return 'bg-green-100 text-green-700';
+    default: return 'bg-gray-100 text-gray-700';
+  }
+};
+
 export function Sidebar({ role }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // Select menu items based on user role
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setIsLogoutModalOpen(false);
+  };
+
   const menuItems = role === 'admin'
     ? adminMenuItems
     : role === 'staff'
     ? staffMenuItems
     : tenantMenuItems;
 
-  // Helper function to render a menu section with title
-  const renderMenuSection = (items, sectionTitle) => {
+  // Renders static menu section with always visible arrows
+  const renderStaticMenuSection = (items, sectionTitle) => {
     if (!items || items.length === 0) return null;
-    
+
     return (
       <div className="space-y-1">
         {sectionTitle && (
@@ -82,14 +101,22 @@ export function Sidebar({ role }) {
               key={item.path}
               to={item.path}
               className={cn(
-                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                'flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-colors',
                 isActive
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-gray-700 hover:bg-gray-100'
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="font-medium text-sm">{item.label}</span>
+              <div className="flex items-center gap-3">
+                <Icon className="h-5 w-5" />
+                <span className="font-medium text-sm">{item.label}</span>
+              </div>
+              <ChevronRight 
+                className={cn(
+                  "h-4 w-4",
+                  isActive ? "text-blue-600" : "text-gray-400"
+                )}
+              />
             </Link>
           );
         })}
@@ -98,13 +125,76 @@ export function Sidebar({ role }) {
   };
 
   return (
-    <aside className="w-64 bg-white border-r h-[calc(100vh-64px)] sticky top-16 hidden md:block overflow-y-auto">
-      <div className="p-4 space-y-6">
-        {/* Render Management section */}
-        {renderMenuSection(menuItems.management, 'Management')}
-        {/* Render System section */}
-        {renderMenuSection(menuItems.system, 'System')}
-      </div>
-    </aside>
+    <>
+      <aside className="w-64 bg-white border-r h-[calc(100vh-64px)] sticky top-16 hidden md:flex flex-col overflow-y-auto">
+        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
+          {/* Static sections with always visible arrows */}
+          {renderStaticMenuSection(menuItems.management, 'Management')}
+          {renderStaticMenuSection(menuItems.system, 'System')}
+        </div>
+
+        {/* User profile - entire section clickable */}
+        {user && (
+          <div 
+            className="border-t p-4 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+            onClick={() => setIsLogoutModalOpen(true)}
+          >
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9 border-2 border-gray-200 flex-shrink-0">
+                <AvatarImage src={user.avatar} alt={user.firstName} />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                  {user.firstName?.[0]}{user.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-medium text-gray-900 truncate">
+                  {user.firstName} {user.lastName}
+                </span>
+                <span className={cn(
+                  'text-xs px-2 py-0.5 rounded-full w-fit mt-0.5',
+                  getRoleBadgeColor(user.role)
+                )}>
+                  {user.role}
+                </span>
+              </div>
+
+              {/* Logout icon - visual indicator only */}
+              <LogOut className="h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Logout modal */}
+      <Dialog open={isLogoutModalOpen} onOpenChange={setIsLogoutModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Confirm Logout</DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Are you sure you want to log out of your account?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:justify-end pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleLogout}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+            >
+              Logout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
