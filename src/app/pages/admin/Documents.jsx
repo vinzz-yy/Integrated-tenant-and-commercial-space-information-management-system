@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Search, FileText, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
-export function ComplianceManagement() {
+export function Documents() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -53,7 +53,7 @@ export function ComplianceManagement() {
     
     const load = async () => {
       try {
-        const resp = await connection.compliance.getDocuments();
+        const resp = await connection.documents.getDocuments();
         const list = Array.isArray(resp) ? resp : (resp?.results || []);
         setDocuments(list);
         setFilteredDocuments(list);
@@ -100,7 +100,7 @@ export function ComplianceManagement() {
     
     try {
       // Update document status via API
-      await connection.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+      await connection.documents.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
       
       // Update local state with the new status
       setDocuments(documents.map(doc => 
@@ -151,7 +151,7 @@ export function ComplianceManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Compliance Management
+              Documents Management
             </h1>
             <p className="text-gray-600 mt-1">
               Track and manage tenant compliance documents

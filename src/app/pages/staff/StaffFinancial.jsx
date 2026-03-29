@@ -49,7 +49,7 @@ export function StaffFinancial() {
   const loadPayments = async () => {
     try {
       const pay = await connection.financial.getPayments();
-      setPayments(pay.results || []);
+      setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
     } catch (error) {
       console.error('Failed to load payments:', error);
     }
@@ -70,7 +70,7 @@ export function StaffFinancial() {
       setIsSearching(true);
       try {
         const resp = await connection.users.getUsers({ role: 'tenant', search: searchQuery });
-        setSearchResults(resp.results || []);
+        setSearchResults(Array.isArray(resp) ? resp : (resp.results || []));
       } catch (error) {
         console.error('Tenant search failed:', error);
       } finally {
@@ -134,7 +134,7 @@ export function StaffFinancial() {
       const headers = ['Payment ID', 'Tenant', 'Amount', 'Payment Date', 'Method', 'Status', 'Description'];
       const rows = payments.map(pay => [
         pay.id,
-        pay.tenant_name,
+        pay.tenant_name || '',
         pay.amount,
         pay.payment_date,
         pay.payment_method,
@@ -406,12 +406,23 @@ export function StaffFinancial() {
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="e.g., Monthly rent, Utility bills, Penalty fee..."
+                <Select
                   value={transactionData.description}
-                  onChange={(e) => setTransactionData({ ...transactionData, description: e.target.value })}
-                />
+                  onValueChange={(val) => setTransactionData({ ...transactionData, description: val })}
+                >
+                  <SelectTrigger id="description">
+                    <SelectValue placeholder="Select description type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly Rent">Monthly Rent</SelectItem>
+                    <SelectItem value="Utility Bills">Utility Bills</SelectItem>
+                    <SelectItem value="Penalty Fee">Penalty Fee</SelectItem>
+                    <SelectItem value="Security Deposit">Security Deposit</SelectItem>
+                    <SelectItem value="Advance Rent">Advance Rent</SelectItem>
+                    <SelectItem value="Maintenance Fee">Maintenance Fee</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -46,6 +46,19 @@ export function CommercialSpaceManagement() {
     tenantId: 'none',
   });
 
+  // State for creating a user directly from unit details
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [userFormData, setUserFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'tenant',
+    phone: '',
+    unitNumber: '',
+    password: '',
+  });
+
   // Initial load - fetch all units and users
   useEffect(() => {
     // Redirect if not admin
@@ -142,6 +155,46 @@ export function CommercialSpaceManagement() {
   const openViewDialog = (unit) => {
     setSelectedUnit(unit);
     setIsViewDialogOpen(true);
+  };
+
+  const openCreateUserForUnit = (unit) => {
+    setUserFormData({
+      email: '',
+      firstName: '',
+      lastName: '',
+      role: 'tenant',
+      phone: '',
+      unitNumber: unit.number || unit.unitNumber || '',
+      password: '',
+    });
+    setIsAddUserDialogOpen(true);
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      setIsCreatingUser(true);
+      await connection.users.createUser(userFormData);
+      
+      // Refresh list from server to capture updated unit status and tenant
+      const resp = await connection.commercialSpace.getUnits();
+      const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      setUnits(list);
+      setFilteredUnits(list);
+      
+      setIsAddUserDialogOpen(false);
+      setIsViewDialogOpen(false); // Close the view dialog safely
+      
+      setResultTitle('Adding User Successful');
+      setResultMessage('The user has been added and assigned to the unit successfully.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      setResultTitle('Failed Adding User');
+      setResultMessage('Failed adding user. Please try again.');
+      setIsResultDialogOpen(true);
+    } finally {
+      setIsCreatingUser(false);
+    }
   };
 
   const handleUpdateUnit = async () => {
@@ -473,11 +526,18 @@ export function CommercialSpaceManagement() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t">
-                   <Label className="text-gray-500 text-xs">Current Tenant</Label>
-                   <p className="font-medium text-gray-900 mt-1">
-                     {selectedUnit.tenant_name || 'No tenant assigned'}
-                   </p>
+                <div className="pt-4 border-t flex justify-between items-center">
+                   <div>
+                     <Label className="text-gray-500 text-xs">Current Tenant</Label>
+                     <p className="font-medium text-gray-900 mt-1">
+                       {selectedUnit.tenant_name || 'No tenant assigned'}
+                     </p>
+                   </div>
+                   {!selectedUnit.tenant_name && (
+                     <Button size="sm" onClick={() => openCreateUserForUnit(selectedUnit)}>
+                       <Plus className="h-4 w-4 mr-1" /> Add User
+                     </Button>
+                   )}
                  </div>
                  
                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
@@ -611,6 +671,82 @@ export function CommercialSpaceManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Create User Dialog */}
+        <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New User for Unit {userFormData.unitNumber}</DialogTitle>
+              <DialogDescription>
+                Add a new tenant user and assign them to this unit.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={userFormData.firstName}
+                  onChange={(e) => setUserFormData({ ...userFormData, firstName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={userFormData.lastName}
+                  onChange={(e) => setUserFormData({ ...userFormData, lastName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={userFormData.email}
+                  onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={userFormData.password}
+                  onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={userFormData.phone}
+                  onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unitNumber">Unit Number</Label>
+                <Input
+                  id="unitNumber"
+                  value={userFormData.unitNumber}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+                {isCreatingUser ? 'Creating...' : 'Create & Assign User'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </Layout>
   );

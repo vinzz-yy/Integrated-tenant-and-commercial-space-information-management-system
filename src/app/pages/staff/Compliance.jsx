@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import connection from '../../connected/connection.js';
 
-export function StaffOperations() {
+export function Compliance() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -31,7 +31,7 @@ export function StaffOperations() {
   // Load operation requests
   useEffect(() => {
     const load = async () => {
-      const data = await connection.operations.getRequests();
+      const data = await connection.compliance.getRequests();
       const list = Array.isArray(data) ? data : (data?.results || []);
       setRequests(list);
     };
@@ -42,7 +42,7 @@ export function StaffOperations() {
     <Layout role="staff">
       <div className="space-y-6">
         {/* Header */}
-        <h1 className="text-3xl font-bold">Operations</h1>
+        <h1 className="text-3xl font-bold">Compliance Management</h1>
         
         {/* Requests table */}
         <Card>
@@ -75,7 +75,7 @@ export function StaffOperations() {
                         value={req.status || 'pending'}
                         onValueChange={async (value) => {
                           try {
-                            const updated = await api.operations.updateRequest(String(req.id), { status: value });
+                            const updated = await connection.compliance.updateRequest(String(req.id), { status: value });
                             setRequests(requests.map(r => String(r.id) === String(req.id) ? updated : r));
                           } catch (e) {}
                         }}

@@ -1,38 +1,62 @@
+// ScheduleManagement.jsx - Admin schedule management page
+// Allows administrators to view, create, and manage appointments and schedules
+
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
-import { Button } from '../../components/ui/button.jsx';
-import { Input } from '../../components/ui/input.jsx';
-import { Label } from '../../components/ui/label.jsx';
-import { Badge } from '../../components/ui/badge.jsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Tabs, TabsContent } from '../../components/ui/tabs.jsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
-import { Search, Eye, Edit, Plus } from 'lucide-react';
-import connection from '../../connected/connection.js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
+import api from '../../connected/connection.js';
 
-export function StaffSchedule() {
+export function Events() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   const [appointments, setAppointments] = useState([]);
-  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [staffUsers, setStaffUsers] = useState([]);
 
   const [activeTab, setActiveTab] = useState('appointments');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
-  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -45,8 +69,6 @@ export function StaffSchedule() {
     assignedTo: '',
     status: 'scheduled',
   });
-
-  const UNASSIGNED_VALUE = '__unassigned__';
 
   const getUserLabel = (u) => {
     if (!u) return '';
@@ -67,8 +89,7 @@ export function StaffSchedule() {
 
   const parseDateOnly = (dateStr) => {
     if (!dateStr) return null;
-    const normalized = String(dateStr).slice(0, 10);
-    const [y, m, d] = normalized.split('-').map((v) => Number(v));
+    const [y, m, d] = String(dateStr).split('-').map((v) => Number(v));
     if (!y || !m || !d) return null;
     const dt = new Date(y, m - 1, d);
     return Number.isNaN(dt.getTime()) ? null : dt;
@@ -131,6 +152,9 @@ export function StaffSchedule() {
         return 'secondary';
     }
   };
+
+  const appointmentKey = (apt) => String(apt?.id ?? '');
+  const UNASSIGNED_VALUE = '__unassigned__';
 
   const resetForm = () => {
     setFormData({
@@ -196,10 +220,29 @@ export function StaffSchedule() {
       });
   }, [appointments, searchQuery, dateFilter, statusFilter, assigneeFilter]);
 
+  const allVisibleSelected =
+    filteredAppointments.length > 0 &&
+    filteredAppointments.every((a) => selectedIds.includes(appointmentKey(a)));
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      const visibleSet = new Set(filteredAppointments.map((a) => appointmentKey(a)));
+      setSelectedIds((prev) => prev.filter((id) => !visibleSet.has(id)));
+      return;
+    }
+    const toAdd = filteredAppointments.map((a) => appointmentKey(a));
+    setSelectedIds((prev) => Array.from(new Set([...prev, ...toAdd])));
+  };
+
+  const toggleSelectOne = (id) => {
+    const key = String(id);
+    setSelectedIds((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
+  };
+
   // Load appointments when component mounts
   useEffect(() => {
-    // Redirect if user is not staff
-    if (user?.role !== 'staff') {
+    // Redirect if user is not an admin
+    if (user?.role !== 'admin') {
       navigate('/');
       return;
     }
@@ -207,16 +250,14 @@ export function StaffSchedule() {
     // Async function to fetch appointments from API
     const load = async () => {
       try {
-        const resp = await connection.schedule.getAppointments({ tenant_id: user?.id });
+        const resp = await api.events.getAppointments();
         const list = Array.isArray(resp) ? resp : (resp?.results || []);
         setAppointments(list);
         try {
-          const usersResp = await connection.users.getUsers();
+          const usersResp = await api.users.getUsers({ role: 'staff', limit: 100 });
           const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
-          setAssignableUsers(usersList);
-        } catch (e) {
-          console.error("Could not fetch user list", e);
-        }
+          setStaffUsers(usersList);
+        } catch {}
       } catch (e) {
         // Set empty array on error to prevent undefined issues
         setAppointments([]);
@@ -239,10 +280,50 @@ export function StaffSchedule() {
         time: formData.time,
         location: formData.location,
         status: formData.status || 'scheduled',
-        tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined
+        tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
       };
-      const created = await connection.schedule.createAppointment(payload);
+      const created = await api.events.createAppointment(payload);
       setAppointments((prev) => [...prev, created]);
+      const createdTenantId = String(created?.tenantId ?? created?.tenant_id ?? '');
+      const createdStatus = String(created?.status || 'scheduled');
+      const createdDate = parseDateOnly(created?.date);
+      const query = searchQuery.trim().toLowerCase();
+
+      if (query) {
+        const hay = [created?.title, created?.location, created?.assignedTo, created?.date, created?.time, created?.status]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!hay.includes(query)) setSearchQuery('');
+      }
+
+      if (statusFilter !== 'all' && createdStatus !== statusFilter) setStatusFilter('all');
+      if (assigneeFilter !== 'all' && createdTenantId !== String(assigneeFilter)) setAssigneeFilter('all');
+
+      if (dateFilter !== 'all' && createdDate) {
+        const today = new Date();
+        const start =
+          dateFilter === 'today'
+            ? new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
+            : dateFilter === 'this_week'
+              ? getStartOfWeek(today)
+              : dateFilter === 'this_month'
+                ? getStartOfMonth(today)
+                : null;
+        const end =
+          dateFilter === 'today'
+            ? new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
+            : dateFilter === 'this_week'
+              ? getEndOfWeek(today)
+              : dateFilter === 'this_month'
+                ? getEndOfMonth(today)
+                : null;
+        if (start && end) {
+          const ms = createdDate.getTime();
+          if (ms < start.getTime() || ms > end.getTime()) setDateFilter('all');
+        }
+      }
+
       setActiveTab('appointments');
       setIsCreateDialogOpen(false);
       resetForm();
@@ -256,7 +337,7 @@ export function StaffSchedule() {
       setIsResultDialogOpen(true);
     }
   };
-
+  
   const openEditDialog = (apt) => {
     setSelectedAppointment(apt);
     setFormData({
@@ -292,7 +373,7 @@ export function StaffSchedule() {
         status: formData.status,
         tenant_id: formData.assignedTo ? String(formData.assignedTo) : null,
       };
-      const updated = await connection.schedule.updateAppointment(String(selectedAppointment.id), payload);
+      const updated = await api.events.updateAppointment(String(selectedAppointment.id), payload);
       setAppointments((prev) => prev.map((a) => (String(a.id) === String(selectedAppointment.id) ? updated : a)));
       setIsEditDialogOpen(false);
       resetForm();
@@ -307,25 +388,63 @@ export function StaffSchedule() {
     }
   };
 
+  const handleDeleteAppointment = async (id) => {
+    try {
+      await api.events.deleteAppointment(String(id));
+      setAppointments((prev) => prev.filter((a) => String(a.id) !== String(id)));
+      setSelectedIds((prev) => prev.filter((x) => x !== String(id)));
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      alert('Failed to delete appointment. Please try again.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Delete ${selectedIds.length} appointment(s)?`)) return;
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      try {
+        await api.events.deleteAppointment(String(id));
+      } catch {}
+    }
+    setAppointments((prev) => prev.filter((a) => !ids.includes(String(a.id))));
+    setSelectedIds([]);
+  };
+
   return (
-    <Layout role="staff">
+    <Layout role="admin">
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Schedule</h1>
-            <p className="text-gray-600 mt-1">
-              View and manage your appointments
+             <h1 className="text-3xl font-bold text-gray-900">
+              Event Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Manage appointments and schedules
             </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Appointment
-            </Button>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedIds.length})
+                </Button>
+              )}
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Appointment
+              </Button>
+            </div>
+          </div>
+
           <TabsContent value="appointments">
             <Card className="mt-4">
               <CardHeader>
@@ -351,10 +470,10 @@ export function StaffSchedule() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Date: All</SelectItem>
-                        <SelectItem value="today">Date: Today</SelectItem>
                         <SelectItem value="this_week">Date: This Week</SelectItem>
                         <SelectItem value="this_month">Date: This Month</SelectItem>
+                        <SelectItem value="today">Date: Today</SelectItem>
+                        <SelectItem value="all">Date: All</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -375,7 +494,7 @@ export function StaffSchedule() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Assigned: All</SelectItem>
-                        {assignableUsers.map((s) => (
+                        {staffUsers.map((s) => (
                           <SelectItem key={String(s.id)} value={String(s.id)}>
                             {getUserLabel(s)}
                           </SelectItem>
@@ -389,6 +508,9 @@ export function StaffSchedule() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">
+                          <Checkbox checked={allVisibleSelected} onCheckedChange={toggleSelectAllVisible} />
+                        </TableHead>
                         <TableHead>Time / Date</TableHead>
                         <TableHead>Client / Event</TableHead>
                         <TableHead>Assigned To</TableHead>
@@ -399,15 +521,20 @@ export function StaffSchedule() {
                     <TableBody>
                       {filteredAppointments.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="py-10 text-center text-sm text-gray-500">
+                          <TableCell colSpan={6} className="py-10 text-center text-sm text-gray-500">
                             No appointments match your filters.
                           </TableCell>
                         </TableRow>
                       ) : (
                         filteredAppointments.map((apt) => {
+                          const id = appointmentKey(apt);
+                          const checked = selectedIds.includes(id);
                           const assigned = apt.assignedTo || 'Unassigned';
                           return (
-                            <TableRow key={apt.id}>
+                            <TableRow key={id}>
+                              <TableCell>
+                                <Checkbox checked={checked} onCheckedChange={() => toggleSelectOne(id)} />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium">{apt.time || '-'}</span>
@@ -434,7 +561,7 @@ export function StaffSchedule() {
                                   value={apt.status || 'scheduled'}
                                   onValueChange={async (value) => {
                                     try {
-                                      const updated = await connection.schedule.updateAppointment(String(apt.id), { status: value });
+                                      const updated = await api.events.updateAppointment(String(apt.id), { status: value });
                                       setAppointments((prev) =>
                                         prev.map((a) => (String(a.id) === String(apt.id) ? updated : a))
                                       );
@@ -460,6 +587,9 @@ export function StaffSchedule() {
                                   <Button variant="ghost" size="sm" onClick={() => openEditDialog(apt)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => handleDeleteAppointment(apt.id)}>
+                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -484,7 +614,7 @@ export function StaffSchedule() {
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
               <DialogTitle>New Appointment</DialogTitle>
-              <DialogDescription>Create a new schedule entry.</DialogDescription>
+              <DialogDescription>Create and assign an appointment.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
@@ -531,11 +661,11 @@ export function StaffSchedule() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select user" />
+                      <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
-                      {assignableUsers.map((s) => (
+                      {staffUsers.map((s) => (
                         <SelectItem key={String(s.id)} value={String(s.id)}>
                           {getUserLabel(s)}
                         </SelectItem>
@@ -582,27 +712,27 @@ export function StaffSchedule() {
             </DialogHeader>
             {selectedAppointment ? (
               <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <Label className="text-gray-500">Title</Label>
-                  <Input value={selectedAppointment.title || ''} readOnly className="bg-gray-50/50" />
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-500">Title</div>
+                  <div className="font-medium">{selectedAppointment.title || '-'}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-500">Date</Label>
-                    <Input value={selectedAppointment.date || ''} readOnly className="bg-gray-50/50" />
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-500">Date</div>
+                    <div className="font-medium">{selectedAppointment.date || '-'}</div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-500">Time</Label>
-                    <Input value={selectedAppointment.time || ''} readOnly className="bg-gray-50/50" />
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-500">Time</div>
+                    <div className="font-medium">{selectedAppointment.time || '-'}</div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-500">Location</Label>
-                  <Input value={selectedAppointment.location || ''} readOnly className="bg-gray-50/50" />
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-500">Location</div>
+                  <div className="font-medium">{selectedAppointment.location || '-'}</div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-500">Assigned To</Label>
-                  <Input value={selectedAppointment.assignedTo || 'Unassigned'} readOnly className="bg-gray-50/50" />
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-500">Assigned To</div>
+                  <div className="font-medium">{selectedAppointment.assignedTo || 'Unassigned'}</div>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <Badge variant={statusVariant(selectedAppointment.status)}>
@@ -611,6 +741,15 @@ export function StaffSchedule() {
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => openEditDialog(selectedAppointment)}>
                       Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setIsViewDialogOpen(false);
+                        handleDeleteAppointment(selectedAppointment.id);
+                      }}
+                    >
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -673,11 +812,11 @@ export function StaffSchedule() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select user" />
+                      <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
-                      {assignableUsers.map((s) => (
+                      {staffUsers.map((s) => (
                         <SelectItem key={String(s.id)} value={String(s.id)}>
                           {getUserLabel(s)}
                         </SelectItem>

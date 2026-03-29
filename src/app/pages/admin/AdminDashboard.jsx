@@ -31,7 +31,7 @@ export function AdminDashboard() {
   // State for chart data and lists
   const [revenueData, setRevenueData] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+
 
   // Load all dashboard data when component mounts
   useEffect(() => {
@@ -56,10 +56,9 @@ export function AdminDashboard() {
           connection.users.getUsers(),
           connection.financial.getPayments(),
           connection.commercialSpace.getUnits(),
-          connection.compliance.getDocuments({ status: 'pending' }),
-          connection.schedule.getAppointments({ status: 'scheduled' }),
-          connection.financial.getRevenueAnalytics({ period: '6months' }),
-          connection.notifications.getNotifications({ read: false, limit: 5 })
+          connection.documents.getDocuments({ status: 'pending' }),
+          connection.events.getAppointments({ status: 'scheduled' }),
+          connection.financial.getRevenueAnalytics({ period: '6months' })
         ]);
 
         // Process users data
@@ -82,19 +81,48 @@ export function AdminDashboard() {
         if (paymentsResp.status === 'fulfilled') {
           const paymentsData = paymentsResp.value;
           const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.results || []);
-          const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
           
           // Calculate revenue growth (compare last month with previous month)
-          const sortedPayments = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+          const sortedPayments = [...payments].sort((a, b) => new Date(b.payment_date || b.created_at) - new Date(a.payment_date || a.created_at));
           const currentMonth = new Date().getMonth();
-          const lastMonthPayments = sortedPayments.filter(p => new Date(p.date).getMonth() === currentMonth);
-          const previousMonthPayments = sortedPayments.filter(p => new Date(p.date).getMonth() === currentMonth - 1);
+          const lastMonthPayments = sortedPayments.filter(p => {
+             const d = new Date(p.payment_date || p.created_at);
+             return !isNaN(d) && d.getMonth() === currentMonth;
+          });
+          const previousMonthPayments = sortedPayments.filter(p => {
+             const d = new Date(p.payment_date || p.created_at);
+             return !isNaN(d) && d.getMonth() === (currentMonth - 1 < 0 ? 11 : currentMonth - 1);
+          });
           
-          const lastMonthTotal = lastMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-          const previousMonthTotal = previousMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          const lastMonthTotal = lastMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const previousMonthTotal = previousMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
           
           const revenueGrowth = previousMonthTotal ? 
             ((lastMonthTotal - previousMonthTotal) / previousMonthTotal * 100).toFixed(1) : 0;
+
+          // Generate revenue analytics from payments
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const generatedRevenueData = [];
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const targetMonth = d.getMonth();
+            const targetYear = d.getFullYear();
+            
+            const monthPayments = payments.filter(p => {
+              const pDate = new Date(p.payment_date || p.created_at);
+              return !isNaN(pDate) && pDate.getMonth() === targetMonth && pDate.getFullYear() === targetYear;
+            });
+            const monthRevenue = monthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            
+            generatedRevenueData.push({
+              month: monthNames[targetMonth],
+              revenue: monthRevenue,
+              expenses: monthRevenue * 0.2 // Mock expenses as 20% of revenue
+            });
+          }
+          setRevenueData(generatedRevenueData);
 
           setStats(prev => ({
             ...prev,
@@ -145,23 +173,19 @@ export function AdminDashboard() {
           setAppointments(sortedAppointments);
         }
 
-        // Process revenue analytics
-        if (revenueResp.status === 'fulfilled') {
+        // Process revenue analytics handles by payments logic above
+        if (revenueResp.status === 'fulfilled' && revenueData.length === 0) {
           const revenueDataValue = revenueResp.value;
           const revenueChartData = Array.isArray(revenueDataValue) 
             ? revenueDataValue 
             : (revenueDataValue?.data || revenueDataValue?.results || []);
           
-          // Ensure it's an array before setting state
-          setRevenueData(Array.isArray(revenueChartData) ? revenueChartData : []);
+          if (revenueChartData && revenueChartData.length > 0) {
+            setRevenueData(Array.isArray(revenueChartData) ? revenueChartData : []);
+          }
         }
 
-        // Process notifications
-        if (notifResp.status === 'fulfilled') {
-          const notifData = notifResp.value;
-          const notificationsData = Array.isArray(notifData) ? notifData : (notifData?.results || []);
-          setNotifications(notificationsData);
-        }
+
 
       } catch (e) {
         console.error('Error loading dashboard data:', e);
@@ -368,56 +392,6 @@ export function AdminDashboard() {
           </Card>
         </div>
 
-        {/* System Notifications section */}
-        <div className="grid grid-cols-1 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>System Notifications</CardTitle>
-                <CardDescription>Recent alerts and updates</CardDescription>
-              </div>
-              {notifications.filter(n => !n.read).length > 0 && (
-                <Badge variant="destructive" className="rounded-full">
-                  {notifications.filter(n => !n.read).length}
-                </Badge>
-              )}
-            </CardHeader>
-            <CardContent>
-              {notifications.length > 0 ? (
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div 
-                      key={notification.id} 
-                      className={`flex items-start gap-3 p-3 border rounded-lg ${
-                        !notification.read ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />}
-                      {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />}
-                      {notification.type === 'info' && <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(notification.createdAt).toLocaleDateString('en-PH', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No new notifications
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </Layout>
   );

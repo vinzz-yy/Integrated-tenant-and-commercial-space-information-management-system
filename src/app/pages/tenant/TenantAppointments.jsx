@@ -189,7 +189,7 @@ export function TenantAppointments() {
     // Async function to fetch appointments from API
     const load = async () => {
       try {
-        const resp = await connection.schedule.getAppointments({ tenant_id: user?.id });
+        const resp = await connection.events.getAppointments({ tenant_id: user?.id });
         const list = Array.isArray(resp) ? resp : (resp?.results || []);
         setAppointments(list);
       } catch (e) {
@@ -216,7 +216,7 @@ export function TenantAppointments() {
         status: formData.status || 'scheduled',
         tenant_id: String(user?.id)
       };
-      const created = await connection.schedule.createAppointment(payload);
+      const created = await connection.events.createAppointment(payload);
       setAppointments((prev) => [...prev, created]);
       setActiveTab('appointments');
       setIsCreateDialogOpen(false);
@@ -265,7 +265,7 @@ export function TenantAppointments() {
         location: formData.location,
         status: formData.status,
       };
-      const updated = await connection.schedule.updateAppointment(String(selectedAppointment.id), payload);
+      const updated = await connection.events.updateAppointment(String(selectedAppointment.id), payload);
       setAppointments((prev) => prev.map((a) => (String(a.id) === String(selectedAppointment.id) ? updated : a)));
       setIsEditDialogOpen(false);
       resetForm();
@@ -394,7 +394,7 @@ export function TenantAppointments() {
                                   value={apt.status || 'scheduled'}
                                   onValueChange={async (value) => {
                                     try {
-                                      const updated = await connection.schedule.updateAppointment(String(apt.id), { status: value });
+                                      const updated = await connection.events.updateAppointment(String(apt.id), { status: value });
                                       setAppointments((prev) =>
                                         prev.map((a) => (String(a.id) === String(apt.id) ? updated : a))
                                       );

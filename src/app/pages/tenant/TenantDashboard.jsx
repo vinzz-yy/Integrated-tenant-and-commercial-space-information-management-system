@@ -48,7 +48,7 @@ export function TenantDashboard() {
 
   // Calculate unpaid invoices total
   const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
-  const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
   return (
     <Layout role="tenant">

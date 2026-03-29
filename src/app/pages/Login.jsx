@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '../components/ui/alert.jsx';
 import { Eye, EyeOff, Loader2, Building2, UserCog, User } from 'lucide-react';
 
 export function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
   // State for form inputs
@@ -31,6 +31,15 @@ export function Login() {
       setRememberMe(true);
     }
   }, []);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') navigate('/admin', { replace: true });
+      else if (user.role === 'staff') navigate('/staff', { replace: true });
+      else if (user.role === 'tenant') navigate('/tenant', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -79,16 +88,16 @@ export function Login() {
       // Navigate to appropriate dashboard
       switch (user.role) {
         case 'admin':
-          navigate('/admin');
+          navigate('/admin', { replace: true });
           break;
         case 'staff':
-          navigate('/staff');
+          navigate('/staff', { replace: true });
           break;
         case 'tenant':
-          navigate('/tenant');
+          navigate('/tenant', { replace: true });
           break;
         default:
-          navigate('/');
+          navigate('/', { replace: true });
       }
     } catch (err) {
       setError(err?.message || 'Invalid email or password. Please try again.');

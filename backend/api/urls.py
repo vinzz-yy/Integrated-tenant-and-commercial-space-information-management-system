@@ -2,8 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     LoginView, LogoutView, MeView, UsersViewSet, DocumentsViewSet,
-    AppointmentsViewSet, UnitsViewSet, MaintenanceRequestsViewSet,
-    NotificationsViewSet, OperationsRequestsViewSet, FinancialPaymentsViewSet,
+    EventsViewSet, UnitsViewSet, MaintenanceRequestsViewSet,
+    NotificationsViewSet, ComplianceRequestsViewSet, FinancialPaymentsViewSet,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -11,13 +11,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 router = DefaultRouter()
 # I-register ang mga ViewSet sa router
 router.register(r"users", UsersViewSet, basename="users")  
-router.register(r"compliance/documents", DocumentsViewSet, basename="documents")  
-router.register(r"schedule/appointments", AppointmentsViewSet, basename="appointments")  
+router.register(r"documents", DocumentsViewSet, basename="documents")  
+router.register(r"events", EventsViewSet, basename="appointments")  
 router.register(r"commercial-spaces/units", UnitsViewSet, basename="units") 
 router.register(r"maintenance/requests", MaintenanceRequestsViewSet, basename="maintenance-requests") 
 router.register(r"notifications", NotificationsViewSet, basename="notifications")  
 router.register(r"financial/payments", FinancialPaymentsViewSet, basename="payments")  
-router.register(r"operations/requests", OperationsRequestsViewSet, basename="operations-requests")  
+router.register(r"compliance/requests", ComplianceRequestsViewSet, basename="operations-requests")  
 
 urlpatterns = [
     # Authentication endpoints

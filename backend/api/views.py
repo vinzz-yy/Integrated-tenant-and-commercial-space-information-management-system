@@ -18,9 +18,8 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = User.objects.filter(email=email).first()
+        if not user:
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         if not user.check_password(password):
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -81,13 +80,38 @@ class UsersViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # I-filter ang users based sa role
         user = getattr(self.request, "user", None)
-        if not (getattr(user, "is_staff", False) or getattr(getattr(user, "profile", None), "role", "") == "admin"):
+        if not (getattr(user, "is_staff", False) or getattr(getattr(user, "profile", None), "role", "") in ["admin", "staff"]):
             return User.objects.none()
-        return super().get_queryset()
+            
+        qs = super().get_queryset()
+        
+        # Parameter filters
+        role_param = self.request.query_params.get("role")
+        if role_param:
+            qs = qs.filter(profile__role=role_param)
+            
+        search_param = self.request.query_params.get("search")
+        if search_param:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(first_name__icontains=search_param) |
+                Q(last_name__icontains=search_param) |
+                Q(username__icontains=search_param) |
+                Q(email__icontains=search_param) |
+                Q(id__icontains=search_param)
+            )
+            
+        return qs
 
     def create(self, request, *args, **kwargs):
         # Gumawa ng bagong user
-        if not (getattr(request.user, "is_staff", False) or getattr(getattr(request.user, "profile", None), "role", "") == "admin"):
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        target_role = request.data.get('role', 'staff')
+        
+        is_admin = getattr(request.user, "is_staff", False) or user_role == "admin"
+        is_staff_creating_tenant = user_role == "staff" and target_role == "tenant"
+        
+        if not (is_admin or is_staff_creating_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         data = request.data.copy()
         
@@ -105,21 +129,50 @@ class UsersViewSet(viewsets.ModelViewSet):
             first_name=data.get('first_name', ''),
             last_name=data.get('last_name', '')
         )
+        
+        role = data.get('role', 'staff')
+        unit_number = data.get('unitNumber', '')
+        
         UserProfile.objects.create(
             user=user,
-            role=data.get('role', 'staff'),
+            role=role,
             phone=data.get('phone', ''),
             department=data.get('department', ''),
-            unitNumber=data.get('unitNumber', '')
+            unitNumber=unit_number
         )
+        
+        # Automatic unit assignment logic
+        if role == 'tenant' and unit_number:
+            from .models import Unit
+            from django.db.models import Q
+            try:
+                unit = Unit.objects.filter(Q(number=unit_number) | Q(unit_number=unit_number)).first()
+                if unit:
+                    unit.tenant = user
+                    unit.tenant_name = f"{user.first_name} {user.last_name}".strip() or user.username
+                    unit.status = 'occupied'
+                    unit.save()
+            except Exception as e:
+                # Log error or handle gracefully
+                pass
+
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         # I-update ang user details
-        if not (getattr(request.user, "is_staff", False) or getattr(getattr(request.user, "profile", None), "role", "") == "admin"):
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         instance = self.get_object()
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_admin = getattr(request.user, "is_staff", False) or user_role == "admin"
+        
+        target_role = getattr(instance.profile, "role", "") if instance.profile else ""
+        requested_new_role = request.data.get('role', target_role)
+        
+        is_staff_editing_tenant = user_role == "staff" and target_role == "tenant" and requested_new_role == "tenant"
+        
+        if not (is_admin or is_staff_editing_tenant):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+            
         data = request.data.copy()
         
         # Convert camelCase to snake_case
@@ -148,6 +201,19 @@ class UsersViewSet(viewsets.ModelViewSet):
                 setattr(instance.profile, key, value)
             instance.profile.save()
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_admin = getattr(request.user, "is_staff", False) or user_role == "admin"
+        
+        target_role = getattr(instance.profile, "role", "") if instance.profile else ""
+        is_staff_deleting_tenant = user_role == "staff" and target_role == "tenant"
+        
+        if not (is_admin or is_staff_deleting_tenant):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+            
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"], url_path="bulk-import", permission_classes=[permissions.IsAdminUser], parser_classes=[MultiPartParser, FormParser])
     def bulk_import(self, request):
@@ -193,7 +259,7 @@ class DocumentsViewSet(viewsets.ModelViewSet):
 
 # ==================== APPOINTMENTS ====================
 
-class AppointmentsViewSet(viewsets.ModelViewSet):
+class EventsViewSet(viewsets.ModelViewSet):
     # Appointment/schedule management
     queryset = Appointment.objects.all().order_by("date")
     serializer_class = AppointmentSerializer
@@ -344,7 +410,7 @@ class NotificationsViewSet(viewsets.ModelViewSet):
 
 # ==================== OPERATIONS ====================
 
-class OperationsRequestsViewSet(viewsets.ModelViewSet):
+class ComplianceRequestsViewSet(viewsets.ModelViewSet):
     # Operations requests - maintenance requests para sa staff
     queryset = MaintenanceRequest.objects.all().order_by("-created_at")
     serializer_class = MaintenanceRequestSerializer

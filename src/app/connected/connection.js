@@ -98,58 +98,58 @@ export const userAPI = {
 
 // Mag-upload ng document
 
-export const complianceAPI = {
+export const documentsAPI = {
   getDocuments: async (params = {}) => 
-    api.get('/compliance/documents/', { params }),
+    api.get('/documents/', { params }),
   
   uploadDocument: async (data) => 
-    axios.post(`${API_BASE_URL}/compliance/documents/`, data, {
+    axios.post(`${API_BASE_URL}/documents/`, data, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     }).then(res => res.data),
   
   updateDocumentStatus: async (id, status, notes) => 
-    api.patch(`/compliance/documents/${id}/`, { status, notes }),
+    api.patch(`/documents/${id}/`, { status, notes }),
   
   getReports: async () => 
-    api.get('/compliance/reports/'),
+    api.get('/documents/reports/'),
 };
 
 // Gumawa ng appointment
  
-export const scheduleAPI = {
+export const eventsAPI = {
   getAppointments: async (params = {}) => 
-    api.get('/schedule/appointments/', { params }),
+    api.get('/events/', { params }),
   
   createAppointment: async (appointmentData) => 
-    api.post('/schedule/appointments/', appointmentData),
+    api.post('/events/', appointmentData),
   
   updateAppointment: async (id, data) => 
-    api.patch(`/schedule/appointments/${id}/`, data),
+    api.patch(`/events/${id}/`, data),
   
   deleteAppointment: async (id) => 
-    api.delete(`/schedule/appointments/${id}/`),
+    api.delete(`/events/${id}/`),
   
   getTasks: async (params = {}) => 
-    api.get('/schedule/tasks/', { params }),
+    api.get('/events/tasks/', { params }),
 };
 
 // Kunin activity logs
  
-export const operationsAPI = {
+export const complianceAPI = {
   getRequests: async (params = {}) => 
-    api.get('/operations/requests/', { params }),
+    api.get('/compliance/requests/', { params }),
   
   createRequest: async (requestData) => 
-    api.post('/operations/requests/', requestData),
+    api.post('/compliance/requests/', requestData),
   
   updateRequest: async (id, data) => 
-    api.patch(`/operations/requests/${id}/`, data),
+    api.patch(`/compliance/requests/${id}/`, data),
   
   getActivityLogs: async (params = {}) => 
-    api.get('/operations/activity-logs/', { params }),
+    api.get('/compliance/activity-logs/', { params }),
   
   getMetrics: async () => 
-    api.get('/operations/metrics/'),
+    api.get('/compliance/metrics/'),
 };
 
  // Payment
@@ -230,9 +230,9 @@ export const notificationsAPI = {
 export default {
   auth: authAPI,
   users: userAPI,
+  documents: documentsAPI,
+  events: eventsAPI,
   compliance: complianceAPI,
-  schedule: scheduleAPI,
-  operations: operationsAPI,
   financial: financialAPI,
   commercialSpace: commercialSpaceAPI,
   maintenance: maintenanceAPI,

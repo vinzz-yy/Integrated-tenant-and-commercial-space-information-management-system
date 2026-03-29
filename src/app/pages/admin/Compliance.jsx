@@ -14,7 +14,7 @@ import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../c
 import { Search, Plus } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
-export function OperationsManagement() {
+export function Compliance() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -59,7 +59,7 @@ export function OperationsManagement() {
     }
     
     const load = async () => {
-      const resp = await connection.operations.getRequests();
+      const resp = await connection.compliance.getRequests();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
       setRequests(list);
       setFilteredRequests(list);
@@ -101,7 +101,7 @@ export function OperationsManagement() {
         status: 'pending',
         tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
       };
-      const created = await connection.operations.createRequest(payload);
+      const created = await connection.compliance.createRequest(payload);
       setRequests([...requests, created]);
       setIsCreateDialogOpen(false);
       setResultTitle('Adding Request Successful');
@@ -142,7 +142,7 @@ export function OperationsManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Operations Management
+              Compliance Management
             </h1>
             <p className="text-gray-600 mt-1">
               Monitor and manage operational requests
@@ -252,7 +252,7 @@ export function OperationsManagement() {
                         value={request.status || 'pending'}
                         onValueChange={async (value) => {
                           try {
-                            const updated = await connection.operations.updateRequest(String(request.id), { status: value });
+                            const updated = await connection.compliance.updateRequest(String(request.id), { status: value });
                             setRequests(requests.map(r => String(r.id) === String(request.id) ? updated : r));
                           } catch (e) {}
                         }}

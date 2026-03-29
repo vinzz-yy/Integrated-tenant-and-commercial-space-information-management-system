@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { FileText, Download, CheckCircle, XCircle, Clock } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
-export function StaffCompliance() {
+export function Documents() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -43,7 +43,7 @@ export function StaffCompliance() {
     }
     
     const load = async () => {
-      const data = await connection.compliance.getDocuments();
+      const data = await connection.documents.getDocuments();
       const list = Array.isArray(data) ? data : (data?.results || []);
       setDocuments(list);
     };
@@ -91,7 +91,7 @@ export function StaffCompliance() {
     if (!selectedDocument) return;
     
     // Update document status via API
-    await connection.compliance.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+    await connection.documents.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
     
     // Update local state
     setDocuments(documents.map(doc => 
@@ -112,7 +112,7 @@ export function StaffCompliance() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Compliance Documents
+             Documents Management
           </h1>
           <p className="text-gray-600 mt-1">
             View tenant compliance documents

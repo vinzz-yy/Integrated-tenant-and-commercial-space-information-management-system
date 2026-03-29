@@ -35,7 +35,7 @@ export function TenantCompliance() {
       if (!user?.id) return;
       try {
         setLoading(true);
-        const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
+        const resp = await connection.documents.getDocuments({ tenant_id: user?.id });
         setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
       } catch (err) {
         toast.error('Failed to load documents');
@@ -61,12 +61,12 @@ export function TenantCompliance() {
     data.append('tenant', String(user?.id || ''));
 
     try {
-      await connection.compliance.uploadDocument(data);
+      await connection.documents.uploadDocument(data);
       toast.success('Document uploaded');
       setIsUploadDialogOpen(false);
 
       // Refresh document list
-      const resp = await connection.compliance.getDocuments({ tenant_id: user?.id });
+      const resp = await connection.documents.getDocuments({ tenant_id: user?.id });
       setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
 
       // Reset form

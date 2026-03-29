@@ -11,12 +11,13 @@ import { Button } from './ui/button.jsx';
 const adminMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'User Profiles', path: '/admin/users' },
-    { icon: Building, label: 'Commercial Space', path: '/admin/commercial-space' },
     { icon: PhilippinePeso, label: 'Financials', path: '/admin/financial' },
-    { icon: FileCheck, label: 'Compliance', path: '/admin/compliance' },
-    { icon: Calendar, label: 'Scheduling', path: '/admin/schedule' },
-    { icon: Settings, label: 'Operations', path: '/admin/operations' },
+    { icon: Building, label: 'Commercial Space', path: '/admin/commercial-space' },
+    { icon: Users, label: 'User Profiles', path: '/admin/users' },
+    { icon: FileCheck, label: 'Documents', path: '/admin/Documents' },
+    { icon: Settings, label: 'Compliance', path: '/admin/Compliance' },
+    { icon: Calendar, label: 'Events', path: '/admin/Events' },
+   
   ],
   system: [
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
@@ -27,11 +28,12 @@ const staffMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/staff' },
     { icon: UserCog, label: 'My Profile', path: '/staff/profile' },
+    { icon: Users, label: 'User Profiles', path: '/staff/users' },
     { icon: PhilippinePeso, label: 'Financial', path: '/staff/financial' },
     { icon: Building, label: 'Commercial Space', path: '/staff/commercial-space' },
-    { icon: FileCheck, label: 'Compliance', path: '/staff/compliance' },
-    { icon: Calendar, label: 'Schedule', path: '/staff/schedule' },
-    { icon: ClipboardList, label: 'Operations', path: '/staff/operations' },
+    { icon: FileCheck, label: 'Documents', path: '/staff/Documents' },
+    { icon: ClipboardList, label: 'Compliance', path: '/staff/Compliance' },
+    { icon: Calendar, label: 'Events', path: '/staff/Events' },
   ],
   system: [
     { icon: Settings, label: 'Settings', path: '/staff/settings' },
@@ -43,10 +45,10 @@ const tenantMenuItems = {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/tenant' },
     { icon: UserCog, label: 'My Profile', path: '/tenant/profile' },
     { icon: Building, label: 'Commercial Space', path: '/tenant/commercial-space' },
-    { icon: FileCheck, label: 'Documents', path: '/tenant/compliance' },
     { icon: CreditCard, label: 'Payments', path: '/tenant/payments' },
-    { icon: Calendar, label: 'Appointments', path: '/tenant/appointments' },
+    { icon: FileCheck, label: 'Documents', path: '/tenant/compliance' },
     { icon: Wrench, label: 'Maintenance', path: '/tenant/maintenance' },
+    { icon: Calendar, label: 'Appointments', path: '/tenant/appointments' },
   ],
   system: [
     { icon: Settings, label: 'Settings', path: '/tenant/settings' },

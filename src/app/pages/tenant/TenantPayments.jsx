@@ -28,20 +28,20 @@ export function TenantPayments() {
     const load = async () => {
       // Fetch payments for this tenant
       const pay = await connection.financial.getPayments({ tenant_id: user?.id });
-      setPayments(pay.results || []);
+      setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
     };
     load();
   }, [user]);
 
   // Calculate financial summaries
-  const paidTotal = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
-  const unpaidAmount = payments.filter(p => p.status !== 'completed').reduce((sum, p) => sum + (p.amount || 0), 0);
+  const paidTotal = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const unpaidAmount = payments.filter(p => p.status !== 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   // Export combined invoices and payments
   const handleExport = async (format) => {
-    const headers = ['ID', 'Amount', 'Status', 'Date'];
+    const headers = ['Type', 'ID', 'Amount', 'Status', 'Date'];
     const rows = [
-      ...payments.map(pay => ['Payment', pay.id, pay.amount, pay.status || 'completed', pay.paymentDate]),
+      ...payments.map(pay => ['Payment', pay.id, pay.amount, pay.status || 'completed', pay.payment_date]),
     ];
     if (format === 'csv') {
       exportToCSV(headers, rows, 'tenant_billing.csv');
