@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import connection from '../../connected/connection.js';
-import {  Users, Calendar, PhilippinePeso, Building, TrendingUp,AlertCircle,CheckCircle,Clock,} from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,} from 'recharts';
+import { Users, Calendar, PhilippinePeso, Building, TrendingUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function AdminDashboard() {
   // Get current user from auth context and navigation hook
@@ -31,7 +31,7 @@ export function AdminDashboard() {
   // State for chart data and lists
   const [revenueData, setRevenueData] = useState([]);
   const [appointments, setAppointments] = useState([]);
-
+  const [notifications, setNotifications] = useState([]);
 
   // Load all dashboard data when component mounts
   useEffect(() => {
@@ -58,7 +58,8 @@ export function AdminDashboard() {
           connection.commercialSpace.getUnits(),
           connection.documents.getDocuments({ status: 'pending' }),
           connection.events.getAppointments({ status: 'scheduled' }),
-          connection.financial.getRevenueAnalytics({ period: '6months' })
+          connection.financial.getRevenueAnalytics({ period: '6months' }),
+          connection.notifications.getNotifications({ read: false, limit: 5 })
         ]);
 
         // Process users data
@@ -87,12 +88,12 @@ export function AdminDashboard() {
           const sortedPayments = [...payments].sort((a, b) => new Date(b.payment_date || b.created_at) - new Date(a.payment_date || a.created_at));
           const currentMonth = new Date().getMonth();
           const lastMonthPayments = sortedPayments.filter(p => {
-             const d = new Date(p.payment_date || p.created_at);
-             return !isNaN(d) && d.getMonth() === currentMonth;
+            const d = new Date(p.payment_date || p.created_at);
+            return !isNaN(d) && d.getMonth() === currentMonth;
           });
           const previousMonthPayments = sortedPayments.filter(p => {
-             const d = new Date(p.payment_date || p.created_at);
-             return !isNaN(d) && d.getMonth() === (currentMonth - 1 < 0 ? 11 : currentMonth - 1);
+            const d = new Date(p.payment_date || p.created_at);
+            return !isNaN(d) && d.getMonth() === (currentMonth - 1 < 0 ? 11 : currentMonth - 1);
           });
           
           const lastMonthTotal = lastMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -185,7 +186,12 @@ export function AdminDashboard() {
           }
         }
 
-
+        // Process notifications
+        if (notifResp.status === 'fulfilled') {
+          const notifData = notifResp.value;
+          const notificationsData = Array.isArray(notifData) ? notifData : (notifData?.results || []);
+          setNotifications(notificationsData);
+        }
 
       } catch (e) {
         console.error('Error loading dashboard data:', e);
@@ -217,7 +223,7 @@ export function AdminDashboard() {
       <div className="space-y-8">
         {/* Header section with welcome message */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-[#2E3192]">
             Admin Dashboard
           </h1>
           <p className="text-gray-600 mt-1">
@@ -233,7 +239,7 @@ export function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total Users
               </CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
+              <Users className="h-4 w-4 text-[#2E3192]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
@@ -249,7 +255,7 @@ export function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Monthly Revenue
               </CardTitle>
-              <PhilippinePeso className="h-4 w-4 text-green-600" />
+              <PhilippinePeso className="h-4 w-4 text-[#F9E81B]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -274,7 +280,7 @@ export function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Occupancy Rate
               </CardTitle>
-              <Building className="h-4 w-4 text-purple-600" />
+              <Building className="h-4 w-4 text-[#2E3192]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
@@ -290,7 +296,7 @@ export function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Items
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertCircle className="h-4 w-4 text-[#ED1C24]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.pendingCompliance}</div>
@@ -306,7 +312,7 @@ export function AdminDashboard() {
           {/* Revenue Chart - takes 2/3 of the grid */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Revenue Overview</CardTitle>
+              <CardTitle className="text-[#2E3192]">Revenue Overview</CardTitle>
               <CardDescription>Monthly revenue and expenses (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
@@ -323,14 +329,14 @@ export function AdminDashboard() {
                     <Line 
                       type="monotone" 
                       dataKey="revenue" 
-                      stroke="#3b82f6" 
+                      stroke="#2E3192" 
                       strokeWidth={2}
                       name="Revenue"
                     />
                     <Line 
                       type="monotone" 
                       dataKey="expenses" 
-                      stroke="#ef4444" 
+                      stroke="#ED1C24" 
                       strokeWidth={2}
                       name="Expenses"
                     />
@@ -348,12 +354,17 @@ export function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Upcoming Appointments</CardTitle>
+                <CardTitle className="text-[#2E3192]">Upcoming Appointments</CardTitle>
                 <CardDescription>
                   {stats.scheduledAppointments} scheduled appointments
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/admin/schedule')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin/Events')}
+                className="border-gray-300 hover:bg-[#F9E81B]/10 hover:text-[#2E3192]"
+              >
                 View All
               </Button>
             </CardHeader>
@@ -363,9 +374,9 @@ export function AdminDashboard() {
                   {appointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="flex items-start gap-3 p-3 border rounded-lg"
+                      className="flex items-start gap-3 p-3 border rounded-lg hover:bg-[#F9E81B]/5 transition-colors"
                     >
-                      <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <Calendar className="h-5 w-5 text-[#2E3192] mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{appointment.title}</p>
                         <p className="text-xs text-gray-500 mt-1">
@@ -386,6 +397,57 @@ export function AdminDashboard() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   No upcoming appointments
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* System Notifications section */}
+        <div className="grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-[#2E3192]">System Notifications</CardTitle>
+                <CardDescription>Recent alerts and updates</CardDescription>
+              </div>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <Badge variant="destructive" className="rounded-full">
+                  {notifications.filter(n => !n.read).length}
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              {notifications.length > 0 ? (
+                <div className="space-y-4">
+                  {notifications.map((notification) => (
+                    <div 
+                      key={notification.id} 
+                      className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-[#F9E81B]/5 transition-colors ${
+                        !notification.read ? 'bg-[#F9E81B]/10' : ''
+                      }`}
+                    >
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-[#2E3192] mt-0.5 flex-shrink-0" />}
+                      {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-[#ED1C24] mt-0.5 flex-shrink-0" />}
+                      {notification.type === 'info' && <Clock className="h-5 w-5 text-[#F9E81B] mt-0.5 flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(notification.createdAt).toLocaleDateString('en-PH', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No new notifications
                 </div>
               )}
             </CardContent>
