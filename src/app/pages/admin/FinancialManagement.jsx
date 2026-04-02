@@ -48,7 +48,7 @@ export function FinancialManagement() {
     try {
       // Fetch invoices, payments, and revenue analytics in parallel
       const [pay, revenue] = await Promise.all([
-        connection.financial.getPayments(),
+        connection.financial.getPayments({ limit: 1000 }),
         connection.financial.getRevenueAnalytics({ period: 'month' })
       ]);
       setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
@@ -148,7 +148,7 @@ export function FinancialManagement() {
   const handleExportReport = async (format) => {
     try {
       const [allPayments] = await Promise.all([
-        connection.financial.getPayments(),
+        connection.financial.getPayments({ limit: 1000 }),
       ]);
 
       const headers = ['ID', 'Tenant', 'Amount (PHP)', 'Status', 'Date'];

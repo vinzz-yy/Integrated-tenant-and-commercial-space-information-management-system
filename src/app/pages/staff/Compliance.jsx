@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { ClipboardList, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle, Activity } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function Compliance() {
@@ -121,15 +121,15 @@ export function Compliance() {
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                High Priority
-                <AlertTriangle className="h-4 w-4 text-[#ED1C24]" />
+                In Progress
+                <Activity className="h-4 w-4 text-[#F9E81B]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#ED1C24]">
-                {requests.filter(r => r.priority === 'high').length}
+              <div className="text-2xl font-bold text-[#2E3192]">
+                {requests.filter(r => r.status === 'in_progress').length}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Needs attention</p>
+              <p className="text-xs text-gray-500 mt-1">Active requests</p>
             </CardContent>
           </Card>
         </div>

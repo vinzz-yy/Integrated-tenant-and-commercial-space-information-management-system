@@ -10,30 +10,12 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,DialogTitle,
 } from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,
 } from '../../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
@@ -42,7 +24,7 @@ import api from '../../connected/connection.js';
 export function Events() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [appointments, setAppointments] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
 
@@ -60,7 +42,7 @@ export function Events() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -246,7 +228,7 @@ export function Events() {
       navigate('/');
       return;
     }
-    
+
     // Async function to fetch appointments from API
     const load = async () => {
       try {
@@ -257,7 +239,7 @@ export function Events() {
           const usersResp = await api.users.getUsers({ role: 'staff', limit: 100 });
           const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
           setStaffUsers(usersList);
-        } catch {}
+        } catch { }
       } catch (e) {
         // Set empty array on error to prevent undefined issues
         setAppointments([]);
@@ -337,7 +319,7 @@ export function Events() {
       setIsResultDialogOpen(true);
     }
   };
-  
+
   const openEditDialog = (apt) => {
     setSelectedAppointment(apt);
     setFormData({
@@ -355,7 +337,7 @@ export function Events() {
     setSelectedAppointment(apt);
     setIsViewDialogOpen(true);
   };
-  
+
   const handleUpdateAppointment = async () => {
     if (!selectedAppointment) return;
     if (!formData.title || !formData.date || !formData.time) {
@@ -406,7 +388,7 @@ export function Events() {
     for (const id of ids) {
       try {
         await api.events.deleteAppointment(String(id));
-      } catch {}
+      } catch { }
     }
     setAppointments((prev) => prev.filter((a) => !ids.includes(String(a.id))));
     setSelectedIds([]);
@@ -567,7 +549,7 @@ export function Events() {
                                       setAppointments((prev) =>
                                         prev.map((a) => (String(a.id) === String(apt.id) ? updated : a))
                                       );
-                                    } catch {}
+                                    } catch { }
                                   }}
                                 >
                                   <SelectTrigger className="w-[140px] border-gray-200">
@@ -673,42 +655,26 @@ export function Events() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Assigned To</Label>
-                  <Select
-                    value={formData.assignedTo ? String(formData.assignedTo) : UNASSIGNED_VALUE}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, assignedTo: value === UNASSIGNED_VALUE ? '' : value })
-                    }
-                  >
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue placeholder="Select staff" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
-                      {staffUsers.map((s) => (
-                        <SelectItem key={String(s.id)} value={String(s.id)}>
-                          {getUserLabel(s)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Pending</SelectItem>
-                      <SelectItem value="in_progress">Confirmed</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">Assigned To</Label>
+                <Select
+                  value={formData.assignedTo ? String(formData.assignedTo) : UNASSIGNED_VALUE}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, assignedTo: value === UNASSIGNED_VALUE ? '' : value })
+                  }
+                >
+                  <SelectTrigger className="border-gray-200">
+                    <SelectValue placeholder="Select staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+                    {staffUsers.map((s) => (
+                      <SelectItem key={String(s.id)} value={String(s.id)}>
+                        {getUserLabel(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

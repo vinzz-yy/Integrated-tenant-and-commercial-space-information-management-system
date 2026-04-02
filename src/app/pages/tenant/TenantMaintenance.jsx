@@ -187,13 +187,8 @@ export function TenantMaintenance() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-<<<<<<< HEAD
                     <Badge className={getPriorityColor(request.type || request.priority)}>
                       {request.type || request.priority || 'medium'} priority
-=======
-                    <Badge className={getPriorityColor(request.priority)}>
-                      {request.priority} priority
->>>>>>> 5a088a269a12ca0e14c52aaf3df93f76583de191
                     </Badge>
                     <Badge className={getStatusColor(request.status)}>
                       {(request.status || '').replace('_', ' ')}

@@ -119,8 +119,7 @@ export function AdminDashboard() {
             
             generatedRevenueData.push({
               month: monthNames[targetMonth],
-              revenue: monthRevenue,
-              expenses: monthRevenue * 0.2 // Mock expenses as 20% of revenue
+              revenue: monthRevenue
             });
           }
           setRevenueData(generatedRevenueData);
@@ -167,9 +166,9 @@ export function AdminDashboard() {
             scheduledAppointments: appointmentsData.length
           }));
           
-          // Get upcoming appointments (next 3)
+          // Get upcoming appointments (next 3 newest)
           const sortedAppointments = [...appointmentsData]
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .sort((a, b) => b.id - a.id)
             .slice(0, 3);
           setAppointments(sortedAppointments);
         }
@@ -313,7 +312,7 @@ export function AdminDashboard() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-[#2E3192]">Revenue Overview</CardTitle>
-              <CardDescription>Monthly revenue and expenses (last 6 months)</CardDescription>
+              <CardDescription>Monthly revenue (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
               {revenueData.length > 0 ? (
@@ -332,13 +331,6 @@ export function AdminDashboard() {
                       stroke="#2E3192" 
                       strokeWidth={2}
                       name="Revenue"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="expenses" 
-                      stroke="#ED1C24" 
-                      strokeWidth={2}
-                      name="Expenses"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -403,56 +395,7 @@ export function AdminDashboard() {
           </Card>
         </div>
 
-        {/* System Notifications section */}
-        <div className="grid grid-cols-1 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-[#2E3192]">System Notifications</CardTitle>
-                <CardDescription>Recent alerts and updates</CardDescription>
-              </div>
-              {notifications.filter(n => !n.read).length > 0 && (
-                <Badge variant="destructive" className="rounded-full">
-                  {notifications.filter(n => !n.read).length}
-                </Badge>
-              )}
-            </CardHeader>
-            <CardContent>
-              {notifications.length > 0 ? (
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div 
-                      key={notification.id} 
-                      className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-[#F9E81B]/5 transition-colors ${
-                        !notification.read ? 'bg-[#F9E81B]/10' : ''
-                      }`}
-                    >
-                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-[#2E3192] mt-0.5 flex-shrink-0" />}
-                      {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-[#ED1C24] mt-0.5 flex-shrink-0" />}
-                      {notification.type === 'info' && <Clock className="h-5 w-5 text-[#F9E81B] mt-0.5 flex-shrink-0" />}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(notification.createdAt).toLocaleDateString('en-PH', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No new notifications
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
 
       </div>
     </Layout>

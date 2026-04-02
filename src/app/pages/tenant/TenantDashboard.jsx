@@ -13,7 +13,7 @@ export function TenantDashboard() {
   const navigate = useNavigate();
   
   // State for tenant's data
-  const [invoices, setInvoices] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [requests, setRequests] = useState([]);
 
   // Redirect if not tenant
@@ -25,15 +25,15 @@ export function TenantDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        // Fetch invoices for this tenant
-        const inv = await connection.financial.getInvoices({ tenant_id: user?.id });
-        setInvoices(inv.results || []);
+        // Fetch payments for this tenant
+        const pay = await connection.financial.getPayments({ tenant_id: user?.id });
+        setPayments(pay.results || pay || []);
         
         // Fetch maintenance requests for this tenant
         const req = await connection.maintenance.getRequests({ tenant_id: user?.id });
-        setRequests(req.results || []);
+        setRequests(Array.isArray(req) ? req : (req?.results || []));
       } catch (e) {
-        setInvoices([]); 
+        setPayments([]); 
         setRequests([]);
       }
     };
@@ -46,9 +46,9 @@ export function TenantDashboard() {
   const handleMaintenanceRequestsClick = () => navigate('/tenant/maintenance');
   const handleDocumentsClick = () => navigate('/tenant/compliance');
 
-  // Calculate unpaid invoices total
-  const unpaidInvoices = invoices.filter(inv => inv.status === 'unpaid');
-  const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  // Calculate unpaid payments total
+  const unpaidPayments = payments.filter(pay => pay.status === 'unpaid' || pay.status === 'pending');
+  const unpaidTotal = unpaidPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
 
   return (
     <Layout role="tenant">
@@ -93,7 +93,7 @@ export function TenantDashboard() {
                 ₱{unpaidTotal.toLocaleString()}
               </div>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                {unpaidInvoices.length} unpaid invoice(s)
+                {unpaidPayments.length} unpaid payment(s)
                 <ArrowRight className="h-3 w-3" />
               </p>
             </CardContent>
@@ -138,7 +138,7 @@ export function TenantDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-[#2E3192]">Recent Invoices</CardTitle>
+                <CardTitle className="text-[#2E3192]">Recent Payments</CardTitle>
                 <CardDescription>Your recent billing statements</CardDescription>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate('/tenant/payments')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
@@ -147,25 +147,25 @@ export function TenantDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {invoices.slice(0, 3).map((invoice) => (
+                {payments.slice(0, 3).map((payment) => (
                   <div 
-                    key={invoice.id} 
+                    key={payment.id} 
                     className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-[#F9E81B]/10 transition-colors"
                     onClick={() => navigate('/tenant/payments')}
                   >
                     <div className="flex items-start gap-3">
                       <CreditCard className="h-5 w-5 text-[#2E3192] mt-0.5" />
                       <div>
-                        <p className="font-medium text-sm">{invoice.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">Due: {invoice.dueDate}</p>
+                        <p className="font-medium text-sm">{payment.description || payment.reference_number || 'Payment'}</p>
+                        <p className="text-xs text-gray-500 mt-1">Date: {payment.payment_date || payment.date || payment.dueDate}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">₱{(invoice.amount || 0).toLocaleString()}</p>
+                      <p className="font-semibold">₱{(payment.amount || 0).toLocaleString()}</p>
                       <Badge 
-                        className={`mt-1 ${invoice.status === 'paid' ? 'bg-[#2E3192] text-white' : 'bg-[#ED1C24] text-white'}`}
+                        className={`mt-1 ${payment.status === 'completed' || payment.status === 'paid' ? 'bg-[#2E3192] text-white' : 'bg-[#ED1C24] text-white'}`}
                       >
-                        {invoice.status}
+                        {payment.status}
                       </Badge>
                     </div>
                   </div>

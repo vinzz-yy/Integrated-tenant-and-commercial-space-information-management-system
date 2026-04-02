@@ -409,27 +409,12 @@ export function TenantAppointments() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={apt.status || 'scheduled'}
-                                  onValueChange={async (value) => {
-                                    try {
-                                      const updated = await connection.events.updateAppointment(String(apt.id), { status: value });
-                                      setAppointments((prev) =>
-                                        prev.map((a) => (String(a.id) === String(apt.id) ? updated : a))
-                                      );
-                                    } catch {}
-                                  }}
+                                <Badge
+                                  variant={statusVariant(apt.status)}
+                                  className={getStatusColor(apt.status)}
                                 >
-                                  <SelectTrigger className="w-[140px] border-gray-200">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="scheduled">Pending</SelectItem>
-                                    <SelectItem value="in_progress">Confirmed</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  {statusLabel(apt.status)}
+                                </Badge>
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
@@ -515,22 +500,7 @@ export function TenantAppointments() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Pending</SelectItem>
-                      <SelectItem value="in_progress">Confirmed</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              {/* Status input removed for tenant creation */}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-gray-300">
@@ -660,17 +630,14 @@ export function TenantAppointments() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#2E3192] font-medium">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Pending</SelectItem>
-                      <SelectItem value="in_progress">Confirmed</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="pt-2">
+                    <Badge
+                      variant={statusVariant(formData.status)}
+                      className={getStatusColor(formData.status)}
+                    >
+                      {statusLabel(formData.status)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>

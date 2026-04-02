@@ -61,6 +61,7 @@ export function Compliance() {
     const load = async () => {
       const resp = await connection.compliance.getRequests();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
+      list.sort((a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at));
       setRequests(list);
       setFilteredRequests(list);
       try {
@@ -99,18 +100,26 @@ export function Compliance() {
         description: formData.description,
         type: formData.type,
         status: 'pending',
-        tenant_id: formData.assignedTo ? String(formData.assignedTo) : undefined,
+        tenant: formData.assignedTo ? String(formData.assignedTo) : undefined,
       };
       const created = await connection.compliance.createRequest(payload);
-      setRequests([...requests, created]);
+      setRequests([created, ...requests]);
       setIsCreateDialogOpen(false);
       setResultTitle('Adding Request Successful');
       setResultMessage('The request has been submitted successfully.');
       setIsResultDialogOpen(true);
+      // Reset form
+      setFormData({
+        title: '',
+        type: 'Technical',
+        description: '',
+        assignedTo: '',
+        date: '',
+      });
     } catch (error) {
       console.error('Error creating request:', error);
       setResultTitle('Failed Adding Request');
-      setResultMessage('Failed adding request. Please try again.');
+      setResultMessage(error.message || 'Failed adding request. Please try again.');
       setIsResultDialogOpen(true);
     }
   };
@@ -128,9 +137,9 @@ export function Compliance() {
   // Helper function to determine badge color based on status
   const getStatusColor = (status) => {
     switch (status) {
-      case 'closed': return 'outline'; // Outlined badge
+      case 'completed': return 'outline'; // Outlined badge
       case 'in_progress': return 'default'; // Blue badge
-      case 'open': return 'secondary'; // Gray badge
+      case 'pending': return 'secondary'; // Gray badge
       default: return 'outline';
     }
   };
@@ -162,13 +171,13 @@ export function Compliance() {
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Open Requests
+                Pending Requests
                 <ClipboardList className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-[#2E3192]">
-                {requests.filter(r => r.status === 'open').length}
+                {requests.filter(r => r.status === 'pending').length}
               </div>
             </CardContent>
           </Card>
@@ -188,13 +197,13 @@ export function Compliance() {
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Closed
+                Completed
                 <CheckCircle className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {requests.filter(r => r.status === 'closed').length}
+                {requests.filter(r => r.status === 'completed').length}
               </div>
             </CardContent>
           </Card>
@@ -223,9 +232,10 @@ export function Compliance() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
