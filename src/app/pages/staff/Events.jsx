@@ -298,14 +298,14 @@ export function Events() {
     <Layout role="staff">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-[#2E3192]">My Events</h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               View and manage your appointments
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <Button
               className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
               onClick={() => setIsCreateDialogOpen(true)}
@@ -316,7 +316,7 @@ export function Events() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="appointments">
             <Card className="mt-4">
               <CardHeader className="pb-3">

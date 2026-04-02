@@ -97,7 +97,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80 p-0">
                   <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <span className="font-semibold text-sm">Notifications & Events</span>
+                    <span className="font-semibold text-sm text-[#2E3192]">Notifications & Events</span>
                     {unreadCount > 0 && (
                       <Badge variant="destructive" className="text-xs rounded-full">
                         {unreadCount} new
@@ -120,9 +120,9 @@ export function Navbar() {
                             {!['success', 'warning', 'info', 'event'].includes(notification.type) && <Bell className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />}
                             
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-gray-900 leading-tight">{notification.title}</p>
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{notification.message}</p>
-                              <p className="text-[10px] text-gray-400 mt-1.5">
+                              <p className="font-medium text-sm text-[#2E3192] leading-tight">{notification.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
+                              <p className="text-[10px] text-gray-500 mt-1.5">
                                 {new Date(notification.createdAt || notification.created_at).toLocaleDateString('en-PH', {
                                   month: 'short',
                                   day: 'numeric',
@@ -135,7 +135,7 @@ export function Navbar() {
                         ))}
                       </div>
                     ) : (
-                      <div className="p-6 text-center text-sm text-gray-500">
+                      <div className="p-6 text-center text-sm text-gray-600">
                         No new notifications or events
                       </div>
                     )}

@@ -242,7 +242,7 @@ export function AdminDashboard() {
               <Users className="h-4 w-4 text-[#2E3192]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-[#2E3192]">{stats.totalUsers}</div>
               <p className="text-xs text-gray-500 mt-1">
                 {stats.totalTenants} tenants, {stats.totalStaff} staff
               </p>
@@ -258,7 +258,7 @@ export function AdminDashboard() {
               <PhilippinePeso className="h-4 w-4 text-[#F9E81B]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-[#2E3192]">
                 {formatCurrency(stats.totalRevenue)}
               </div>
               {stats.revenueGrowth !== 0 && (
@@ -283,7 +283,7 @@ export function AdminDashboard() {
               <Building className="h-4 w-4 text-[#2E3192]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
+              <div className="text-2xl font-bold text-[#2E3192]">{stats.occupancyRate}%</div>
               <p className="text-xs text-gray-500 mt-1">
                 {stats.occupiedUnits} of {stats.totalUnits || 0} units occupied
               </p>
@@ -299,7 +299,7 @@ export function AdminDashboard() {
               <AlertCircle className="h-4 w-4 text-[#ED1C24]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingCompliance}</div>
+              <div className="text-2xl font-bold text-[#ED1C24]">{stats.pendingCompliance}</div>
               <p className="text-xs text-gray-500 mt-1">
                 Compliance documents
               </p>

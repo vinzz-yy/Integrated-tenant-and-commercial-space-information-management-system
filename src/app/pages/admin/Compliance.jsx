@@ -11,7 +11,7 @@ import { Label } from '../../components/ui/label.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ClipboardList, Clock, CheckCircle } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function Compliance() {
@@ -161,8 +161,9 @@ export function Compliance() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Open Requests
+                <ClipboardList className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -173,8 +174,9 @@ export function Compliance() {
           </Card>
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 In Progress
+                <Clock className="h-4 w-4 text-[#F9E81B]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -185,8 +187,9 @@ export function Compliance() {
           </Card>
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Closed
+                <CheckCircle className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>

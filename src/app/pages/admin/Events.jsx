@@ -424,33 +424,27 @@ export function Events() {
               Manage appointments and schedules
             </p>
           </div>
+          <div className="flex items-center gap-2 ml-auto">
+            {selectedIds.length > 0 && (
+              <Button
+                className="bg-[#ED1C24] hover:bg-[#c8161d] text-white"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete ({selectedIds.length})
+              </Button>
+            )}
+            <Button
+              className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Appointment
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between gap-3">
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="appointments">Appointments</TabsTrigger>
-            </TabsList>
-            <div className="flex items-center gap-2">
-              {selectedIds.length > 0 && (
-                <Button
-                  className="bg-[#ED1C24] hover:bg-[#c8161d] text-white"
-                  onClick={handleBulkDelete}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete ({selectedIds.length})
-                </Button>
-              )}
-              <Button
-                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                onClick={() => setIsCreateDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Appointment
-              </Button>
-            </div>
-          </div>
-
           <TabsContent value="appointments">
             <Card className="mt-4">
               <CardHeader className="pb-3">

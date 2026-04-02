@@ -214,13 +214,6 @@ export function FinancialManagement() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setIsTransactionDialogOpen(true)}
-              className="bg-[#2E3192] hover:bg-[#1f2170] text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="border-gray-300">
@@ -251,6 +244,13 @@ export function FinancialManagement() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => setIsTransactionDialogOpen(true)}
+              className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Transaction
+            </Button>
           </div>
         </div>
 
