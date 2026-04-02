@@ -4,9 +4,9 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:8000/api';
 const BACKEND_ORIGIN = 'http://localhost:8000';
 
-// Kunin ang token mula localStorage
+// Kunin ang token mula sessionStorage
 function getAuthToken() {
-  return localStorage.getItem('authToken');
+  return sessionStorage.getItem('authToken');
 }
 
 // Axios instance setup
@@ -33,6 +33,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (error.response?.status === 401) {
+      // Clear expired or invalid credentials
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('user');
+      
+      // Force redirect to login page for a fresh unauthenticated state
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    }
+
     const data = error.response?.data;
     let message = error.response?.statusText || 'Request failed';
     if (data) {
@@ -207,7 +218,9 @@ export const maintenanceAPI = {
     api.get('/maintenance/requests/', { params }),
   
   createRequest: async (data) => 
-    api.post('/maintenance/requests/', data),
+    axios.post(`${API_BASE_URL}/maintenance/requests/`, data, {
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    }).then(res => res.data),
   
   updateRequest: async (id, data) => 
     api.patch(`/maintenance/requests/${id}/`, data),

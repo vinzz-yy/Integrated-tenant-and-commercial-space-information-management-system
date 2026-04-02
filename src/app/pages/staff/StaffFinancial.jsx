@@ -21,18 +21,15 @@ export function StaffFinancial() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // State for storing payments and UI
   const [payments, setPayments] = useState([]);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Tenant search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Transaction form state
   const [transactionData, setTransactionData] = useState({
     amount: '',
     payment_method: 'cash',
@@ -40,12 +37,10 @@ export function StaffFinancial() {
     payment_date: new Date().toISOString().split('T')[0]
   });
 
-  // Redirect if not staff
   useEffect(() => {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
 
-  // Load payments
   const loadPayments = async () => {
     try {
       const pay = await connection.financial.getPayments();
@@ -59,7 +54,6 @@ export function StaffFinancial() {
     loadPayments();
   }, []);
 
-  // Handle tenant search
   useEffect(() => {
     const searchTenants = async () => {
       if (searchQuery.trim().length < 2) {
@@ -82,7 +76,6 @@ export function StaffFinancial() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Handle saving transaction
   const handleSaveTransaction = async () => {
     if (!selectedTenant) {
       toast.error('Please select a tenant');
@@ -128,7 +121,6 @@ export function StaffFinancial() {
     });
   };
 
-  // Export payments with format choice
   const handleExport = async (format) => {
     try {
       const headers = ['Payment ID', 'Tenant', 'Amount', 'Payment Date', 'Method', 'Status', 'Description'];
@@ -157,7 +149,6 @@ export function StaffFinancial() {
     }
   };
 
-  // Receipt generation logic
   const handleViewReceipt = (payment) => {
     const headers = ['Receipt Item', 'Value'];
     const rows = [
@@ -172,27 +163,26 @@ export function StaffFinancial() {
     printToPDF(headers, rows, `Receipt - ${payment.id}`);
   };
 
-  // Helper function to get appropriate icon based on payment status
+  // Kept from first code, enhanced with brand colors from second code
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-3 w-3 mr-1" />;
       case 'pending':
-        return <Clock className="h-4 w-4 text-orange-600" />;
+        return <Clock className="h-3 w-3 mr-1" />;
       default:
-        return <XCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-3 w-3 mr-1" />;
     }
   };
 
-  // Helper function to determine badge color based on status
-  const getStatusVariant = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'default'; // Blue badge
-      case 'pending':
-        return 'secondary'; // Gray badge
-      default:
-        return 'outline';
+  // Replaced with brand-color system from second code
+  const getStatusBadge = (status) => {
+    if (status === 'completed') {
+      return { className: 'bg-[#2E3192] text-white hover:bg-[#2E3192]/90' };
+    } else if (status === 'pending') {
+      return { className: 'bg-[#F9E81B]/30 text-[#2E3192] hover:bg-[#F9E81B]/40' };
+    } else {
+      return { className: 'bg-[#ED1C24] text-white hover:bg-[#ED1C24]/90' };
     }
   };
 
@@ -201,17 +191,16 @@ export function StaffFinancial() {
       <div className="space-y-6">
         {/* Header with export and add button */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Financial Overview
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-[#2E3192]">
+              Financial Overview
+            </h1>
+            <p className="text-gray-600 mt-1">Manage and track all payment transactions</p>
+          </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsTransactionDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="border-gray-300">
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
@@ -239,51 +228,77 @@ export function StaffFinancial() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => setIsTransactionDialogOpen(true)}
+              className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Transaction
+            </Button>
           </div>
         </div>
         
         {/* Payments table */}
         <Card>
           <CardHeader>
-            <CardTitle>Payments ({payments.length})</CardTitle>
+            <CardTitle className="text-[#2E3192]">Payments ({payments.length})</CardTitle>
+            <CardDescription>All recorded payment transactions</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Payment ID</TableHead>
-                  <TableHead>Tenant</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Payment Date</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.id}</TableCell>
-                    <TableCell>{payment.tenant_name}</TableCell>
-                    <TableCell>₱{(payment.amount || 0).toLocaleString()}</TableCell>
-                    <TableCell>{payment.payment_date}</TableCell>
-                    <TableCell>{payment.payment_method}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(payment.status)} className="flex items-center gap-1 w-fit">
-                        {getStatusIcon(payment.status)}
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewReceipt(payment)}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Receipt
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {payments.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="h-10 w-10 mx-auto mb-3 text-[#2E3192]/30" />
+                <p className="font-medium text-[#2E3192]">No transactions recorded</p>
+                <p className="text-sm text-gray-500 mt-1">Add your first transaction to get started</p>
+              </div>
+            ) : (
+              <div className="rounded-md border border-gray-200">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-[#2E3192] font-semibold">Payment ID</TableHead>
+                      <TableHead className="text-[#2E3192] font-semibold">Tenant</TableHead>
+                      <TableHead className="text-[#2E3192] font-semibold">Amount</TableHead>
+                      <TableHead className="text-[#2E3192] font-semibold">Payment Date</TableHead>
+                      <TableHead className="text-[#2E3192] font-semibold">Method</TableHead>
+                      <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
+                      <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.map((payment) => {
+                      const statusBadge = getStatusBadge(payment.status);
+                      return (
+                        <TableRow key={payment.id} className="hover:bg-[#F9E81B]/5">
+                          <TableCell className="font-medium">{payment.id}</TableCell>
+                          <TableCell>{payment.tenant_name}</TableCell>
+                          <TableCell>₱{(payment.amount || 0).toLocaleString()}</TableCell>
+                          <TableCell>{payment.payment_date}</TableCell>
+                          <TableCell>{payment.payment_method}</TableCell>
+                          <TableCell>
+                            <Badge className={`flex items-center gap-1 w-fit ${statusBadge.className}`}>
+                              {getStatusIcon(payment.status)}
+                              {payment.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewReceipt(payment)}
+                              className="border-gray-300"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Receipt
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -292,94 +307,107 @@ export function StaffFinancial() {
           if (!open) resetForm();
           setIsTransactionDialogOpen(open);
         }}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle>New Financial Transaction</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">New Financial Transaction</DialogTitle>
               <DialogDescription>
                 Search for a tenant and enter payment details to save a new transaction.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 py-4">
+            <div className="space-y-4 py-2">
               {/* Tenant Search Section */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Search Tenant (Name or ID)</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      placeholder="Start typing to search..."
-                      className="pl-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">
+                  Search Tenant (Name or ID) <span className="text-[#ED1C24]">*</span>
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Start typing to search..."
+                    className="pl-9 border-gray-200"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
-
-                {/* Search Results */}
-                {searchResults.length > 0 && !selectedTenant && (
-                  <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
-                    {searchResults.map((tenant) => (
-                      <div
-                        key={tenant.id}
-                        className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                        onClick={() => {
-                          setSelectedTenant(tenant);
-                          setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
-                          setSearchResults([]);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{tenant.first_name} {tenant.last_name}</p>
-                            <p className="text-xs text-gray-500">ID: {tenant.id} | {tenant.email}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{tenant.unitNumber || 'No Unit'}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {isSearching && <p className="text-xs text-gray-500">Searching...</p>}
-
-                {/* Selected Tenant Info */}
-                {selectedTenant && (
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-700" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-blue-900">{selectedTenant.first_name} {selectedTenant.last_name}</p>
-                        <p className="text-xs text-blue-700">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedTenant(null)}>Change</Button>
-                  </div>
-                )}
               </div>
+
+              {/* Search Results */}
+              {searchResults.length > 0 && !selectedTenant && (
+                <div className="border border-gray-200 rounded-md divide-y max-h-[200px] overflow-y-auto">
+                  {searchResults.map((tenant) => (
+                    <div
+                      key={tenant.id}
+                      className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between transition-colors"
+                      onClick={() => {
+                        setSelectedTenant(tenant);
+                        setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
+                        setSearchResults([]);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-[#F9E81B] flex items-center justify-center">
+                          <User className="h-4 w-4 text-[#2E3192]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#2E3192]">{tenant.first_name} {tenant.last_name}</p>
+                          <p className="text-xs text-gray-500">ID: {tenant.id} | {tenant.email}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">{tenant.unitNumber || 'No Unit'}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isSearching && <p className="text-xs text-gray-500">Searching...</p>}
+
+              {/* Selected Tenant Info */}
+              {selectedTenant && (
+                <div className="p-4 bg-[#F9E81B]/10 border border-[#F9E81B] rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-[#F9E81B] flex items-center justify-center">
+                      <User className="h-5 w-5 text-[#2E3192]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#2E3192]">{selectedTenant.first_name} {selectedTenant.last_name}</p>
+                      <p className="text-xs text-gray-500">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTenant(null)}
+                    className="text-[#2E3192]"
+                  >
+                    Change
+                  </Button>
+                </div>
+              )}
 
               {/* Transaction Details Section */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Payment Amount (PHP)</Label>
+                  <Label htmlFor="amount" className="text-[#2E3192] font-medium">
+                    Payment Amount (PHP) <span className="text-[#ED1C24]">*</span>
+                  </Label>
                   <Input
                     id="amount"
                     type="number"
                     placeholder="0.00"
+                    className="border-gray-200"
                     value={transactionData.amount}
                     onChange={(e) => setTransactionData({ ...transactionData, amount: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date">Payment Date</Label>
+                  <Label htmlFor="date" className="text-[#2E3192] font-medium">
+                    Payment Date <span className="text-[#ED1C24]">*</span>
+                  </Label>
                   <Input
                     id="date"
                     type="date"
+                    className="border-gray-200"
                     value={transactionData.payment_date}
                     onChange={(e) => setTransactionData({ ...transactionData, payment_date: e.target.value })}
                   />
@@ -387,12 +415,14 @@ export function StaffFinancial() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="method">Payment Method</Label>
+                <Label htmlFor="method" className="text-[#2E3192] font-medium">
+                  Payment Method <span className="text-[#ED1C24]">*</span>
+                </Label>
                 <Select
                   value={transactionData.payment_method}
                   onValueChange={(val) => setTransactionData({ ...transactionData, payment_method: val })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-gray-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -405,12 +435,12 @@ export function StaffFinancial() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description" className="text-[#2E3192] font-medium">Description (Optional)</Label>
                 <Select
                   value={transactionData.description}
                   onValueChange={(val) => setTransactionData({ ...transactionData, description: val })}
                 >
-                  <SelectTrigger id="description">
+                  <SelectTrigger id="description" className="border-gray-200">
                     <SelectValue placeholder="Select description type..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -427,10 +457,14 @@ export function StaffFinancial() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsTransactionDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsTransactionDialogOpen(false)} className="border-gray-300">
                 Cancel
               </Button>
-              <Button onClick={handleSaveTransaction} disabled={loading}>
+              <Button
+                onClick={handleSaveTransaction}
+                disabled={loading}
+                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+              >
                 {loading ? 'Saving...' : 'Save Transaction'}
               </Button>
             </DialogFooter>

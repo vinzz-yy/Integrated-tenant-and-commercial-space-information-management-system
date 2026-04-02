@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Building2, Bell, CheckCircle, AlertCircle, Clock, Calendar } from 'lucide-react';
+import { Bell, CheckCircle, AlertCircle, Clock, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import connection from '../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './ui/dropdown-menu.jsx';
 import { Badge } from './ui/badge.jsx';
+import mannaLogo from '../images/manna_logo.png';
 
 // Navbar component with notifications
 export function Navbar() {
@@ -60,18 +61,20 @@ export function Navbar() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
+    <nav className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
       <div className="mx-auto w-full px-2 sm:px-4 lg:px-6">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Logo */}
-            <div className="bg-blue-600 rounded-lg p-1 sm:p-1.5 flex-shrink-0">
-              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-            </div>
+            <img 
+              src={mannaLogo} 
+              alt="Company Logo" 
+              className="h-10 w-10 sm:h-12 sm:w-12 object-contain flex-shrink-0"
+            />
 
             {/* Brand name & subtitle */}
             <Link to={getDashboardLink()} className="flex flex-col flex-shrink-0">
-              <span className="font-semibold text-sm sm:text-base text-gray-900 leading-tight whitespace-nowrap">
+              <span className="font-bold text-sm sm:text-base text-[#2E3192] leading-tight whitespace-nowrap">
                 LA Union Sky Mall
               </span>
               <span className="text-[10px] sm:text-[11px] text-gray-500 leading-tight whitespace-nowrap hidden xs:inline">
@@ -94,7 +97,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80 p-0">
                   <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <span className="font-semibold text-sm">Notifications & Events</span>
+                    <span className="font-semibold text-sm text-[#2E3192]">Notifications & Events</span>
                     {unreadCount > 0 && (
                       <Badge variant="destructive" className="text-xs rounded-full">
                         {unreadCount} new
@@ -117,9 +120,9 @@ export function Navbar() {
                             {!['success', 'warning', 'info', 'event'].includes(notification.type) && <Bell className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />}
                             
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-gray-900 leading-tight">{notification.title}</p>
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{notification.message}</p>
-                              <p className="text-[10px] text-gray-400 mt-1.5">
+                              <p className="font-medium text-sm text-[#2E3192] leading-tight">{notification.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
+                              <p className="text-[10px] text-gray-500 mt-1.5">
                                 {new Date(notification.createdAt || notification.created_at).toLocaleDateString('en-PH', {
                                   month: 'short',
                                   day: 'numeric',
@@ -132,7 +135,7 @@ export function Navbar() {
                         ))}
                       </div>
                     ) : (
-                      <div className="p-6 text-center text-sm text-gray-500">
+                      <div className="p-6 text-center text-sm text-gray-600">
                         No new notifications or events
                       </div>
                     )}

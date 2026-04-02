@@ -12,7 +12,7 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User } from 'lucide-react';
+import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -55,7 +55,7 @@ export function FinancialManagement() {
       setRevenueData(revenue.data || []);
     } catch (e) {
       // Set empty arrays on error
-      setPayments([]); 
+      setPayments([]);
       setRevenueData([]);
     }
   };
@@ -147,16 +147,15 @@ export function FinancialManagement() {
   // Handle exporting financial report with format choice
   const handleExportReport = async (format) => {
     try {
-      // Fetch all financial data
       const [allPayments] = await Promise.all([
-          connection.financial.getPayments(),
-        ]);
-        
-        const headers = ['ID', 'Tenant', 'Amount (PHP)', 'Status', 'Date'];
-        const paymentsArray = Array.isArray(allPayments) ? allPayments : (allPayments?.results || []);
-        const rows = [
-          ...paymentsArray.map(pay => [pay.id, pay.tenant_name || '', pay.amount, pay.status, pay.payment_date]),
-        ];
+        connection.financial.getPayments(),
+      ]);
+
+      const headers = ['ID', 'Tenant', 'Amount (PHP)', 'Status', 'Date'];
+      const paymentsArray = Array.isArray(allPayments) ? allPayments : (allPayments?.results || []);
+      const rows = [
+        ...paymentsArray.map(pay => [pay.id, pay.tenant_name || '', pay.amount, pay.status, pay.payment_date]),
+      ];
 
       if (format === 'csv') {
         exportToCSV(headers, rows, 'financial_report.csv');
@@ -190,13 +189,24 @@ export function FinancialManagement() {
     printToPDF(headers, rows, `Receipt - ${payment.id}`);
   };
 
+  // Helper function to determine badge styling based on status
+  const getStatusBadge = (status) => {
+    if (status === 'completed') {
+      return { className: 'bg-[#2E3192] text-white hover:bg-[#2E3192]/90', icon: <CheckCircle className="h-3 w-3 mr-1" /> };
+    } else if (status === 'pending') {
+      return { className: 'bg-[#F9E81B]/30 text-[#2E3192] hover:bg-[#F9E81B]/40', icon: <Clock className="h-3 w-3 mr-1" /> };
+    } else {
+      return { className: 'bg-[#ED1C24]/10 text-[#ED1C24] hover:bg-[#ED1C24]/20', icon: <XCircle className="h-3 w-3 mr-1" /> };
+    }
+  };
+
   return (
     <Layout role="admin">
       <div className="space-y-6">
         {/* Header with export button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-[#2E3192]">
               Financial Management
             </h1>
             <p className="text-gray-600 mt-1">
@@ -204,13 +214,9 @@ export function FinancialManagement() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsTransactionDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="border-gray-300">
                   <Download className="h-4 w-4 mr-2" />
                   Export Report
                 </Button>
@@ -238,23 +244,29 @@ export function FinancialManagement() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => setIsTransactionDialogOpen(true)}
+              className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Transaction
+            </Button>
           </div>
         </div>
 
         {/* Financial summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total Revenue
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{totalRevenue.toLocaleString('en-PH')}</div>
-              
+              <div className="text-2xl font-bold text-[#2E3192]">₱{totalRevenue.toLocaleString('en-PH')}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Paid Payment
@@ -264,75 +276,87 @@ export function FinancialManagement() {
               <div className="text-2xl font-bold text-green-600">₱{paidAmount.toLocaleString('en-PH')}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Unpaid Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">₱{unpaidAmount.toLocaleString('en-PH')}</div>
+              <div className="text-2xl font-bold text-[#ED1C24]">₱{unpaidAmount.toLocaleString('en-PH')}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total Payment
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{payments.length}</div>
+              <div className="text-2xl font-bold text-[#2E3192]">{payments.length}</div>
             </CardContent>
           </Card>
         </div>
 
-
         {/* Financial records table with tabs */}
         <Card>
-          <CardHeader>
-            <CardTitle>Financial Records</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[#2E3192]">Financial Records</CardTitle>
+            <CardDescription>All recorded payment transactions</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="payments">
-              
-              
+
               {/* Payments tab */}
               <TabsContent value="payments" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Payment ID</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Amount (PHP)</TableHead>
-                      <TableHead>Payment Date</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-medium">{payment.id}</TableCell>
-                        <TableCell>{payment.tenant_name}</TableCell>
-                        <TableCell>₱{(payment.amount || 0).toLocaleString('en-PH')}</TableCell>
-                        <TableCell className="text-sm">{payment.payment_date}</TableCell>
-                        <TableCell>{payment.payment_method}</TableCell>
-                        <TableCell>
-                          <Badge variant={payment.status === 'completed' ? 'default' : 'destructive'}>
-                            {payment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewReceipt(payment)}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Receipt
-                          </Button>
-                        </TableCell>
+                <div className="rounded-md border border-gray-200">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-[#2E3192] font-semibold">Payment ID</TableHead>
+                        <TableHead className="text-[#2E3192] font-semibold">Tenant</TableHead>
+                        <TableHead className="text-[#2E3192] font-semibold">Amount (PHP)</TableHead>
+                        <TableHead className="text-[#2E3192] font-semibold">Payment Date</TableHead>
+                        <TableHead className="text-[#2E3192] font-semibold">Method</TableHead>
+                        <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
+                        <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map((payment) => {
+                        const statusBadge = getStatusBadge(payment.status);
+                        return (
+                          <TableRow key={payment.id} className="hover:bg-[#F9E81B]/5">
+                            <TableCell className="font-medium text-[#2E3192]">{payment.id}</TableCell>
+                            <TableCell>{payment.tenant_name}</TableCell>
+                            <TableCell>₱{(payment.amount || 0).toLocaleString('en-PH')}</TableCell>
+                            <TableCell className="text-sm">{payment.payment_date}</TableCell>
+                            <TableCell>{payment.payment_method}</TableCell>
+                            <TableCell>
+                              <Badge className={statusBadge.className}>
+                                <span className="flex items-center">
+                                  {statusBadge.icon}
+                                  {payment.status}
+                                </span>
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
+                                onClick={() => handleViewReceipt(payment)}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Receipt
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -345,7 +369,7 @@ export function FinancialManagement() {
         }}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>New Financial Transaction</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">New Financial Transaction</DialogTitle>
               <DialogDescription>
                 Search for a tenant and enter payment details to save a new transaction.
               </DialogDescription>
@@ -373,7 +397,7 @@ export function FinancialManagement() {
                     {searchResults.map((tenant) => (
                       <div
                         key={tenant.id}
-                        className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                        className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between"
                         onClick={() => {
                           setSelectedTenant(tenant);
                           setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
@@ -381,8 +405,8 @@ export function FinancialManagement() {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-blue-600" />
+                          <div className="h-8 w-8 rounded-full bg-[#2E3192]/10 flex items-center justify-center">
+                            <User className="h-4 w-4 text-[#2E3192]" />
                           </div>
                           <div>
                             <p className="text-sm font-medium">{tenant.first_name} {tenant.last_name}</p>
@@ -399,14 +423,14 @@ export function FinancialManagement() {
 
                 {/* Selected Tenant Info */}
                 {selectedTenant && (
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                  <div className="p-4 bg-[#F9E81B]/10 border border-[#F9E81B]/30 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-700" />
+                      <div className="h-10 w-10 rounded-full bg-[#2E3192] flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-blue-900">{selectedTenant.first_name} {selectedTenant.last_name}</p>
-                        <p className="text-xs text-blue-700">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
+                        <p className="font-semibold text-[#2E3192]">{selectedTenant.first_name} {selectedTenant.last_name}</p>
+                        <p className="text-xs text-gray-600">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setSelectedTenant(null)}>Change</Button>
@@ -481,7 +505,11 @@ export function FinancialManagement() {
               <Button variant="outline" onClick={() => setIsTransactionDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveTransaction} disabled={loading}>
+              <Button
+                onClick={handleSaveTransaction}
+                disabled={loading}
+                className="bg-[#2E3192] hover:bg-[#1f2170] text-white"
+              >
                 {loading ? 'Saving...' : 'Save Transaction'}
               </Button>
             </DialogFooter>

@@ -10,8 +10,8 @@ export function AuthProvider({ children }) {
 
   // Check stored auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const storedUser = localStorage.getItem('user');
+    const token = sessionStorage.getItem('authToken');
+    const storedUser = sessionStorage.getItem('user');
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
@@ -30,8 +30,8 @@ export function AuthProvider({ children }) {
       firstName: rawUser.first_name,
       lastName: rawUser.last_name,
     };
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('user', JSON.stringify(profile));
+    sessionStorage.setItem('authToken', token);
+    sessionStorage.setItem('user', JSON.stringify(profile));
     setUser(profile);
     setIsAuthenticated(true);
     return profile;
@@ -39,8 +39,8 @@ export function AuthProvider({ children }) {
 
   // Logout user
   const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      sessionStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 

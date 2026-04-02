@@ -11,7 +11,7 @@ import { Label } from '../../components/ui/label.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ClipboardList, Clock, CheckCircle } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function Compliance() {
@@ -141,14 +141,17 @@ export function Compliance() {
         {/* Header with create button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-[#2E3192]">
               Compliance Management
             </h1>
             <p className="text-gray-600 mt-1">
               Monitor and manage operational requests
             </p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Request
           </Button>
@@ -156,34 +159,37 @@ export function Compliance() {
 
         {/* Stats cards showing request overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Open Requests
+                <ClipboardList className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-[#2E3192]">
                 {requests.filter(r => r.status === 'open').length}
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 In Progress
+                <Clock className="h-4 w-4 text-[#F9E81B]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-[#2E3192]">
                 {requests.filter(r => r.status === 'in_progress').length}
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Closed
+                <CheckCircle className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -195,9 +201,9 @@ export function Compliance() {
         </div>
 
         {/* Filters card */}
-        <Card>
+        <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
           <CardHeader>
-            <CardTitle>Filters</CardTitle>
+            <CardTitle className="text-[#2E3192]">Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -207,12 +213,12 @@ export function Compliance() {
                   placeholder="Search requests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
               {/* Status filter dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-200">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -228,52 +234,54 @@ export function Compliance() {
 
         {/* Requests table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Operation Requests ({filteredRequests.length})</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[#2E3192]">Operation Requests ({filteredRequests.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRequests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium">{request.title}</TableCell>
-                    <TableCell>{request.type || request.request_type}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={request.status || 'pending'}
-                        onValueChange={async (value) => {
-                          try {
-                            const updated = await connection.compliance.updateRequest(String(request.id), { status: value });
-                            setRequests(requests.map(r => String(r.id) === String(request.id) ? updated : r));
-                          } catch (e) {}
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
-                    <TableCell className="text-sm">{formatDate(request.createdAt || request.created_at)}</TableCell>
+            <div className="rounded-md border border-gray-200">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="text-[#2E3192] font-semibold">Title</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Type</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Assigned To</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRequests.map((request) => (
+                    <TableRow key={request.id} className="hover:bg-[#F9E81B]/5">
+                      <TableCell className="font-medium text-[#2E3192]">{request.title}</TableCell>
+                      <TableCell>{request.type || request.request_type}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={request.status || 'pending'}
+                          onValueChange={async (value) => {
+                            try {
+                              const updated = await connection.compliance.updateRequest(String(request.id), { status: value });
+                              setRequests(requests.map(r => String(r.id) === String(request.id) ? updated : r));
+                            } catch (e) {}
+                          }}
+                        >
+                          <SelectTrigger className="border-gray-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
+                      <TableCell className="text-sm">{formatDate(request.createdAt || request.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
@@ -281,26 +289,27 @@ export function Compliance() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Operation Request</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">Create Operation Request</DialogTitle>
               <DialogDescription>Submit a new operational request</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {/* Title input */}
               <div className="space-y-2">
-                <Label>Title</Label>
+                <Label className="text-[#2E3192] font-medium">Title</Label>
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Request title"
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
               
               {/* Type select */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Type</Label>
+                  <Label className="text-[#2E3192] font-medium">Type</Label>
                   <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-gray-200">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -316,17 +325,18 @@ export function Compliance() {
               {/* Date and Assigned To */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Date</Label>
+                  <Label className="text-[#2E3192] font-medium">Date</Label>
                   <Input
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Assigned To</Label>
+                  <Label className="text-[#2E3192] font-medium">Assigned To</Label>
                   <Select value={String(formData.assignedTo || '')} onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-gray-200">
                       <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
                     <SelectContent>
@@ -342,31 +352,43 @@ export function Compliance() {
               
               {/* Description textarea */}
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label className="text-[#2E3192] font-medium">Description</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe the request..."
                   rows={4}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button variant="outline" className="border-gray-300" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateRequest}>Create Request</Button>
+              <Button
+                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+                onClick={handleCreateRequest}
+              >
+                Create Request
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
         <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{resultTitle}</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">{resultTitle}</DialogTitle>
               <DialogDescription>{resultMessage}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setIsResultDialogOpen(false)}>OK</Button>
+              <Button
+                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+                onClick={() => setIsResultDialogOpen(false)}
+              >
+                OK
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
