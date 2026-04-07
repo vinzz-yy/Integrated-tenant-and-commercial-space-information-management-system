@@ -87,15 +87,20 @@ export function Documents() {
   const handleReviewSubmit = async () => {
     if (!selectedDocument) return;
     
-    await connection.documents.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
-    
-    setDocuments(documents.map(doc => 
-      String(doc.id) === String(selectedDocument.id) 
-        ? { ...doc, status: reviewStatus, notes: reviewNotes }
-        : doc
-    ));
-    
-    setIsReviewDialogOpen(false);
+    try {
+      await connection.documents.updateDocumentStatus(String(selectedDocument.id), reviewStatus, reviewNotes);
+      
+      setDocuments(documents.map(doc => 
+        String(doc.id) === String(selectedDocument.id) 
+          ? { ...doc, status: reviewStatus, notes: reviewNotes }
+          : doc
+      ));
+      
+      setIsReviewDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating document status:', error);
+      alert('Failed to update document status. Please try again.');
+    }
   };
 
   const handleDownload = (doc) => {};

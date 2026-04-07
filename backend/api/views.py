@@ -227,7 +227,7 @@ class DocumentsViewSet(viewsets.ModelViewSet):
     # Document management - tenants sariling docs lang makikita
     queryset = Document.objects.all().order_by("-upload_date")
     serializer_class = DocumentSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):

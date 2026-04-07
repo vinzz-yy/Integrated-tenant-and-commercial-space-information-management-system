@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
 import { Textarea } from '../../components/ui/textarea.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, FileText, CheckCircle, XCircle, Clock, Table as TableIcon, Plus, Search, User } from 'lucide-react';
+import { Download, FileText, CheckCircle, XCircle, Clock, Table as TableIcon, Plus, Search, User, Trash2 } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -106,6 +106,19 @@ export function StaffFinancial() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
+      try {
+        await connection.financial.deletePayment(paymentId);
+        toast.success('Payment record deleted successfully');
+        loadPayments();
+      } catch (error) {
+        console.error('Failed to delete payment:', error);
+        toast.error('Failed to delete payment record');
+      }
     }
   };
 
@@ -282,15 +295,26 @@ export function StaffFinancial() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewReceipt(payment)}
-                              className="border-gray-300"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Receipt
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewReceipt(payment)}
+                                className="border-gray-300"
+                                title="Receipt"
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red-200 hover:bg-red-50 text-red-600"
+                                onClick={() => handleDeletePayment(payment.id)}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

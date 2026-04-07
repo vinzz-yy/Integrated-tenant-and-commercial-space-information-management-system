@@ -12,7 +12,7 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -124,6 +124,19 @@ export function FinancialManagement() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
+      try {
+        await connection.financial.deletePayment(paymentId);
+        toast.success('Payment record deleted successfully');
+        loadPayments();
+      } catch (error) {
+        console.error('Failed to delete payment:', error);
+        toast.error('Failed to delete payment record');
+      }
     }
   };
 
@@ -341,15 +354,26 @@ export function FinancialManagement() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                onClick={() => handleViewReceipt(payment)}
-                              >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Receipt
-                              </Button>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
+                                  onClick={() => handleViewReceipt(payment)}
+                                  title="Receipt"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="hover:bg-red-100 text-red-600"
+                                  onClick={() => handleDeletePayment(payment.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );

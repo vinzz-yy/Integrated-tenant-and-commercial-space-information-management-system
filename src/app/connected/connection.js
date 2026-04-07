@@ -117,6 +117,18 @@ export const documentsAPI = {
     axios.post(`${API_BASE_URL}/documents/`, data, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     }).then(res => res.data),
+
+  updateDocument: async (id, data) => {
+    if (data instanceof FormData) {
+      return axios.patch(`${API_BASE_URL}/documents/${id}/`, data, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      }).then(res => res.data);
+    }
+    return api.patch(`/documents/${id}/`, data);
+  },
+  
+  deleteDocument: async (id) => 
+    api.delete(`/documents/${id}/`),
   
   updateDocumentStatus: async (id, status, notes) => 
     api.patch(`/documents/${id}/`, { status, notes }),
@@ -181,6 +193,9 @@ export const financialAPI = {
   processPayment: async (paymentData) => 
     api.post('/financial/payments/', paymentData),
   
+  deletePayment: async (id) => 
+    api.delete(`/financial/payments/${id}/`),
+
   getRevenueAnalytics: async (params = {}) => 
     api.get('/financial/revenue-analytics/', { params }),
   

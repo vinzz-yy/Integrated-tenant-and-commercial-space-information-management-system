@@ -9,7 +9,7 @@ import { Label } from '../../components/ui/label.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Upload, FileText, FileCheck, Clock, XCircle } from 'lucide-react';
+import { Upload, FileText, FileCheck, Clock, XCircle, Eye, Edit, Trash2 } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { toast } from 'sonner';
@@ -23,6 +23,12 @@ export function TenantCompliance() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ documentType: '', file: null });
   const [loading, setLoading] = useState(false);
+
+  // Edit and Delete state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({ id: null, documentType: '', file: null });
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
 
   // Redirect if not tenant
   useEffect(() => {
@@ -74,6 +80,59 @@ export function TenantCompliance() {
     } catch (err) {
       console.error("Upload error: ", err);
       toast.error(err.message || 'Upload failed');
+    }
+  };
+
+  // Open edit dialog
+  const handleOpenEdit = (doc) => {
+    setEditFormData({ id: doc.id, documentType: doc.documentType || doc.document_type, file: null });
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle edit submission
+  const handleEdit = async () => {
+    if (!editFormData.documentType) {
+      toast.warning('Please select a document type');
+      return;
+    }
+
+    try {
+      const data = new FormData();
+      data.append('document_type', editFormData.documentType);
+      if (editFormData.file) {
+         data.append('file', editFormData.file);
+      }
+      
+      await connection.documents.updateDocument(editFormData.id, data);
+      toast.success('Document updated');
+      setIsEditDialogOpen(false);
+
+      // Refresh document list
+      const resp = await connection.documents.getDocuments({ tenant_id: user?.id });
+      setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
+    } catch (err) {
+      toast.error(err.message || 'Update failed');
+    }
+  };
+
+  // Open delete dialog
+  const handleOpenDelete = (doc) => {
+    setDocToDelete(doc);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Handle delete execution
+  const handleDelete = async () => {
+    if (!docToDelete) return;
+    try {
+      await connection.documents.deleteDocument(docToDelete.id);
+      toast.success('Document deleted successfully');
+      setIsDeleteDialogOpen(false);
+      // Refresh
+      const resp = await connection.documents.getDocuments({ tenant_id: user?.id });
+      setDocuments(Array.isArray(resp) ? resp : (resp.results || []));
+    } catch (err) {
+      toast.error('Failed to delete document');
     }
   };
 
@@ -206,9 +265,22 @@ export function TenantCompliance() {
                           </p>
                         </div>
                       </div>
-                      <Badge className={statusBadge.className}>
-                        {statusBadge.text}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <Badge className={statusBadge.className}>
+                          {statusBadge.text}
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E3192] hover:bg-[#2E3192]/10" onClick={() => window.open(fullUrl, '_blank')} title="View">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => handleOpenEdit(doc)} title="Edit">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => handleOpenDelete(doc)} title="Delete">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })
@@ -284,6 +356,95 @@ export function TenantCompliance() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Document Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[520px]">
+            <DialogHeader>
+              <DialogTitle className="text-[#2E3192]">Edit Document</DialogTitle>
+              <DialogDescription>Update your document details or replace the file</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">Document Type <span className="text-[#ED1C24]">*</span></Label>
+                <Select
+                  value={editFormData.documentType}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, documentType: value })}
+                >
+                  <SelectTrigger className="border-gray-200">
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Business License">Business License</SelectItem>
+                    <SelectItem value="Insurance Certificate">Insurance Certificate</SelectItem>
+                    <SelectItem value="Fire Safety Certificate">Fire Safety Certificate</SelectItem>
+                    <SelectItem value="Health Permit">Health Permit</SelectItem>
+                    <SelectItem value="Valid ID">Valid ID</SelectItem>
+                    <SelectItem value="Storefront Photo">Storefront Photo</SelectItem>
+                    <SelectItem value="Other Image">Other Image</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">Replace File (Optional)</Label>
+                <Input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,image/*"
+                  onChange={(e) => setEditFormData({ ...editFormData, file: e.target.files?.[0] || null })}
+                  className="border-gray-200"
+                />
+                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (max 5MB). Leave empty to keep existing file.</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-gray-300">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEdit}
+                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Document Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#ED1C24] flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Delete Document
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this document? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {docToDelete && (
+                <div className="p-3 bg-gray-50 rounded-md border border-gray-100 flex items-center gap-3">
+                  <FileText className="h-8 w-8 text-gray-400" />
+                  <div>
+                    <p className="font-medium text-gray-800">{docToDelete.documentType || docToDelete.document_type}</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{docToDelete.fileName || docToDelete.file_name || 'Document'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} className="bg-[#ED1C24] hover:bg-[#ED1C24]/90 text-white">
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </Layout>
   );
