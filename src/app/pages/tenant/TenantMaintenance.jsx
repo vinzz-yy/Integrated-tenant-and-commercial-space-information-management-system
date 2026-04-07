@@ -10,7 +10,7 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Plus, Wrench, ClipboardList, CheckCircle } from 'lucide-react';
+import { Plus, Wrench, ClipboardList, CheckCircle, Pencil, Trash2 } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { toast } from 'sonner';
 
@@ -21,6 +21,8 @@ export function TenantMaintenance() {
   // State for maintenance requests
   const [requests, setRequests] = useState([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   
   // Form state for new request
   const [formData, setFormData] = useState({
@@ -44,7 +46,7 @@ export function TenantMaintenance() {
     load();
   }, [user]);
 
-  // Handle submitting a new maintenance request
+  // Handle submitting an operation request
   const handleSubmitRequest = async () => {
     try {
       // Create FormData for file upload
@@ -55,16 +57,47 @@ export function TenantMaintenance() {
       data.append('tenant_id', String(user?.id || ''));
       if (formData.file) data.append('attachment', formData.file);
       
-      await connection.maintenance.createRequest(data);
+      if (isEditMode && editingId) {
+        await connection.maintenance.updateRequestWithFile(editingId, data);
+        toast.success('Maintenance request updated successfully!');
+      } else {
+        await connection.maintenance.createRequest(data);
+        toast.success('Maintenance request submitted successfully!');
+      }
       setIsCreateDialogOpen(false);
+      setIsEditMode(false);
+      setEditingId(null);
       
       // Refresh requests list
       const resp = await connection.maintenance.getRequests({ tenant_id: user?.id });
       setRequests(Array.isArray(resp) ? resp : (resp?.results || []));
-      toast.success('Maintenance request submitted successfully!');
     } catch (error) {
-      console.error('Error submitting maintenance request:', error);
-      toast.error('Failed to submit maintenance request. Please try again.');
+      console.error('Error saving request:', error);
+      toast.error('Failed to save maintenance request. Please try again.');
+    }
+  };
+
+  const handleEditClick = (request) => {
+    setFormData({
+      title: request.title || '',
+      description: request.description || '',
+      priority: request.type || request.request_type || 'medium',
+      file: null,
+    });
+    setEditingId(request.id);
+    setIsEditMode(true);
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleDeleteRequest = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this maintenance request?")) return;
+    try {
+      await connection.maintenance.deleteRequest(id);
+      setRequests(requests.filter(r => String(r.id) !== String(id)));
+      toast.success('Maintenance request deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error('Failed to delete maintenance request.');
     }
   };
 
@@ -100,7 +133,12 @@ export function TenantMaintenance() {
             </p>
           </div>
           <Button
-            onClick={() => setIsCreateDialogOpen(true)}
+            onClick={() => {
+              setFormData({ title: '', description: '', priority: 'medium', file: null });
+              setIsEditMode(false);
+              setEditingId(null);
+              setIsCreateDialogOpen(true);
+            }}
             className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -186,13 +224,20 @@ export function TenantMaintenance() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Badge className={getPriorityColor(request.type || request.priority)}>
-                      {request.type || request.priority || 'medium'} priority
-                    </Badge>
-                    <Badge className={getStatusColor(request.status)}>
-                      {(request.status || '').replace('_', ' ')}
-                    </Badge>
+                  <div className="flex flex-col gap-2 items-end">
+                    <div className="flex gap-2 items-center">
+                      <Badge className={getStatusColor(request.status)}>
+                        {(request.status || '').replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                       <Button variant="outline" size="sm" onClick={() => handleEditClick(request)} className="h-8 w-8 p-0 border-[#2E3192] text-[#2E3192]">
+                         <Pencil className="h-4 w-4" />
+                       </Button>
+                       <Button variant="outline" size="sm" onClick={() => handleDeleteRequest(request.id)} className="h-8 w-8 p-0 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600">
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -206,13 +251,19 @@ export function TenantMaintenance() {
           </CardContent>
         </Card>
 
-        {/* Create Request Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        {/* Create/Edit Request Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            setIsEditMode(false);
+            setEditingId(null);
+          }
+        }}>
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">Submit Maintenance Request</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">{isEditMode ? 'Update Maintenance Request' : 'Submit Maintenance Request'}</DialogTitle>
               <DialogDescription>
-                Describe the issue you're experiencing
+                {isEditMode ? 'Update the details of your request' : "Describe the issue you're experiencing"}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
@@ -227,24 +278,6 @@ export function TenantMaintenance() {
                 />
               </div>
               
-              {/* Priority select */}
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Priority</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="high">High - Urgent</SelectItem>
-                    <SelectItem value="medium">Medium - Normal</SelectItem>
-                    <SelectItem value="low">Low - Can Wait</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               {/* Description textarea */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Description <span className="text-[#ED1C24]">*</span></Label>
@@ -257,17 +290,6 @@ export function TenantMaintenance() {
                 />
               </div>
               
-              {/* File attachment */}
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Attachment (Optional)</Label>
-                <Input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
-                  className="border-gray-200"
-                />
-                <p className="text-xs text-gray-500">Upload photos or documents (max 5MB)</p>
-              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-gray-300">
@@ -277,7 +299,7 @@ export function TenantMaintenance() {
                 onClick={handleSubmitRequest}
                 className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
               >
-                Submit Request
+                {isEditMode ? 'Update Request' : 'Submit Request'}
               </Button>
             </DialogFooter>
           </DialogContent>

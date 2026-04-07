@@ -187,7 +187,7 @@ class MaintenanceRequest(models.Model):
     # Maintenance request
     tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='maintenance_requests')  
     title = models.CharField(max_length=128)
-    description = models.TextField()  
+    description = models.TextField(blank=True, null=True)  
     attachment = models.FileField(upload_to='maintenance/', blank=True, null=True) 
     request_type = models.CharField(max_length=32, default='Technical')  
     status = models.CharField(max_length=16, choices=[('pending','pending'),('in_progress','in_progress'),('completed','completed'),('cancelled','cancelled')], default='pending') 

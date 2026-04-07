@@ -228,12 +228,14 @@ class DocumentsViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all().order_by("-upload_date")
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # I-filter ang documents base sa role
         qs = super().get_queryset()
-        user = self.request.user
-        if user.profile.role == 'tenant':
+        user = getattr(self.request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant':
             qs = qs.filter(tenant=user)
         else:
             tenant_id = self.request.query_params.get("tenant_id")
@@ -243,13 +245,16 @@ class DocumentsViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         # Mag-upload ng document
+        user = getattr(request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        
+        # Only tenants can upload documents
+        if role != 'tenant':
+            return Response({"detail": "Forbidden: Only tenants can upload documents."}, status=status.HTTP_403_FORBIDDEN)
+            
         data = request.data.copy()
-        if request.user.profile.role == 'tenant':
-            data["tenant"] = request.user.id
-        else:
-            tid = data.pop("tenant_id", None)
-            if tid:
-                data["tenant"] = tid
+        data["tenant"] = user.id
+        
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -281,7 +286,9 @@ class EventsViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         # Gumawa ng bagong appointment
         data = request.data.copy()
-        if request.user.profile.role == 'tenant':
+        user = getattr(request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant':
             data["tenant"] = request.user.id
         else:
             tid = data.pop("tenant_id", None)
@@ -297,7 +304,9 @@ class EventsViewSet(viewsets.ModelViewSet):
         # I-update ang appointment
         instance = self.get_object()
         data = request.data.copy()
-        if request.user.profile.role != 'tenant':
+        user = getattr(request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role != 'tenant':
             has_tid = "tenant_id" in data
             tid = data.pop("tenant_id", None)
             if has_tid:
@@ -353,12 +362,14 @@ class MaintenanceRequestsViewSet(viewsets.ModelViewSet):
     queryset = MaintenanceRequest.objects.all().order_by("-created_at")
     serializer_class = MaintenanceRequestSerializer
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # I-filter ang requests base sa role
         qs = super().get_queryset()
-        user = self.request.user
-        if user.profile.role == 'tenant':
+        user = getattr(self.request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant':
             qs = qs.filter(tenant=user)
         else:
             tenant_id = self.request.query_params.get("tenant_id")
@@ -369,7 +380,9 @@ class MaintenanceRequestsViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         # Mag-report ng maintenance issue
         data = request.data.copy()
-        if request.user.profile.role == 'tenant':
+        user = getattr(request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None)
+        if role == 'tenant':
             data["tenant"] = request.user.id
         else:
             tid = data.pop("tenant_id", None)
@@ -388,6 +401,7 @@ class NotificationsViewSet(viewsets.ModelViewSet):
     # Notification management
     queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # Kunin lang ang notifications ng current user
@@ -414,6 +428,7 @@ class ComplianceRequestsViewSet(viewsets.ModelViewSet):
     # Operations requests - maintenance requests para sa staff
     queryset = MaintenanceRequest.objects.all().order_by("-created_at")
     serializer_class = MaintenanceRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 # ==================== FINANCIAL ====================
@@ -422,10 +437,12 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
     # Payment/financial management
     queryset = Payment.objects.all().order_by("-created_at")
     serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # I-filter ang payments base sa role
-        user = self.request.user
-        if getattr(user.profile, 'role', '') == 'tenant':
+        user = getattr(self.request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", "")
+        if role == 'tenant':
             return self.queryset.filter(user=user)
         return self.queryset

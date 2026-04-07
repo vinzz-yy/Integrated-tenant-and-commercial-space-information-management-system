@@ -11,7 +11,7 @@ import { Label } from '../../components/ui/label.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus, ClipboardList, Clock, CheckCircle } from 'lucide-react';
+import { Search, Plus, ClipboardList, Clock, CheckCircle, Pencil, Trash2 } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function Compliance() {
@@ -28,6 +28,8 @@ export function Compliance() {
   
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
@@ -92,22 +94,32 @@ export function Compliance() {
     setFilteredRequests(filtered);
   }, [searchQuery, statusFilter, requests]);
 
-  // Handle creating a new operation request
-  const handleCreateRequest = async () => {
+  // Handle creating/saving an operation request
+  const handleSaveRequest = async () => {
     try {
       const payload = {
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        status: 'pending',
         tenant: formData.assignedTo ? String(formData.assignedTo) : undefined,
       };
-      const created = await connection.compliance.createRequest(payload);
-      setRequests([created, ...requests]);
+      
+      if (isEditMode && editingId) {
+        const updated = await connection.compliance.updateRequest(editingId, payload);
+        setRequests(requests.map(r => String(r.id) === String(editingId) ? updated : r));
+        setResultTitle('Update Successful');
+        setResultMessage('The request has been updated successfully.');
+      } else {
+        payload.status = 'pending';
+        const created = await connection.compliance.createRequest(payload);
+        setRequests([created, ...requests]);
+        setResultTitle('Adding Request Successful');
+        setResultMessage('The request has been submitted successfully.');
+      }
+      
       setIsCreateDialogOpen(false);
-      setResultTitle('Adding Request Successful');
-      setResultMessage('The request has been submitted successfully.');
       setIsResultDialogOpen(true);
+      
       // Reset form
       setFormData({
         title: '',
@@ -116,11 +128,42 @@ export function Compliance() {
         assignedTo: '',
         date: '',
       });
+      setIsEditMode(false);
+      setEditingId(null);
     } catch (error) {
-      console.error('Error creating request:', error);
-      setResultTitle('Failed Adding Request');
-      setResultMessage(error.message || 'Failed adding request. Please try again.');
+      console.error('Error saving request:', error);
+      setResultTitle('Failed Saving Request');
+      setResultMessage(error.message || 'Failed saving request. Please try again.');
       setIsResultDialogOpen(true);
+    }
+  };
+
+  const handleEditClick = (request) => {
+    setFormData({
+      title: request.title || '',
+      type: request.type || request.request_type || 'Technical',
+      description: request.description || '',
+      assignedTo: request.tenant || request.assignedTo || '',
+      date: request.date || request.createdAt || request.created_at || '',
+    });
+    setEditingId(request.id);
+    setIsEditMode(true);
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleDeleteRequest = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this request?")) return;
+    try {
+      await connection.compliance.deleteRequest(id);
+      setRequests(requests.filter(r => String(r.id) !== String(id)));
+      setResultTitle('Delete Successful');
+      setResultMessage('The request has been deleted.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+       console.error('Error deleting:', error);
+       setResultTitle('Failed to Delete');
+       setResultMessage(error.message || 'Error deleting request.');
+       setIsResultDialogOpen(true);
     }
   };
 
@@ -159,7 +202,12 @@ export function Compliance() {
           </div>
           <Button
             className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-            onClick={() => setIsCreateDialogOpen(true)}
+            onClick={() => {
+              setFormData({ title: '', type: 'Technical', description: '', assignedTo: '', date: '' });
+              setIsEditMode(false);
+              setEditingId(null);
+              setIsCreateDialogOpen(true);
+            }}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Request
@@ -253,17 +301,16 @@ export function Compliance() {
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-[#2E3192] font-semibold">Title</TableHead>
-                    <TableHead className="text-[#2E3192] font-semibold">Type</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Assigned To</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Date</TableHead>
+                    <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredRequests.map((request) => (
                     <TableRow key={request.id} className="hover:bg-[#F9E81B]/5">
                       <TableCell className="font-medium text-[#2E3192]">{request.title}</TableCell>
-                      <TableCell>{request.type || request.request_type}</TableCell>
                       <TableCell>
                         <Select
                           value={request.status || 'pending'}
@@ -287,6 +334,16 @@ export function Compliance() {
                       </TableCell>
                       <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
                       <TableCell className="text-sm">{formatDate(request.createdAt || request.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEditClick(request)} className="h-8 w-8 p-0 border-[#2E3192] text-[#2E3192]">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteRequest(request.id)} className="h-8 w-8 p-0 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -295,12 +352,22 @@ export function Compliance() {
           </CardContent>
         </Card>
 
-        {/* Create Request Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        {/* Create/Edit Request Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            setIsEditMode(false);
+            setEditingId(null);
+          }
+        }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">Create Operation Request</DialogTitle>
-              <DialogDescription>Submit a new operational request</DialogDescription>
+              <DialogTitle className="text-[#2E3192]">
+                {isEditMode ? 'Edit Operation Request' : 'Create Operation Request'}
+              </DialogTitle>
+              <DialogDescription>
+                {isEditMode ? 'Update existing operational request' : 'Submit a new operational request'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {/* Title input */}
@@ -312,24 +379,6 @@ export function Compliance() {
                   placeholder="Request title"
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
-              </div>
-              
-              {/* Type select */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Type</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Technical">Technical</SelectItem>
-                      <SelectItem value="Security">Security</SelectItem>
-                      <SelectItem value="Administrative">Administrative</SelectItem>
-                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               
               {/* Date and Assigned To */}
@@ -378,9 +427,9 @@ export function Compliance() {
               </Button>
               <Button
                 className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                onClick={handleCreateRequest}
+                onClick={handleSaveRequest}
               >
-                Create Request
+                {isEditMode ? 'Update Request' : 'Create Request'}
               </Button>
             </DialogFooter>
           </DialogContent>

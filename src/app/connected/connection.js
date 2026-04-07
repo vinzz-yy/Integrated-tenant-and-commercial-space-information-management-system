@@ -156,6 +156,9 @@ export const complianceAPI = {
   updateRequest: async (id, data) => 
     api.patch(`/compliance/requests/${id}/`, data),
   
+  deleteRequest: async (id) => 
+    api.delete(`/compliance/requests/${id}/`),
+  
   getActivityLogs: async (params = {}) => 
     api.get('/compliance/activity-logs/', { params }),
   
@@ -224,6 +227,14 @@ export const maintenanceAPI = {
   
   updateRequest: async (id, data) => 
     api.patch(`/maintenance/requests/${id}/`, data),
+    
+  updateRequestWithFile: async (id, data) => 
+    axios.patch(`${API_BASE_URL}/maintenance/requests/${id}/`, data, {
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    }).then(res => res.data),
+    
+  deleteRequest: async (id) => 
+    api.delete(`/maintenance/requests/${id}/`),
 };
 
  // Mark lahat ng notifications as read

@@ -39,7 +39,7 @@ export function TenantAppointments() {
     title: '',
     date: '',
     time: '',
-    location: '',
+    location: user?.unitNumber ? `Unit ${user.unitNumber}` : '',
     status: 'scheduled',
   });
 
@@ -139,7 +139,7 @@ export function TenantAppointments() {
       title: '',
       date: '',
       time: '',
-      location: '',
+      location: user?.unitNumber ? `Unit ${user.unitNumber}` : '',
       status: 'scheduled',
     });
     setSelectedAppointment(null);
@@ -307,7 +307,10 @@ export function TenantAppointments() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <Button
-              onClick={() => setIsCreateDialogOpen(true)}
+              onClick={() => {
+                resetForm();
+                setIsCreateDialogOpen(true);
+              }}
               className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -494,10 +497,10 @@ export function TenantAppointments() {
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Location</Label>
                 <Input
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  value={formData.location || (user?.unitNumber ? `Unit ${user.unitNumber}` : '')}
+                  readOnly
                   placeholder="e.g., Unit A-101"
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                  className="border-gray-200 bg-gray-50 focus:border-gray-200 focus:ring-0 text-gray-700"
                 />
               </div>
               {/* Status input removed for tenant creation */}
@@ -623,8 +626,8 @@ export function TenantAppointments() {
                 <Label className="text-[#2E3192] font-medium">Location</Label>
                 <Input
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                  readOnly
+                  className="border-gray-200 bg-gray-50 focus:border-gray-200 focus:ring-0 text-gray-700"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
