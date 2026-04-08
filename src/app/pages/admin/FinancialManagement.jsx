@@ -12,7 +12,7 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
+import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Trash2, Eye } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -29,6 +29,13 @@ export function FinancialManagement() {
   // Transaction state
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+
+  const handleViewPayment = (payment) => {
+    setSelectedPayment(payment);
+    setIsViewDialogOpen(true);
+  };
 
   // Tenant search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +47,7 @@ export function FinancialManagement() {
   const [transactionData, setTransactionData] = useState({
     amount: '',
     payment_method: 'cash',
-    description: '',
+    description: 'Monthly Rent',
     payment_date: new Date().toISOString().split('T')[0]
   });
 
@@ -147,7 +154,7 @@ export function FinancialManagement() {
     setTransactionData({
       amount: '',
       payment_method: 'cash',
-      description: '',
+      description: 'Monthly Rent',
       payment_date: new Date().toISOString().split('T')[0]
     });
   };
@@ -359,6 +366,15 @@ export function FinancialManagement() {
                                   variant="ghost"
                                   size="sm"
                                   className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
+                                  onClick={() => handleViewPayment(payment)}
+                                  title="View Details"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
                                   onClick={() => handleViewReceipt(payment)}
                                   title="Receipt"
                                 >
@@ -422,10 +438,26 @@ export function FinancialManagement() {
                       <div
                         key={tenant.id}
                         className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between"
-                        onClick={() => {
+                        onClick={async () => {
                           setSelectedTenant(tenant);
                           setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
                           setSearchResults([]);
+                          
+                          // Autocomplete the payment amount using the commercial unit rental rate
+                          try {
+                            const unitsResp = await connection.commercialSpace.getUnits({ tenant_id: tenant.id });
+                            const units = Array.isArray(unitsResp) ? unitsResp : (unitsResp.results || []);
+                            const tenantUnit = units.find(u => String(u.tenant) === String(tenant.id)) || units[0];
+                            if (tenantUnit && (tenantUnit.rental_rate || tenantUnit.rentalRate)) {
+                               const rate = tenantUnit.rental_rate || tenantUnit.rentalRate;
+                               setTransactionData(prev => ({ ...prev, amount: String(rate) }));
+                            } else {
+                               // Ensure amount isn't overwritten if not found, or clear it
+                               setTransactionData(prev => ({ ...prev, amount: '' }));
+                            }
+                          } catch (err) {
+                            console.error('Failed to fetch tenant unit for amount auto-fill', err);
+                          }
                         }}
                       >
                         <div className="flex items-center gap-3">
@@ -504,24 +536,13 @@ export function FinancialManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Select
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="e.g. Monthly Rent"
                   value={transactionData.description}
-                  onValueChange={(val) => setTransactionData({ ...transactionData, description: val })}
-                >
-                  <SelectTrigger id="description">
-                    <SelectValue placeholder="Select description type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Monthly Rent">Monthly Rent</SelectItem>
-                    <SelectItem value="Utility Bills">Utility Bills</SelectItem>
-                    <SelectItem value="Penalty Fee">Penalty Fee</SelectItem>
-                    <SelectItem value="Security Deposit">Security Deposit</SelectItem>
-                    <SelectItem value="Advance Rent">Advance Rent</SelectItem>
-                    <SelectItem value="Maintenance Fee">Maintenance Fee</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setTransactionData({ ...transactionData, description: e.target.value })}
+                />
               </div>
             </div>
 
@@ -535,6 +556,71 @@ export function FinancialManagement() {
                 className="bg-[#2E3192] hover:bg-[#1f2170] text-white"
               >
                 {loading ? 'Saving...' : 'Save Transaction'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Payment Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="text-[#2E3192]">Payment Details</DialogTitle>
+              <DialogDescription>View complete information for this transaction</DialogDescription>
+            </DialogHeader>
+            {selectedPayment && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-500">Transaction ID</p>
+                    <p className="font-semibold text-[#2E3192]">{selectedPayment.id}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-sm font-medium text-gray-500">Status</p>
+                    <div className="flex justify-end">
+                      <Badge className={getStatusBadge(selectedPayment.status).className}>
+                          <span className="flex items-center">
+                            {getStatusBadge(selectedPayment.status).icon}
+                            {selectedPayment.status}
+                          </span>
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-500">Tenant / Customer</p>
+                    <p className="font-semibold text-[#2E3192]">{selectedPayment.tenant_name || 'Unknown'}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-sm font-medium text-gray-500">Payment Date</p>
+                    <p className="font-medium text-gray-800">{selectedPayment.payment_date}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-500">Payment Method</p>
+                    <p className="font-medium capitalize text-gray-800">{selectedPayment.payment_method?.replace('_', ' ')}</p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <p className="text-sm font-medium text-gray-500">Description</p>
+                    <p className="font-medium text-gray-800">{selectedPayment.description}</p>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="bg-[#2E3192]/5 p-4 rounded-lg flex justify-between items-center border border-[#2E3192]/10">
+                    <p className="font-medium text-[#2E3192]">Total Amount</p>
+                    <p className="text-2xl font-bold text-[#ED1C24]">₱{(selectedPayment.amount || 0).toLocaleString('en-PH')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setIsViewDialogOpen(false)} className="bg-[#2E3192] text-white hover:bg-[#1f2170]">
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>

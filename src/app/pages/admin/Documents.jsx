@@ -201,13 +201,13 @@ export function Documents() {
           <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Expiring Soon
-                <AlertTriangle className="h-4 w-4 text-[#ED1C24]" />
+                Rejected
+                <XCircle className="h-4 w-4 text-[#ED1C24]" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-[#ED1C24]">
-                {documents.filter(d => d.status === 'expiring_soon').length}
+                {documents.filter(d => d.status === 'rejected').length}
               </div>
             </CardContent>
           </Card>
@@ -239,7 +239,7 @@ export function Documents() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="approved">Accepted</SelectItem>
                   <SelectItem value="pending">Under Validation</SelectItem>
-                  <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -353,7 +353,6 @@ export function Documents() {
                     <SelectContent>
                       <SelectItem value="approved">Accepted</SelectItem>
                       <SelectItem value="pending">Under Validation</SelectItem>
-                      <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>

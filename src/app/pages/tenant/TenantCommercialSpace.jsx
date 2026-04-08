@@ -120,13 +120,12 @@ export function TenantCommercialSpace() {
                 <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                      Size
-                      <Maximize className="h-4 w-4 text-[#2E3192]" />
+                      Type
+                      <Building className="h-4 w-4 text-[#2E3192]" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-[#2E3192]">{myUnit.size}</div>
-                    <p className="text-xs text-gray-500 mt-1">Total area</p>
+                    <div className="text-2xl font-bold text-[#2E3192] capitalize">{myUnit.type}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
@@ -181,17 +180,6 @@ export function TenantCommercialSpace() {
                         </div>
                       </div>
 
-                      <div className="flex items-start gap-4">
-                        <div className="bg-[#2E3192]/10 p-3 rounded-lg">
-                          <Maximize className="h-6 w-6 text-[#2E3192]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
-                            Total Area
-                          </p>
-                          <p className="text-xl font-semibold mt-1 text-[#2E3192]">{myUnit.size}</p>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Right column - Financial info */}
@@ -241,7 +229,7 @@ export function TenantCommercialSpace() {
                   <CardDescription>Your current lease period and terms</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Start date */}
                     <div className="p-5 bg-[#2E3192]/5 border border-[#2E3192]/10 rounded-xl">
                       <div className="flex items-center gap-2 mb-2">
@@ -265,19 +253,6 @@ export function TenantCommercialSpace() {
                       </div>
                       <p className="text-xl font-bold text-[#2E3192]">
                         {formatDate(myUnit.leaseEndDate || myUnit.lease_end_date)}
-                      </p>
-                    </div>
-
-                    {/* Security deposit */}
-                    <div className="p-5 bg-[#ED1C24]/5 border border-[#ED1C24]/10 rounded-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <PhilippinePeso className="h-5 w-5 text-[#ED1C24]" />
-                        <p className="text-sm font-medium text-gray-600">
-                          Security Deposit
-                        </p>
-                      </div>
-                      <p className="text-xl font-bold text-[#ED1C24]">
-                        ₱{(myUnit.securityDeposit || myUnit.security_deposit || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>

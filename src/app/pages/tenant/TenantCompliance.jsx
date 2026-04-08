@@ -310,10 +310,8 @@ export function TenantCompliance() {
                   <SelectContent>
                     <SelectItem value="Business License">Business License</SelectItem>
                     <SelectItem value="Insurance Certificate">Insurance Certificate</SelectItem>
-                    <SelectItem value="Fire Safety Certificate">Fire Safety Certificate</SelectItem>
                     <SelectItem value="Health Permit">Health Permit</SelectItem>
                     <SelectItem value="Valid ID">Valid ID</SelectItem>
-                    <SelectItem value="Storefront Photo">Storefront Photo</SelectItem>
                     <SelectItem value="Other Image">Other Image</SelectItem>
                   </SelectContent>
                 </Select>
@@ -377,10 +375,8 @@ export function TenantCompliance() {
                   <SelectContent>
                     <SelectItem value="Business License">Business License</SelectItem>
                     <SelectItem value="Insurance Certificate">Insurance Certificate</SelectItem>
-                    <SelectItem value="Fire Safety Certificate">Fire Safety Certificate</SelectItem>
                     <SelectItem value="Health Permit">Health Permit</SelectItem>
                     <SelectItem value="Valid ID">Valid ID</SelectItem>
-                    <SelectItem value="Storefront Photo">Storefront Photo</SelectItem>
                     <SelectItem value="Other Image">Other Image</SelectItem>
                   </SelectContent>
                 </Select>

@@ -15,6 +15,19 @@ export function AuthProvider({ children }) {
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
+      
+      // Refresh user profile in background to get latest admin updates
+      connection.auth.getCurrentUser()
+        .then(profile => {
+          const updatedProfile = {
+            ...profile,
+            firstName: profile.first_name || profile.firstName || '',
+            lastName: profile.last_name || profile.lastName || '',
+          };
+          setUser(updatedProfile);
+          sessionStorage.setItem('user', JSON.stringify(updatedProfile));
+        })
+        .catch(err => console.error("Failed to refresh user profile", err));
     }
   }, []);
 

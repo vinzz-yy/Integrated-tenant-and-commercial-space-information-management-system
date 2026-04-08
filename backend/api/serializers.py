@@ -76,7 +76,22 @@ class UnitSerializer(serializers.ModelSerializer):
     leaseStartDate = serializers.DateField(source="lease_start_date", required=False)
     leaseEndDate = serializers.DateField(source="lease_end_date", required=False)
     image = serializers.ImageField(required=False, allow_null=True)
-    tenantName = serializers.CharField(source="tenant_name", required=False, allow_null=True, allow_blank=True)
+    tenant_name = serializers.SerializerMethodField()
+    tenantName = serializers.SerializerMethodField()
+
+    def get_tenant_name(self, obj):
+        try:
+            if obj.tenant:
+                first = obj.tenant.first_name or ""
+                last = obj.tenant.last_name or ""
+                name = f"{first} {last}".strip()
+                return name or obj.tenant.email
+            return None
+        except Exception:
+            return None
+
+    def get_tenantName(self, obj):
+        return self.get_tenant_name(obj)
 
     class Meta:
         model = Unit
