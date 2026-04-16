@@ -197,7 +197,7 @@ export const financialAPI = {
     api.delete(`/financial/payments/${id}/`),
 
   getRevenueAnalytics: async (params = {}) => 
-    api.get('/financial/revenue-analytics/', { params }),
+    api.get('/financial/payments/revenue-analytics/', { params }),
   
   getProfitLossReport: async (startDate, endDate) => 
     api.get('/financial/reports/profit-loss/', {

@@ -78,7 +78,7 @@ export function AdminDashboard() {
           }));
         }
 
-        // Process financial data
+        // Process financial statistics
         if (paymentsResp.status === 'fulfilled') {
           const paymentsData = paymentsResp.value;
           const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.results || []);
@@ -102,7 +102,31 @@ export function AdminDashboard() {
           const revenueGrowth = previousMonthTotal ? 
             ((lastMonthTotal - previousMonthTotal) / previousMonthTotal * 100).toFixed(1) : 0;
 
-          // Generate revenue analytics from payments
+          setStats(prev => ({
+            ...prev,
+            totalRevenue,
+            revenueGrowth
+          }));
+        }
+
+        // Process revenue analytics
+        if (revenueResp.status === 'fulfilled') {
+          const revenueDataValue = revenueResp.value;
+          const revenueChartData = revenueDataValue?.data || (Array.isArray(revenueDataValue) ? revenueDataValue : []);
+          
+          if (revenueChartData && revenueChartData.length > 0) {
+            // Map keys if necessary (backend now returns month/revenue, but let's be safe)
+            const normalizedData = revenueChartData.map(item => ({
+              month: item.month || item.name || 'N/A',
+              revenue: Number(item.revenue || item.amount || 0)
+            }));
+            setRevenueData(normalizedData);
+          }
+        } else if (paymentsResp.status === 'fulfilled') {
+          // Fallback to generating from payments if the analytics endpoint fails
+          const paymentsData = paymentsResp.value;
+          const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.results || []);
+          
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           const generatedRevenueData = [];
           for (let i = 5; i >= 0; i--) {
@@ -123,12 +147,6 @@ export function AdminDashboard() {
             });
           }
           setRevenueData(generatedRevenueData);
-
-          setStats(prev => ({
-            ...prev,
-            totalRevenue,
-            revenueGrowth
-          }));
         }
 
         // Process commercial space data
@@ -171,18 +189,6 @@ export function AdminDashboard() {
             .sort((a, b) => b.id - a.id)
             .slice(0, 3);
           setAppointments(sortedAppointments);
-        }
-
-        // Process revenue analytics handles by payments logic above
-        if (revenueResp.status === 'fulfilled' && revenueData.length === 0) {
-          const revenueDataValue = revenueResp.value;
-          const revenueChartData = Array.isArray(revenueDataValue) 
-            ? revenueDataValue 
-            : (revenueDataValue?.data || revenueDataValue?.results || []);
-          
-          if (revenueChartData && revenueChartData.length > 0) {
-            setRevenueData(Array.isArray(revenueChartData) ? revenueChartData : []);
-          }
         }
 
         // Process notifications

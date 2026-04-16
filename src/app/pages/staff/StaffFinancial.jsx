@@ -48,12 +48,18 @@ export function StaffFinancial() {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
 
+  const [loadingPayments, setLoadingPayments] = useState(false);
+
   const loadPayments = async () => {
+    setLoadingPayments(true);
     try {
       const pay = await connection.financial.getPayments();
       setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
     } catch (error) {
       console.error('Failed to load payments:', error);
+      toast.error('Failed to load payment records');
+    } finally {
+      setLoadingPayments(false);
     }
   };
 
@@ -265,7 +271,12 @@ export function StaffFinancial() {
             <CardDescription>All recorded payment transactions</CardDescription>
           </CardHeader>
           <CardContent>
-            {payments.length === 0 ? (
+            {loadingPayments ? (
+              <div className="text-center py-12">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2E3192] border-t-transparent mx-auto mb-3"></div>
+                <p className="font-medium text-[#2E3192]">Loading transactions...</p>
+              </div>
+            ) : payments.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-10 w-10 mx-auto mb-3 text-[#2E3192]/30" />
                 <p className="font-medium text-[#2E3192]">No transactions recorded</p>

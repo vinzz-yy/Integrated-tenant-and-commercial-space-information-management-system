@@ -51,19 +51,35 @@ export function FinancialManagement() {
     payment_date: new Date().toISOString().split('T')[0]
   });
 
+  const [loadingPayments, setLoadingPayments] = useState(false);
+
   const loadPayments = async () => {
+    setLoadingPayments(true);
     try {
-      // Fetch invoices, payments, and revenue analytics in parallel
-      const [pay, revenue] = await Promise.all([
+      // Fetch data independently so one failure doesn't block the other
+      const [payResult, revenueResult] = await Promise.allSettled([
         connection.financial.getPayments({ limit: 1000 }),
         connection.financial.getRevenueAnalytics({ period: 'month' })
       ]);
-      setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
-      setRevenueData(revenue.data || []);
+
+      if (payResult.status === 'fulfilled') {
+        const pay = payResult.value;
+        setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
+      } else {
+        console.error('Failed to load payments:', payResult.reason);
+        toast.error('Failed to load payment records');
+      }
+
+      if (revenueResult.status === 'fulfilled') {
+        setRevenueData(revenueResult.value.data || []);
+      } else {
+        console.error('Failed to load analytics:', revenueResult.reason);
+        // We don't necessarily need to toast for analytics failure
+      }
     } catch (e) {
-      // Set empty arrays on error
-      setPayments([]);
-      setRevenueData([]);
+      console.error('Unexpected error in loadPayments:', e);
+    } finally {
+      setLoadingPayments(false);
     }
   };
 
@@ -343,57 +359,74 @@ export function FinancialManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment) => {
-                        const statusBadge = getStatusBadge(payment.status);
-                        return (
-                          <TableRow key={payment.id} className="hover:bg-[#F9E81B]/5">
-                            <TableCell className="font-medium text-[#2E3192]">{payment.id}</TableCell>
-                            <TableCell>{payment.tenant_name}</TableCell>
-                            <TableCell>₱{(payment.amount || 0).toLocaleString('en-PH')}</TableCell>
-                            <TableCell className="text-sm">{payment.payment_date}</TableCell>
-                            <TableCell>{payment.payment_method}</TableCell>
-                            <TableCell>
-                              <Badge className={statusBadge.className}>
-                                <span className="flex items-center">
-                                  {statusBadge.icon}
-                                  {payment.status}
-                                </span>
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                  onClick={() => handleViewPayment(payment)}
-                                  title="View Details"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                  onClick={() => handleViewReceipt(payment)}
-                                  title="Receipt"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="hover:bg-red-100 text-red-600"
-                                  onClick={() => handleDeletePayment(payment.id)}
-                                  title="Delete"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {loadingPayments ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2E3192] border-t-transparent"></div>
+                              <p className="text-gray-500">Loading records...</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : payments.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                            No payment records found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        payments.map((payment) => {
+                          const statusBadge = getStatusBadge(payment.status);
+                          return (
+                            <TableRow key={payment.id} className="hover:bg-[#F9E81B]/5">
+                              <TableCell className="font-medium text-[#2E3192]">{payment.id}</TableCell>
+                              <TableCell>{payment.tenant_name}</TableCell>
+                              <TableCell>₱{(payment.amount || 0).toLocaleString('en-PH')}</TableCell>
+                              <TableCell className="text-sm">{payment.payment_date}</TableCell>
+                              <TableCell>{payment.payment_method}</TableCell>
+                              <TableCell>
+                                <Badge className={statusBadge.className}>
+                                  <span className="flex items-center">
+                                    {statusBadge.icon}
+                                    {payment.status}
+                                  </span>
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
+                                    onClick={() => handleViewPayment(payment)}
+                                    title="View Details"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
+                                    onClick={() => handleViewReceipt(payment)}
+                                    title="Receipt"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="hover:bg-red-100 text-red-600"
+                                    onClick={() => handleDeletePayment(payment.id)}
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
                     </TableBody>
                   </Table>
                 </div>

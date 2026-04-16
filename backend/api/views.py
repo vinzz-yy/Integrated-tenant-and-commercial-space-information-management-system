@@ -446,3 +446,38 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
         if role == 'tenant':
             return self.queryset.filter(user=user)
         return self.queryset
+
+    @action(detail=False, methods=["get"], url_path="revenue-analytics")
+    def revenue_analytics(self, request):
+        # Simple revenue analytics
+        from django.db.models import Sum
+        from django.utils import timezone
+        import datetime
+
+        # Get total revenue
+        total_revenue = Payment.objects.filter(status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # Get monthly revenue (last 6 months)
+        monthly_revenue = []
+        today = timezone.now().date()
+        for i in range(5, -1, -1):
+            # Calculate months correctly
+            year = today.year
+            month = today.month - i
+            while month <= 0:
+                month += 12
+                year -= 1
+            
+            month_date = datetime.date(year, month, 1)
+            month_name = month_date.strftime('%b')
+            amount = Payment.objects.filter(
+                status='completed',
+                payment_date__year=year,
+                payment_date__month=month
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+            monthly_revenue.append({'month': month_name, 'revenue': float(amount)})
+
+        return Response({
+            "total_revenue": float(total_revenue),
+            "data": monthly_revenue
+        })
