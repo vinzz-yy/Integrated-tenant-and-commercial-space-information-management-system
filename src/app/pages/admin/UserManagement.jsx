@@ -56,13 +56,22 @@ export function UserManagement() {
     unitNumber: '',
     department: '',
     password: '',
+    leaseStartDate: '',
+    leaseEndDate: '',
   });
 
-  const normalizeUser = (u) => ({
-    ...u,
-    firstName: u.firstName ?? u.first_name ?? '',
-    lastName: u.lastName ?? u.last_name ?? '',
-  });
+  const normalizeUser = (u) => {
+    const leaseStart = u.leaseStartDate ?? u.lease_start_date ?? u.profile?.lease_start_date;
+    const leaseEnd = u.leaseEndDate ?? u.lease_end_date ?? u.profile?.lease_end_date;
+    
+    return {
+      ...u,
+      firstName: u.firstName ?? u.first_name ?? '',
+      lastName: u.lastName ?? u.last_name ?? '',
+      leaseStartDate: leaseStart ? String(leaseStart).split('T')[0] : '',
+      leaseEndDate: leaseEnd ? String(leaseEnd).split('T')[0] : '',
+    };
+  };
 
   const sortUsersDesc = (list) => {
     return [...list].sort((a, b) => {
@@ -135,7 +144,15 @@ export function UserManagement() {
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
-      const created = await connection.users.createUser(formData);
+      const payload = {
+        ...formData,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        unit_number: formData.unitNumber,
+        lease_start_date: formData.leaseStartDate || null,
+        lease_end_date: formData.leaseEndDate || null,
+      };
+      const created = await connection.users.createUser(payload);
       setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
       resetForm();
@@ -158,7 +175,15 @@ export function UserManagement() {
 
     try {
       setIsUpdating(true);
-      const updated = await connection.users.updateUser(String(selectedUser.id), formData);
+      const payload = {
+        ...formData,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        unit_number: formData.unitNumber,
+        lease_start_date: formData.leaseStartDate || null,
+        lease_end_date: formData.leaseEndDate || null,
+      };
+      const updated = await connection.users.updateUser(String(selectedUser.id), payload);
       setUsers((prev) =>
         sortUsersDesc(
           prev.map((u) => (String(u.id) === String(selectedUser.id) ? normalizeUser(updated) : u))
@@ -209,7 +234,7 @@ export function UserManagement() {
         }))
       );
 
-      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number'];
+      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number', 'Lease Start', 'Lease End'];
       const rows = rowsUsers.map(user => [
         user.id,
         user.email,
@@ -218,7 +243,9 @@ export function UserManagement() {
         user.role || '',
         user.phone || '',
         user.department || '',
-        user.unitNumber || ''
+        user.unitNumber || '',
+        user.leaseStartDate || '',
+        user.leaseEndDate || ''
       ]);
 
       if (format === 'csv') {
@@ -250,6 +277,8 @@ export function UserManagement() {
       phone: '',
       unitNumber: '',
       department: '',
+      leaseStartDate: '',
+      leaseEndDate: '',
     });
     setSelectedUser(null);
   };
@@ -265,6 +294,8 @@ export function UserManagement() {
       phone: user.phone || '',
       unitNumber: user.unitNumber || '',
       department: user.department || '',
+      leaseStartDate: user.leaseStartDate ? user.leaseStartDate.split('T')[0] : '',
+      leaseEndDate: user.leaseEndDate ? user.leaseEndDate.split('T')[0] : '',
     });
     setIsEditDialogOpen(true);
   };
@@ -374,6 +405,7 @@ export function UserManagement() {
                     <TableHead className="text-[#2E3192] font-semibold">Role</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Phone</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Unit/Department</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Lease Period</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
                   </TableRow>
@@ -419,6 +451,16 @@ export function UserManagement() {
                       {/* User unit or department */}
                       <TableCell className="text-sm">
                         {user.unitNumber || user.department || '-'}
+                      </TableCell>
+
+                      {/* User lease period */}
+                      <TableCell className="text-xs text-gray-500 whitespace-nowrap">
+                        {user.role === 'tenant' ? (
+                          <div className="flex flex-col">
+                            <span>Start: {user.leaseStartDate ? String(user.leaseStartDate).split('T')[0] : '-'}</span>
+                            <span>End: {user.leaseEndDate ? String(user.leaseEndDate).split('T')[0] : '-'}</span>
+                          </div>
+                        ) : '-'}
                       </TableCell>
 
                       {/* User status */}
@@ -545,33 +587,56 @@ export function UserManagement() {
 
               {/* Conditional fields based on role */}
               {formData.role === 'tenant' && (
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
-                  <Select
-                    value={formData.unitNumber || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
-                  >
-                    <SelectTrigger id="unitNumber" className="border-gray-200">
-                      <SelectValue placeholder="Select an available unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Unit</SelectItem>
-                      {formData.unitNumber && !availableUnits.find(u => (u.number || u.unitNumber) === formData.unitNumber) && (
-                        <SelectItem value={formData.unitNumber}>
-                          {formData.unitNumber} (Current)
-                        </SelectItem>
-                      )}
-                      {availableUnits.map(unit => {
-                        const unitId = unit.number || unit.unitNumber;
-                        return (
-                          <SelectItem key={unit.id} value={unitId}>
-                            {unitId} ({unit.type})
+                <>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
+                    <Select
+                      value={formData.unitNumber || "none"}
+                      onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
+                    >
+                      <SelectTrigger id="unitNumber" className="border-gray-200">
+                        <SelectValue placeholder="Select an available unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Unit</SelectItem>
+                        {formData.unitNumber && !availableUnits.find(u => (u.number || u.unitNumber) === formData.unitNumber) && (
+                          <SelectItem value={formData.unitNumber}>
+                            {formData.unitNumber} (Current)
                           </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        )}
+                        {availableUnits.map(unit => {
+                          const unitId = unit.number || unit.unitNumber;
+                          return (
+                            <SelectItem key={unit.id} value={unitId}>
+                              {unitId} ({unit.type})
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                    <Input
+                      id="leaseStartDate"
+                      type="date"
+                      value={formData.leaseStartDate}
+                      onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
+                      className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                    <Input
+                      id="leaseEndDate"
+                      type="date"
+                      value={formData.leaseEndDate}
+                      onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
+                      className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                    />
+                  </div>
+                </>
               )}
 
               {formData.role === 'staff' && (
@@ -695,33 +760,56 @@ export function UserManagement() {
 
               {/* Conditional fields based on role */}
               {formData.role === 'tenant' && (
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="editUnitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
-                  <Select
-                    value={formData.unitNumber || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
-                  >
-                    <SelectTrigger id="editUnitNumber" className="border-gray-200">
-                      <SelectValue placeholder="Select an available unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Unit</SelectItem>
-                      {formData.unitNumber && !availableUnits.find(u => (u.number || u.unitNumber) === formData.unitNumber) && (
-                        <SelectItem value={formData.unitNumber}>
-                          {formData.unitNumber} (Current)
-                        </SelectItem>
-                      )}
-                      {availableUnits.map(unit => {
-                        const unitId = unit.number || unit.unitNumber;
-                        return (
-                          <SelectItem key={unit.id} value={unitId}>
-                            {unitId} ({unit.type})
+                <>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="editUnitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
+                    <Select
+                      value={formData.unitNumber || "none"}
+                      onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
+                    >
+                      <SelectTrigger id="editUnitNumber" className="border-gray-200">
+                        <SelectValue placeholder="Select an available unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Unit</SelectItem>
+                        {formData.unitNumber && !availableUnits.find(u => (u.number || u.unitNumber) === formData.unitNumber) && (
+                          <SelectItem value={formData.unitNumber}>
+                            {formData.unitNumber} (Current)
                           </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        )}
+                        {availableUnits.map(unit => {
+                          const unitId = unit.number || unit.unitNumber;
+                          return (
+                            <SelectItem key={unit.id} value={unitId}>
+                              {unitId} ({unit.type})
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="editLeaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                    <Input
+                      id="editLeaseStartDate"
+                      type="date"
+                      value={formData.leaseStartDate}
+                      onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
+                      className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="editLeaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                    <Input
+                      id="editLeaseEndDate"
+                      type="date"
+                      value={formData.leaseEndDate}
+                      onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
+                      className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                    />
+                  </div>
+                </>
               )}
 
               {formData.role === 'staff' && (

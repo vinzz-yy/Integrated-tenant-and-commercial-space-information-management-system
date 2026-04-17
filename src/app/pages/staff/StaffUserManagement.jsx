@@ -45,13 +45,22 @@ export function StaffUserManagement() {
     phone: '',
     unitNumber: '',
     password: '',
+    leaseStartDate: '',
+    leaseEndDate: '',
   });
 
-  const normalizeUser = (u) => ({
-    ...u,
-    firstName: u.firstName ?? u.first_name ?? '',
-    lastName: u.lastName ?? u.last_name ?? '',
-  });
+  const normalizeUser = (u) => {
+    const leaseStart = u.leaseStartDate ?? u.lease_start_date ?? u.profile?.lease_start_date;
+    const leaseEnd = u.leaseEndDate ?? u.lease_end_date ?? u.profile?.lease_end_date;
+
+    return {
+      ...u,
+      firstName: u.firstName ?? u.first_name ?? '',
+      lastName: u.lastName ?? u.last_name ?? '',
+      leaseStartDate: leaseStart ? String(leaseStart).split('T')[0] : '',
+      leaseEndDate: leaseEnd ? String(leaseEnd).split('T')[0] : '',
+    };
+  };
 
   const sortUsersDesc = (list) => {
     return [...list].sort((a, b) => {
@@ -113,7 +122,15 @@ export function StaffUserManagement() {
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
-      const payload = { ...formData, role: 'tenant' };
+      const payload = { 
+        ...formData, 
+        role: 'tenant',
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        unit_number: formData.unitNumber,
+        lease_start_date: formData.leaseStartDate || null,
+        lease_end_date: formData.leaseEndDate || null,
+      };
       const created = await connection.users.createUser(payload);
       setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
@@ -136,7 +153,15 @@ export function StaffUserManagement() {
     
     try {
       setIsUpdating(true);
-      const payload = { ...formData, role: 'tenant' };
+      const payload = { 
+        ...formData, 
+        role: 'tenant',
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        unit_number: formData.unitNumber,
+        lease_start_date: formData.leaseStartDate || null,
+        lease_end_date: formData.leaseEndDate || null,
+      };
       const updated = await connection.users.updateUser(String(selectedUser.id), payload);
       setUsers((prev) =>
         sortUsersDesc(
@@ -171,7 +196,7 @@ export function StaffUserManagement() {
       
       const rowsUsers = sortUsersDesc(users);
       
-      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Unit Number'];
+      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Unit Number', 'Lease Start', 'Lease End'];
       const rows = rowsUsers.map(user => [
         user.id,
         user.email,
@@ -179,7 +204,9 @@ export function StaffUserManagement() {
         user.lastName || '',
         user.role || '',
         user.phone || '',
-        user.unitNumber || ''
+        user.unitNumber || '',
+        user.leaseStartDate || '',
+        user.leaseEndDate || ''
       ]);
 
       if (format === 'csv') {
@@ -209,6 +236,8 @@ export function StaffUserManagement() {
       role: 'tenant',
       phone: '',
       unitNumber: '',
+      leaseStartDate: '',
+      leaseEndDate: '',
     });
     setSelectedUser(null);
   };
@@ -222,6 +251,8 @@ export function StaffUserManagement() {
       role: 'tenant',
       phone: user.phone || '',
       unitNumber: user.unitNumber || '',
+      leaseStartDate: user.leaseStartDate ? user.leaseStartDate.split('T')[0] : '',
+      leaseEndDate: user.leaseEndDate ? user.leaseEndDate.split('T')[0] : '',
     });
     setIsEditDialogOpen(true);
   };
@@ -316,6 +347,7 @@ export function StaffUserManagement() {
                     <TableHead className="text-[#2E3192] font-semibold">Email</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Phone</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Unit Number</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Lease Period</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
                   </TableRow>
@@ -346,6 +378,13 @@ export function StaffUserManagement() {
                       
                       <TableCell className="text-sm">
                         {user.unitNumber || '-'}
+                      </TableCell>
+                      
+                      <TableCell className="text-xs text-gray-500 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span>Start: {user.leaseStartDate ? String(user.leaseStartDate).split('T')[0] : '-'}</span>
+                          <span>End: {user.leaseEndDate ? String(user.leaseEndDate).split('T')[0] : '-'}</span>
+                        </div>
                       </TableCell>
                       
                       <TableCell>
@@ -477,6 +516,27 @@ export function StaffUserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                <Input
+                  id="leaseStartDate"
+                  type="date"
+                  value={formData.leaseStartDate}
+                  onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                <Input
+                  id="leaseEndDate"
+                  type="date"
+                  value={formData.leaseEndDate}
+                  onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                />
+              </div>
             </div>
             
             <DialogFooter>
@@ -595,6 +655,27 @@ export function StaffUserManagement() {
                     })}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editLeaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                <Input
+                  id="editLeaseStartDate"
+                  type="date"
+                  value={formData.leaseStartDate}
+                  onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLeaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                <Input
+                  id="editLeaseEndDate"
+                  type="date"
+                  value={formData.leaseEndDate}
+                  onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                />
               </div>
             </div>
             

@@ -53,8 +53,8 @@ export function FinancialManagement() {
 
   const [loadingPayments, setLoadingPayments] = useState(false);
 
-  const loadPayments = async () => {
-    setLoadingPayments(true);
+  const loadPayments = async (isSilent = false) => {
+    if (!isSilent) setLoadingPayments(true);
     try {
       // Fetch data independently so one failure doesn't block the other
       const [payResult, revenueResult] = await Promise.allSettled([
@@ -64,22 +64,34 @@ export function FinancialManagement() {
 
       if (payResult.status === 'fulfilled') {
         const pay = payResult.value;
-        setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
+        const serverPayments = Array.isArray(pay) ? pay : (pay?.results || []);
+        
+        if (isSilent) {
+          // Merge logic for silent refresh
+          setPayments(prev => {
+            const serverIds = new Set(serverPayments.map(p => String(p.id)));
+            const localOnly = prev.filter(p => p.id && !serverIds.has(String(p.id)));
+            return [...localOnly, ...serverPayments].sort((a, b) => {
+              const dateA = new Date(a.created_at || a.payment_date || 0);
+              const dateB = new Date(b.created_at || b.payment_date || 0);
+              return dateB - dateA;
+            });
+          });
+        } else {
+          setPayments(serverPayments);
+        }
       } else {
         console.error('Failed to load payments:', payResult.reason);
-        toast.error('Failed to load payment records');
+        if (!isSilent) toast.error('Failed to load payment records');
       }
 
       if (revenueResult.status === 'fulfilled') {
         setRevenueData(revenueResult.value.data || []);
-      } else {
-        console.error('Failed to load analytics:', revenueResult.reason);
-        // We don't necessarily need to toast for analytics failure
       }
     } catch (e) {
       console.error('Unexpected error in loadPayments:', e);
     } finally {
-      setLoadingPayments(false);
+      if (!isSilent) setLoadingPayments(false);
     }
   };
 
@@ -129,7 +141,7 @@ export function FinancialManagement() {
 
     setLoading(true);
     try {
-      await connection.financial.createPayment({
+      const newPayment = await connection.financial.createPayment({
         user: selectedTenant.id,
         amount: parseFloat(transactionData.amount),
         payment_method: transactionData.payment_method,
@@ -141,7 +153,12 @@ export function FinancialManagement() {
       toast.success('Transaction saved successfully');
       setIsTransactionDialogOpen(false);
       resetForm();
-      loadPayments();
+      
+      // Update local state immediately with the new payment at the top
+      setPayments(prev => [newPayment, ...prev]);
+      
+      // Then reload everything silently in background to ensure all data (analytics, etc.) is in sync
+      loadPayments(true);
     } catch (error) {
       toast.error('Failed to save transaction');
       console.error(error);
@@ -151,6 +168,11 @@ export function FinancialManagement() {
   };
 
   const handleDeletePayment = async (paymentId) => {
+    if (!paymentId) {
+      toast.error('Invalid payment record ID');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
       try {
         await connection.financial.deletePayment(paymentId);
@@ -158,7 +180,7 @@ export function FinancialManagement() {
         loadPayments();
       } catch (error) {
         console.error('Failed to delete payment:', error);
-        toast.error('Failed to delete payment record');
+        toast.error(error.message || 'Failed to delete payment record');
       }
     }
   };

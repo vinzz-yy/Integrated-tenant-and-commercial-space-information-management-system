@@ -252,9 +252,8 @@ export function StaffProfile() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="Enter your email"
-                      className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                      disabled
+                      className="h-11 border-gray-200 bg-gray-50 text-gray-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -281,9 +280,8 @@ export function StaffProfile() {
                   <Input
                     id="department"
                     value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    placeholder="Enter your department"
-                    className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                    disabled
+                    className="h-11 border-gray-200 bg-gray-50 text-gray-500"
                   />
                 </div>
 

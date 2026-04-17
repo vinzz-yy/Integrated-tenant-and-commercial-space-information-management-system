@@ -10,6 +10,8 @@ class UserProfile(models.Model):
     phone = models.CharField(max_length=32, blank=True, null=True)  # Numero ng telepono
     department = models.CharField(max_length=64, blank=True, null=True)  # Department (para sa staff)
     unitNumber = models.CharField(max_length=32, blank=True, null=True)  # Unit number (para sa tenant)
+    lease_start_date = models.DateField(blank=True, null=True)  # Lease start date
+    lease_end_date = models.DateField(blank=True, null=True)  # Lease end date
 
     def to_dict(self):
         # I-convert sa dictionary para sa API response
@@ -23,25 +25,8 @@ class UserProfile(models.Model):
             'phone': self.phone,
             'department': self.department,
             'unitNumber': self.unitNumber,
-        }
-
-
-class CommercialUnit(models.Model):
-    # Commercial unit/model ng commercial space
-    number = models.CharField(max_length=32)  # Unit number
-    floor = models.IntegerField(default=1)  # Palapag
-    type = models.CharField(max_length=32, default='retail')  # Uri ng unit
-    status = models.CharField(max_length=16, choices=[('available','available'),('occupied','occupied'),('reserved','reserved'),('maintenance','maintenance')], default='available')  # Status
-    tenant_name = models.CharField(max_length=128, blank=True, null=True)  # Pangalan ng tenant
-
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            'number': self.number,
-            'floor': self.floor,
-            'type': self.type,
-            'status': self.status,
-            'tenant_name': self.tenant_name,
+            'leaseStartDate': self.lease_start_date,
+            'leaseEndDate': self.lease_end_date,
         }
 
 
@@ -61,21 +46,6 @@ class Appointment(models.Model):
             'date': self.date.isoformat(),
             'time': self.time,
             'status': self.status,
-        }
-
-
-class ComplianceDocument(models.Model):
-    # Compliance documents 
-    tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='compliance_documents', blank=True, null=True)
-    status = models.CharField(max_length=16, choices=[('pending','pending'),('approved','approved'),('rejected','rejected')], default='pending')
-    notes = models.TextField(blank=True, null=True)
-
-    def to_dict(self):
-        return {
-            'id': str(self.id),
-            'tenant_id': self.tenant_id,
-            'status': self.status,
-            'notes': self.notes,
         }
 
 

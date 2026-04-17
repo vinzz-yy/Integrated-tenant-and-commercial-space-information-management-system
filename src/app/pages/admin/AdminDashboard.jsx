@@ -6,7 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import connection from '../../connected/connection.js';
-import { Users, Calendar, PhilippinePeso, Building, TrendingUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { 
+  Users, 
+  PhilippinePeso, 
+  Building, 
+  AlertCircle,
+  TrendingUp,
+  ArrowRight,
+  Activity,
+  Calendar,
+  ClipboardList
+} from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function AdminDashboard() {
@@ -239,7 +249,7 @@ export function AdminDashboard() {
         {/* Stats cards grid - each card shows a key metric */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Users Card */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/users')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total Users
@@ -255,7 +265,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Monthly Revenue Card */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/financial')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Monthly Revenue
@@ -280,7 +290,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Occupancy Rate Card */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/commercial-space')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Occupancy Rate
@@ -296,7 +306,7 @@ export function AdminDashboard() {
           </Card>
 
           {/* Pending Items Card */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/Compliance')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Pending Items

@@ -4,17 +4,41 @@ from .models import Document, Appointment, Unit, MaintenanceRequest, Notificatio
 
 class UserSerializer(serializers.ModelSerializer):
     # Kunin ang fields mula sa UserProfile model
-    role = serializers.CharField(source='profile.role', read_only=True)
-    avatar = serializers.URLField(source='profile.avatar', read_only=True)
-    phone = serializers.CharField(source='profile.phone', read_only=True)
-    department = serializers.CharField(source='profile.department', read_only=True)
-    unitNumber = serializers.CharField(source='profile.unitNumber', read_only=True)
+    role = serializers.CharField(source='profile.role', required=False, allow_blank=True, allow_null=True)
+    avatar = serializers.URLField(source='profile.avatar', required=False, allow_null=True)
+    phone = serializers.CharField(source='profile.phone', required=False, allow_blank=True, allow_null=True)
+    department = serializers.CharField(source='profile.department', required=False, allow_blank=True, allow_null=True)
+    unitNumber = serializers.CharField(source='profile.unitNumber', required=False, allow_blank=True, allow_null=True)
+    leaseStartDate = serializers.DateField(source='profile.lease_start_date', required=False, allow_null=True)
+    leaseEndDate = serializers.DateField(source='profile.lease_end_date', required=False, allow_null=True)
     # Password ay write-only para hindi ma-expose 
     password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "role", "avatar", "phone", "department", "unitNumber", "password"]
+        fields = ["id", "email", "first_name", "last_name", "role", "avatar", "phone", "department", "unitNumber", "leaseStartDate", "leaseEndDate", "password"]
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        
+        # Update User fields
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        
+        password = validated_data.get('password')
+        if password:
+            instance.set_password(password)
+        instance.save()
+
+        # Update Profile fields
+        profile = getattr(instance, 'profile', None)
+        if profile:
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+            
+        return instance
 
 
 class DocumentSerializer(serializers.ModelSerializer):
@@ -138,12 +162,14 @@ class PaymentSerializer(serializers.ModelSerializer):
             user = obj.user
             if not user:
                 return "Unassigned"
-            name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-            return name or user.email
+            first = user.first_name or ""
+            last = user.last_name or ""
+            name = f"{first} {last}".strip()
+            return name or user.email or user.username
         except Exception:
             return "Unassigned"
 
     class Meta:
         model = Payment
         fields = ["id", "amount", "payment_method", "description", "status", "payment_date", "created_at", "tenant_name", "tenant_id", "user"]
-        extra_kwargs = {"user": {"required": False, "allow_null": True}}  # User ay optional
+        # Inalis ang extra_kwargs para siguradong required ang user relationship

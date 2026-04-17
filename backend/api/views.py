@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, mixins, status
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -65,6 +65,10 @@ class MeView(APIView):
                 profile.avatar = data.get("avatar")
             if "unitNumber" in data:
                 profile.unitNumber = data.get("unitNumber")
+            if "leaseStartDate" in data:
+                profile.lease_start_date = data.get("leaseStartDate")
+            if "leaseEndDate" in data:
+                profile.lease_end_date = data.get("leaseEndDate")
             profile.save()
         return Response(UserSerializer(user).data)
 
@@ -113,18 +117,23 @@ class UsersViewSet(viewsets.ModelViewSet):
         
         if not (is_admin or is_staff_creating_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        
         data = request.data.copy()
         
-        # Convert camelCase to snake_case
-        if "firstName" in data:
-            data["first_name"] = data.pop("firstName")
-        if "lastName" in data:
-            data["last_name"] = data.pop("lastName")
+        # Convert frontend fields to backend fields if necessary
+        if "firstName" in data: data["first_name"] = data.pop("firstName")
+        if "lastName" in data: data["last_name"] = data.pop("lastName")
+        
+        # Ensure lease dates are correctly mapped for UserProfile
+        lease_start = data.get('lease_start_date') or data.get('leaseStartDate')
+        lease_end = data.get('lease_end_date') or data.get('leaseEndDate')
         
         password = data.pop('password', None)
+        email = data.get('email')
+        
         user = User.objects.create_user(
-            username=data['email'],
-            email=data['email'],
+            username=email,
+            email=email,
             password=password,
             first_name=data.get('first_name', ''),
             last_name=data.get('last_name', '')
@@ -138,7 +147,9 @@ class UsersViewSet(viewsets.ModelViewSet):
             role=role,
             phone=data.get('phone', ''),
             department=data.get('department', ''),
-            unitNumber=unit_number
+            unitNumber=unit_number,
+            lease_start_date=lease_start,
+            lease_end_date=lease_end
         )
         
         # Automatic unit assignment logic
@@ -152,8 +163,7 @@ class UsersViewSet(viewsets.ModelViewSet):
                     unit.tenant_name = f"{user.first_name} {user.last_name}".strip() or user.username
                     unit.status = 'occupied'
                     unit.save()
-            except Exception as e:
-                # Log error or handle gracefully
+            except Exception:
                 pass
 
         serializer = self.get_serializer(user)
@@ -175,32 +185,21 @@ class UsersViewSet(viewsets.ModelViewSet):
             
         data = request.data.copy()
         
-        # Convert camelCase to snake_case
-        if "firstName" in data:
-            data["first_name"] = data.pop("firstName")
-        if "lastName" in data:
-            data["last_name"] = data.pop("lastName")
+        # Map frontend camelCase to snake_case for the User model
+        if "firstName" in data: data["first_name"] = data.get("firstName")
+        if "lastName" in data: data["last_name"] = data.get("lastName")
         
-        password = data.pop('password', None)
-        if password:
-            instance.set_password(password)
-        
+        # Use serializer for updating
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         
-        # I-update ang profile
+        # Re-fetch the instance to ensure we have the latest data for the response
+        instance.refresh_from_db()
         if instance.profile:
-            profile_data = {
-                'role': data.get('role', instance.profile.role),
-                'phone': data.get('phone', instance.profile.phone),
-                'department': data.get('department', instance.profile.department),
-                'unitNumber': data.get('unitNumber', instance.profile.unitNumber)
-            }
-            for key, value in profile_data.items():
-                setattr(instance.profile, key, value)
-            instance.profile.save()
-        return Response(serializer.data)
+            instance.profile.refresh_from_db()
+            
+        return Response(self.get_serializer(instance).data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -440,12 +439,54 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # I-filter ang payments base sa role
+        # Get base queryset directly from model to avoid any caching issues
+        qs = Payment.objects.all().order_by("-created_at")
+        
         user = getattr(self.request, "user", None)
+        if not user or not user.is_authenticated:
+            return qs.none()
+            
         role = getattr(getattr(user, "profile", None), "role", "")
         if role == 'tenant':
-            return self.queryset.filter(user=user)
-        return self.queryset
+            return qs.filter(user=user)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        # Admin or staff only for creating payments manually
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_staff_or_admin = request.user.is_staff or user_role in ['admin', 'staff']
+        
+        if not is_staff_or_admin:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+            
+        data = request.data.copy()
+        # Ensure user ID is an integer if provided as string
+        if 'user' in data and data['user']:
+            try:
+                data['user'] = int(data['user'])
+            except (ValueError, TypeError):
+                pass
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Re-fetch the saved object to ensure all fields (like tenant_name) are populated
+        instance = serializer.instance
+        return Response(self.get_serializer(instance).data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        # Only admin and staff can delete payments
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_staff_or_admin = request.user.is_staff or user_role in ['admin', 'staff']
+        
+        if not is_staff_or_admin:
+            return Response({"detail": "Forbidden: Only admin and staff can delete payment records."}, status=status.HTTP_403_FORBIDDEN)
+            
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except Exception as e:
+            return Response({"detail": f"Delete failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=["get"], url_path="revenue-analytics")
     def revenue_analytics(self, request):

@@ -9,6 +9,7 @@ import { Checkbox } from '../components/ui/checkbox.jsx';
 import { Alert, AlertDescription } from '../components/ui/alert.jsx';
 import { Eye, EyeOff, Loader2, Building2, UserCog, User } from 'lucide-react';
 import mannaLogo from '../images/manna_logo.png';
+import backgroundLogin from '../images/MANAAAA.jpg';
 
 export function Login() {
   const { login, isAuthenticated, user } = useAuth();
@@ -109,28 +110,26 @@ export function Login() {
 
   
   return (
-    <div className="relative min-h-screen bg-amber-50 flex items-center justify-center p-4">
-
-      {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 opacity-30" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, #fbbf24 1px, transparent 0)`,
-        backgroundSize: '40px 40px'
-      }} />
+    <div className="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundLogin})` }}>
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
 
       {/* Center column */}
       <div className="relative w-full max-w-md flex flex-col items-center">
 
-        {/* Logo / brand */}
-        <div className="flex flex-col items-center justify-center gap-3 mb-8">
-          <img 
-            src={mannaLogo}
-            alt="Company Logo" 
-            className="w-24 h-24 object-contain drop-shadow-lg"
-          />
-          <span className="font-black text-2xl text-[#2E3192] tracking-wide">
-            Manna Mall
-          </span>
-        </div>
+          {/* Logo / brand */}
+          <div className="flex flex-col items-center justify-center gap-3 mb-8">
+            <div className="bg-white/80 p-2 rounded-full backdrop-blur-sm shadow-md">
+              <img 
+                src={mannaLogo}
+                alt="Company Logo" 
+                className="w-20 h-20 object-contain drop-shadow-lg"
+              />
+            </div>
+            <span className="font-black text-3xl text-white tracking-wide drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+              Manna Mall
+            </span>
+          </div>
 
         {/* Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 w-full shadow-xl">
@@ -249,13 +248,13 @@ export function Login() {
         </div>{/* end card */}
 
         {/* Footer */}
-        <div className="mt-6 flex flex-col items-center gap-1 text-center">
-          <p className="text-xs text-gray-500">© 2026 Commercial Space Manager. All rights reserved.</p>
-          <p className="text-xs text-gray-400">
+        <div className="mt-8 flex flex-col items-center gap-1 text-center text-white/90 font-medium drop-shadow-md">
+          <p className="text-xs">© 2026 Commercial Space Manager. All rights reserved.</p>
+          <p className="text-xs">
             By signing in, you agree to our{' '}
-            <a href="#" className="text-[#2E3192] hover:text-[#1f2170] transition underline">Terms</a>
+            <a href="#" className="underline hover:text-white transition">Terms</a>
             {' '}and{' '}
-            <a href="#" className="text-[#2E3192] hover:text-[#1f2170] transition underline">Privacy Policy</a>
+            <a href="#" className="underline hover:text-white transition">Privacy Policy</a>
           </p>
         </div>
 

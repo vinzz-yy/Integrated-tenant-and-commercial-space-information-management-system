@@ -132,9 +132,6 @@ export const documentsAPI = {
   
   updateDocumentStatus: async (id, status, notes) => 
     api.patch(`/documents/${id}/`, { status, notes }),
-  
-  getReports: async () => 
-    api.get('/documents/reports/'),
 };
 
 // Gumawa ng appointment
@@ -151,9 +148,6 @@ export const eventsAPI = {
   
   deleteAppointment: async (id) => 
     api.delete(`/events/${id}/`),
-  
-  getTasks: async (params = {}) => 
-    api.get('/events/tasks/', { params }),
 };
 
 // Kunin activity logs
@@ -170,20 +164,11 @@ export const complianceAPI = {
   
   deleteRequest: async (id) => 
     api.delete(`/compliance/requests/${id}/`),
-  
-  getActivityLogs: async (params = {}) => 
-    api.get('/compliance/activity-logs/', { params }),
-  
-  getMetrics: async () => 
-    api.get('/compliance/metrics/'),
 };
 
  // Payment
  
 export const financialAPI = {
-  getInvoices: async (params = {}) => 
-    api.get('/financial/invoices/', { params }),
-  
   getPayments: async (params = {}) => 
     api.get('/financial/payments/', { params }),
   
@@ -198,11 +183,6 @@ export const financialAPI = {
 
   getRevenueAnalytics: async (params = {}) => 
     api.get('/financial/payments/revenue-analytics/', { params }),
-  
-  getProfitLossReport: async (startDate, endDate) => 
-    api.get('/financial/reports/profit-loss/', {
-      params: { start_date: startDate, end_date: endDate },
-    }),
 };
 
 // Mag-assign ng tenant sa unit

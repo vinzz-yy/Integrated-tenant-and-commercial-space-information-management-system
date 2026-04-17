@@ -62,7 +62,7 @@ export function StaffDashboard() {
         {/* Stats cards grid - each card shows a key metric */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* My Tasks Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/operations')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Compliance')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 My Tasks
@@ -79,7 +79,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Appointments Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/schedule')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Events')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Appointments
@@ -96,7 +96,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Pending Reviews Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/compliance')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Compliance')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Pending Reviews
@@ -113,7 +113,7 @@ export function StaffDashboard() {
           </Card>
 
           {/* Active Requests Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/operations')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Compliance')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
                 Active Requests
@@ -139,7 +139,7 @@ export function StaffDashboard() {
                 <CardTitle className="text-[#2E3192]">My Appointments</CardTitle>
                 <CardDescription>Your upcoming appointments</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/staff/schedule')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/staff/Events')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
                 View All <ArrowRight className="h-4 w-4" />
               </Button>
             </CardHeader>
@@ -149,7 +149,7 @@ export function StaffDashboard() {
                   <div
                     key={appointment.id}
                     className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-[#F9E81B]/10 transition-colors"
-                    onClick={() => navigate('/staff/schedule')}
+                    onClick={() => navigate('/staff/Events')}
                   >
                     <Calendar className="h-5 w-5 text-[#F9E81B] mt-0.5" />
                     <div className="flex-1">
@@ -174,7 +174,7 @@ export function StaffDashboard() {
                 <CardTitle className="text-[#2E3192]">Assigned Tasks</CardTitle>
                 <CardDescription>Operation requests assigned to you</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/staff/operations')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/staff/Compliance')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
                 View All <ArrowRight className="h-4 w-4" />
               </Button>
             </CardHeader>
@@ -184,7 +184,7 @@ export function StaffDashboard() {
                   <div
                     key={request.id}
                     className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-[#F9E81B]/10 transition-colors"
-                    onClick={() => navigate('/staff/operations')}
+                    onClick={() => navigate('/staff/Compliance')}
                   >
                     <ClipboardList className="h-5 w-5 text-[#2E3192] mt-0.5" />
                     <div className="flex-1">

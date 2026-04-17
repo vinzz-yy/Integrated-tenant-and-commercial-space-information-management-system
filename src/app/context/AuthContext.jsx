@@ -21,8 +21,8 @@ export function AuthProvider({ children }) {
         .then(profile => {
           const updatedProfile = {
             ...profile,
-            firstName: profile.first_name || profile.firstName || '',
-            lastName: profile.last_name || profile.lastName || '',
+            firstName: profile.firstName || profile.first_name || '',
+            lastName: profile.lastName || profile.last_name || '',
           };
           setUser(updatedProfile);
           sessionStorage.setItem('user', JSON.stringify(updatedProfile));

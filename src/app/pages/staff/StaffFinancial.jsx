@@ -50,16 +50,30 @@ export function StaffFinancial() {
 
   const [loadingPayments, setLoadingPayments] = useState(false);
 
-  const loadPayments = async () => {
-    setLoadingPayments(true);
+  const loadPayments = async (isSilent = false) => {
+    if (!isSilent) setLoadingPayments(true);
     try {
       const pay = await connection.financial.getPayments();
-      setPayments(Array.isArray(pay) ? pay : (pay?.results || []));
+      const serverPayments = Array.isArray(pay) ? pay : (pay?.results || []);
+      
+      if (isSilent) {
+        setPayments(prev => {
+          const serverIds = new Set(serverPayments.map(p => String(p.id)));
+          const localOnly = prev.filter(p => p.id && !serverIds.has(String(p.id)));
+          return [...localOnly, ...serverPayments].sort((a, b) => {
+            const dateA = new Date(a.created_at || a.payment_date || 0);
+            const dateB = new Date(b.created_at || b.payment_date || 0);
+            return dateB - dateA;
+          });
+        });
+      } else {
+        setPayments(serverPayments);
+      }
     } catch (error) {
       console.error('Failed to load payments:', error);
-      toast.error('Failed to load payment records');
+      if (!isSilent) toast.error('Failed to load payment records');
     } finally {
-      setLoadingPayments(false);
+      if (!isSilent) setLoadingPayments(false);
     }
   };
 
@@ -101,7 +115,7 @@ export function StaffFinancial() {
 
     setLoading(true);
     try {
-      await connection.financial.createPayment({
+      const newPayment = await connection.financial.createPayment({
         user: selectedTenant.id,
         amount: parseFloat(transactionData.amount),
         payment_method: transactionData.payment_method,
@@ -113,7 +127,12 @@ export function StaffFinancial() {
       toast.success('Transaction saved successfully');
       setIsTransactionDialogOpen(false);
       resetForm();
-      loadPayments();
+      
+      // Update local state immediately with the new payment at the top
+      setPayments(prev => [newPayment, ...prev]);
+      
+      // Then reload silently from server
+      loadPayments(true);
     } catch (error) {
       toast.error('Failed to save transaction');
       console.error(error);
@@ -123,6 +142,11 @@ export function StaffFinancial() {
   };
 
   const handleDeletePayment = async (paymentId) => {
+    if (!paymentId) {
+      toast.error('Invalid payment record ID');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
       try {
         await connection.financial.deletePayment(paymentId);
@@ -130,7 +154,7 @@ export function StaffFinancial() {
         loadPayments();
       } catch (error) {
         console.error('Failed to delete payment:', error);
-        toast.error('Failed to delete payment record');
+        toast.error(error.message || 'Failed to delete payment record');
       }
     }
   };

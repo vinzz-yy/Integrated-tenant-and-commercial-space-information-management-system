@@ -44,8 +44,6 @@ export function CommercialSpaceManagement() {
     rentalRate: 0,
     status: 'available',
     tenantId: 'none',
-    leaseStartDate: '',
-    leaseEndDate: '',
   });
 
   // State for creating a user directly from unit details
@@ -59,6 +57,8 @@ export function CommercialSpaceManagement() {
     phone: '',
     unitNumber: '',
     password: '',
+    leaseStartDate: '',
+    leaseEndDate: '',
   });
 
   // Initial load - fetch all units and users
@@ -123,8 +123,6 @@ export function CommercialSpaceManagement() {
         type: formData.type.toLowerCase(),
         status: formData.status,
         rental_rate: formData.rentalRate,
-        lease_start_date: formData.leaseStartDate || null,
-        lease_end_date: formData.leaseEndDate || null,
       });
       // Refresh list from server to ensure fields and image URL are populated
       const resp = await connection.commercialSpace.getUnits();
@@ -153,8 +151,6 @@ export function CommercialSpaceManagement() {
       rentalRate: Number(unit.rental_rate || unit.rentalRate || 0),
       status: unit.status || 'available',
       tenantId: unit.tenant_id ? String(unit.tenant_id) : 'none',
-      leaseStartDate: unit.lease_start_date ? unit.lease_start_date.split('T')[0] : '',
-      leaseEndDate: unit.lease_end_date ? unit.lease_end_date.split('T')[0] : '',
     });
     setIsEditDialogOpen(true);
   };
@@ -173,6 +169,8 @@ export function CommercialSpaceManagement() {
       phone: '',
       unitNumber: unit.number || unit.unitNumber || '',
       password: '',
+      leaseStartDate: unit.lease_start_date ? unit.lease_start_date.split('T')[0] : '',
+      leaseEndDate: unit.lease_end_date ? unit.lease_end_date.split('T')[0] : '',
     });
     setIsAddUserDialogOpen(true);
   };
@@ -180,7 +178,15 @@ export function CommercialSpaceManagement() {
   const handleCreateUser = async () => {
     try {
       setIsCreatingUser(true);
-      await connection.users.createUser(userFormData);
+      const payload = {
+        ...userFormData,
+        first_name: userFormData.firstName,
+        last_name: userFormData.lastName,
+        unit_number: userFormData.unitNumber,
+        lease_start_date: userFormData.leaseStartDate || null,
+        lease_end_date: userFormData.leaseEndDate || null,
+      };
+      await connection.users.createUser(payload);
       
       // Refresh list from server to capture updated unit status and tenant
       const resp = await connection.commercialSpace.getUnits();
@@ -213,8 +219,6 @@ export function CommercialSpaceManagement() {
         type: (formData.type || '').toLowerCase(),
         status: formData.status,
         rental_rate: formData.rentalRate,
-        lease_start_date: formData.leaseStartDate || null,
-        lease_end_date: formData.leaseEndDate || null,
       };
       
       // Assign tenant natively through payload
@@ -386,7 +390,6 @@ export function CommercialSpaceManagement() {
                     <TableHead className="w-[10%] text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="w-[15%] text-[#2E3192] font-semibold">Tenant</TableHead>
                     <TableHead className="w-[10%] text-[#2E3192] font-semibold">Amount</TableHead>
-                    <TableHead className="w-[20%] text-[#2E3192] font-semibold">Lease Period</TableHead>
                     <TableHead className="text-right w-[15%] text-[#2E3192] font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -408,12 +411,6 @@ export function CommercialSpaceManagement() {
                       </TableCell>
                       <TableCell className="text-sm font-medium text-[#2E3192]">
                         ₱{Number(unit.rental_rate || unit.rentalRate || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-500 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span>Start: {unit.lease_start_date ? unit.lease_start_date.split('T')[0] : '-'}</span>
-                          <span>End: {unit.lease_end_date ? unit.lease_end_date.split('T')[0] : '-'}</span>
-                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -497,26 +494,6 @@ export function CommercialSpaceManagement() {
                       <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Lease Start Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.leaseStartDate}
-                    onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Lease End Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.leaseEndDate}
-                    onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
                 </div>
               </div>
               <div className="space-y-2">
@@ -613,19 +590,6 @@ export function CommercialSpaceManagement() {
                   )}
                 </div>
 
-                {(selectedUnit.lease_start_date || selectedUnit.lease_end_date) && (
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div className="space-y-1">
-                      <Label className="text-gray-500 text-xs">Lease Start Date</Label>
-                      <p className="font-medium text-gray-900">{selectedUnit.lease_start_date ? selectedUnit.lease_start_date.split('T')[0] : 'Not specified'}</p>
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <Label className="text-gray-500 text-xs">Lease End Date</Label>
-                      <p className="font-medium text-gray-900">{selectedUnit.lease_end_date ? selectedUnit.lease_end_date.split('T')[0] : 'Not specified'}</p>
-                    </div>
-                  </div>
-                )}
-
                 {selectedUnit.amenities && (
                   <div className="pt-4 border-t">
                     <Label className="text-gray-500 text-xs">Amenities</Label>
@@ -701,27 +665,6 @@ export function CommercialSpaceManagement() {
                       <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Lease Start Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.leaseStartDate}
-                    onChange={(e) => setFormData({ ...formData, leaseStartDate: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Lease End Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.leaseEndDate}
-                    onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
                 </div>
               </div>
               
@@ -853,6 +796,27 @@ export function CommercialSpaceManagement() {
                   value={userFormData.unitNumber}
                   disabled
                   className="bg-gray-100"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="userLeaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                <Input
+                  id="userLeaseStartDate"
+                  type="date"
+                  value={userFormData.leaseStartDate}
+                  onChange={(e) => setUserFormData({ ...userFormData, leaseStartDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="userLeaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                <Input
+                  id="userLeaseEndDate"
+                  type="date"
+                  value={userFormData.leaseEndDate}
+                  onChange={(e) => setUserFormData({ ...userFormData, leaseEndDate: e.target.value })}
+                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
             </div>

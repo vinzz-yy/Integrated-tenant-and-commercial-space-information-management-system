@@ -136,7 +136,7 @@ export function TenantCommercialSpace() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-[#ED1C24]">
+                    <div className="text-2xl font-bold text-[#2E3192]">
                       ₱{(myUnit.rentalRate || myUnit.monthlyRent || 0).toLocaleString()}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Base rental rate</p>
@@ -192,7 +192,7 @@ export function TenantCommercialSpace() {
                           <p className="text-sm font-medium text-gray-500">
                             Monthly Rental Rate
                           </p>
-                          <p className="text-3xl font-bold text-[#ED1C24] mt-1">
+                          <p className="text-3xl font-bold text-[#2E3192] mt-1">
                             ₱{(myUnit.rentalRate || myUnit.monthlyRent || 0).toLocaleString()}
                             <span className="text-sm font-normal text-gray-500 ml-1">/month</span>
                           </p>
@@ -239,7 +239,7 @@ export function TenantCommercialSpace() {
                         </p>
                       </div>
                       <p className="text-xl font-bold text-[#2E3192]">
-                        {formatDate(myUnit.leaseStartDate || myUnit.lease_start_date)}
+                        {formatDate(user?.leaseStartDate || myUnit?.leaseStartDate || myUnit?.lease_start_date)}
                       </p>
                     </div>
 
@@ -252,7 +252,7 @@ export function TenantCommercialSpace() {
                         </p>
                       </div>
                       <p className="text-xl font-bold text-[#2E3192]">
-                        {formatDate(myUnit.leaseEndDate || myUnit.lease_end_date)}
+                        {formatDate(user?.leaseEndDate || myUnit?.leaseEndDate || myUnit?.lease_end_date)}
                       </p>
                     </div>
                   </div>
