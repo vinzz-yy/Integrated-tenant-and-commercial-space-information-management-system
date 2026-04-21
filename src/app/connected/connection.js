@@ -1,15 +1,22 @@
 import axios from 'axios';
 
-// Backend URL
-const API_BASE_URL = 'http://localhost:8000/api';
-const BACKEND_ORIGIN = 'http://localhost:8000';
+// JWT: Access token (7 days) + Refresh token (30 days)
+// Access token is sent on every request. When it expires (401),
+// the refresh token silently gets a new one from /auth/refresh/.
 
-// Kunin ang token mula sessionStorage
+const API_BASE_URL = 'http://localhost:8000/api';
+
+// JWT access token — sent on every API request (7-day lifetime)
 function getAuthToken() {
   return sessionStorage.getItem('authToken');
 }
 
-// Axios instance setup
+// JWT refresh token — used only to get a new access token (30-day lifetime)
+function getRefreshToken() {
+  return sessionStorage.getItem('refreshToken');
+}
+
+// Axios instance — all API calls go through this
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,7 +24,7 @@ const api = axios.create({
   },
 });
 
-// Mag-add ng token sa bawat request
+// Attaches the JWT access token to every request (skipped if { skipAuth: true })
 api.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
@@ -29,21 +36,81 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle responses at errors
+// Queue system — prevents duplicate refresh calls when multiple requests fail at once
+let isRefreshing = false;
+let failedQueue = [];
+
+// Resolves or rejects all queued requests after a refresh attempt
+function processQueue(error, token = null) {
+  failedQueue.forEach(({ resolve, reject }) =>
+    error ? reject(error) : resolve(token)
+  );
+  failedQueue = [];
+}
+
+// On 401: silently refreshes the access token using the refresh token,
+// then retries the original request. Redirects to login if refresh fails.
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear expired or invalid credentials
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('user');
-      
-      // Force redirect to login page for a fresh unauthenticated state
-      if (window.location.pathname !== '/') {
-        window.location.href = '/';
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refresh = getRefreshToken();
+
+      // No refresh token — redirect to login
+      if (!refresh) {
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
+        if (window.location.pathname !== '/') window.location.href = '/';
+        return Promise.reject(new Error('Session expired. Please log in again.'));
+      }
+
+      // Already refreshing — queue this request and wait
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest).then(r => r.data ?? r);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Call /auth/refresh/ directly (bypasses this interceptor)
+        const { data } = await axios.post(
+          `${API_BASE_URL}/auth/refresh/`,
+          { refresh },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        const newAccessToken = data.access;
+        sessionStorage.setItem('authToken', newAccessToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        processQueue(null, newAccessToken);
+
+        // Retry the original request with the new token
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+
+      } catch (refreshError) {
+        // Refresh token expired (30 days) — force re-login
+        processQueue(refreshError, null);
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
+        if (window.location.pathname !== '/') window.location.href = '/';
+        return Promise.reject(new Error('Session expired. Please log in again.'));
+      } finally {
+        isRefreshing = false;
       }
     }
 
+    // Extract a readable error message from the response
     const data = error.response?.data;
     let message = error.response?.statusText || 'Request failed';
     if (data) {
@@ -63,21 +130,21 @@ api.interceptors.response.use(
   }
 );
 
-// Login user
+// Auth endpoints — { skipAuth: true } skips token attachment on these calls
 export const authAPI = {
-  login: async (email, password) => 
+  login: async (email, password) =>          // returns { access, refresh, user }
     api.post('/auth/login/', { email, password }, { skipAuth: true }),
-  
-  logout: async () => 
+
+  logout: async () =>
     api.post('/auth/logout/', null, { skipAuth: true }),
-  
-  refreshToken: async (refreshToken) => 
+
+  refreshToken: async (refreshToken) =>      // auto-called by interceptor on 401
     api.post('/auth/refresh/', { refresh: refreshToken }, { skipAuth: true }),
-  
-  getCurrentUser: async () => 
+
+  getCurrentUser: async () =>
     api.get('/auth/me/'),
-  
-  updateCurrentUser: async (userData) => 
+
+  updateCurrentUser: async (userData) =>
     api.patch('/auth/me/', userData),
 };
  // Kunin lahat ng users

@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import UserProfile, Document, Appointment, Unit, MaintenanceRequest, Notification, Payment
 from .serializers import (UserSerializer,DocumentSerializer,AppointmentSerializer,UnitSerializer,MaintenanceRequestSerializer,NotificationSerializer,PaymentSerializer,)
 
-# ==================== AUTH ====================
+# AUTH
 
 class LoginView(APIView):
     # Login - return JWT tokens
@@ -73,7 +73,7 @@ class MeView(APIView):
         return Response(UserSerializer(user).data)
 
 
-# ==================== USERS ====================
+#USERS 
 
 class UsersViewSet(viewsets.ModelViewSet):
     # User management - admin/staff lang pwede
@@ -220,7 +220,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Imported"}, status=200)
 
 
-# ==================== DOCUMENTS ====================
+# DOCUMENTS 
 
 class DocumentsViewSet(viewsets.ModelViewSet):
     # Document management - tenants sariling docs lang makikita
@@ -261,7 +261,7 @@ class DocumentsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# ==================== APPOINTMENTS ====================
+# APPOINTMENTS 
 
 class EventsViewSet(viewsets.ModelViewSet):
     # Appointment/schedule management
@@ -316,7 +316,7 @@ class EventsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-# ==================== UNITS ====================
+# UNITS 
 
 class UnitsViewSet(viewsets.ModelViewSet):
     # Unit/property management
@@ -354,7 +354,7 @@ class UnitsViewSet(viewsets.ModelViewSet):
         return Response(UnitSerializer(unit).data)
 
 
-# ==================== MAINTENANCE ====================
+# MAINTENANCE 
 
 class MaintenanceRequestsViewSet(viewsets.ModelViewSet):
     # Maintenance request management
@@ -394,7 +394,7 @@ class MaintenanceRequestsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# ==================== NOTIFICATIONS ====================
+# NOTIFICATIONS 
 
 class NotificationsViewSet(viewsets.ModelViewSet):
     # Notification management
@@ -410,18 +410,18 @@ class NotificationsViewSet(viewsets.ModelViewSet):
     def mark_read(self, request, pk=None):
         # Mark as read ang isang notification
         note = self.get_object()
-        note.is_read = True
+        note.read = True  # field name is 'read' (not 'is_read')
         note.save()
         return Response({"detail": "Marked read"})
 
     @action(detail=False, methods=["post"], url_path="mark-all-read")
     def mark_all_read(self, request):
         # Mark as read lahat ng notifications
-        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        Notification.objects.filter(user=request.user, read=False).update(read=True)
         return Response({"detail": "All marked read"})
 
 
-# ==================== OPERATIONS ====================
+# OPERATIONS 
 
 class ComplianceRequestsViewSet(viewsets.ModelViewSet):
     # Operations requests - maintenance requests para sa staff
@@ -430,7 +430,7 @@ class ComplianceRequestsViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-# ==================== FINANCIAL ====================
+# FINANCIAL 
 
 class FinancialPaymentsViewSet(viewsets.ModelViewSet):
     # Payment/financial management
