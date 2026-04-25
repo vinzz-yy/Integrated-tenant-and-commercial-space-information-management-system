@@ -10,9 +10,10 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Plus, Wrench, ClipboardList, CheckCircle, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Wrench, ClipboardList, CheckCircle, Pencil, Trash2, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { toast } from 'sonner';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function TenantMaintenance() {
   const { user } = useAuth();
@@ -231,12 +232,23 @@ export function TenantMaintenance() {
                       </Badge>
                     </div>
                     <div className="flex gap-2 mt-2">
-                       <Button variant="outline" size="sm" onClick={() => handleEditClick(request)} className="h-8 w-8 p-0 border-[#2E3192] text-[#2E3192]">
-                         <Pencil className="h-4 w-4" />
-                       </Button>
-                       <Button variant="outline" size="sm" onClick={() => handleDeleteRequest(request.id)} className="h-8 w-8 p-0 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600">
-                         <Trash2 className="h-4 w-4" />
-                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px]">
+                          <DropdownMenuItem onClick={() => handleEditClick(request)} className="cursor-pointer">
+                            <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
+                            <span>Edit Request</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteRequest(request.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete Request</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>

@@ -1,11 +1,8 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
-/**
- * Toaster - Toast notification system
- * Used on: Shows temporary feedback messages
- * Screens: All screens - success/error notifications, alerts
- */
+//Toaster - Toast notification system
+
 const Toaster = (props) => {
   const { theme = "system" } = useTheme();
   return (

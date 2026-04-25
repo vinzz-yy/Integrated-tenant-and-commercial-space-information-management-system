@@ -84,7 +84,7 @@ export function TenantDashboard() {
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={handlePendingPaymentsClick}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Pending Payments
+                Unpaid Payments
                 <CreditCard className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
             </CardHeader>

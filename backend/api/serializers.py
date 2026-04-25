@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .models import Document, Appointment, Unit, MaintenanceRequest, Notification, Payment
 
 class UserSerializer(serializers.ModelSerializer):
+    
     # Kunin ang fields mula sa UserProfile model
     role = serializers.CharField(source='profile.role', required=False, allow_blank=True, allow_null=True)
     avatar = serializers.URLField(source='profile.avatar', required=False, allow_null=True)
@@ -11,6 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     unitNumber = serializers.CharField(source='profile.unitNumber', required=False, allow_blank=True, allow_null=True)
     leaseStartDate = serializers.DateField(source='profile.lease_start_date', required=False, allow_null=True)
     leaseEndDate = serializers.DateField(source='profile.lease_end_date', required=False, allow_null=True)
+    
     # Password ay write-only para hindi ma-expose 
     password = serializers.CharField(write_only=True, required=False)
 
@@ -42,6 +44,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
+    
     # Custom fields para sa frontend compatibility
     tenantName = serializers.SerializerMethodField()
     documentType = serializers.CharField(source="document_type", read_only=True)
@@ -70,11 +73,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
+   
     # Custom fields
     assignedTo = serializers.SerializerMethodField()
     tenantId = serializers.IntegerField(source="tenant_id", read_only=True)
 
     def get_assignedTo(self, obj):
+        
         # Kunin ang pangalan ng assigned tenant
         try:
             u = obj.tenant
@@ -92,6 +97,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 
 class UnitSerializer(serializers.ModelSerializer):
+    
     # I-map ang camelCase fields 
     unitNumber = serializers.CharField(source="unit_number", required=False)
     monthlyRent = serializers.DecimalField(source="monthly_rent", max_digits=12, decimal_places=2, required=False)
@@ -172,4 +178,4 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ["id", "amount", "payment_method", "description", "status", "payment_date", "created_at", "tenant_name", "tenant_id", "user"]
-        # Inalis ang extra_kwargs para siguradong required ang user relationship
+      

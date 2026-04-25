@@ -12,7 +12,7 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Trash2, Eye } from 'lucide-react';
+import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Eye, Pencil, MoreVertical, Printer } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -31,10 +31,31 @@ export function FinancialManagement() {
   const [loading, setLoading] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState(null);
 
   const handleViewPayment = (payment) => {
     setSelectedPayment(payment);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditPayment = (payment) => {
+    setIsEditing(true);
+    setEditingTransactionId(payment.id);
+    setSelectedTenant({
+      id: payment.user || payment.tenant_id,
+      first_name: payment.tenant_name?.split(' ')[0] || '',
+      last_name: payment.tenant_name?.split(' ').slice(1).join(' ') || '',
+      unitNumber: payment.unitNumber,
+    });
+    setTransactionData({
+      amount: String(payment.amount),
+      payment_method: payment.payment_method || 'cash',
+      description: payment.description || '',
+      status: payment.status || 'completed',
+      payment_date: payment.payment_date || new Date().toISOString().split('T')[0]
+    });
+    setIsTransactionDialogOpen(true);
   };
 
   // Tenant search state
@@ -48,6 +69,7 @@ export function FinancialManagement() {
     amount: '',
     payment_method: 'cash',
     description: 'Monthly Rent',
+    status: 'completed',
     payment_date: new Date().toISOString().split('T')[0]
   });
 
@@ -141,66 +163,65 @@ export function FinancialManagement() {
 
     setLoading(true);
     try {
-      const newPayment = await connection.financial.createPayment({
-        user: selectedTenant.id,
-        amount: parseFloat(transactionData.amount),
-        payment_method: transactionData.payment_method,
-        description: transactionData.description,
-        status: 'completed',
-        payment_date: transactionData.payment_date
-      });
+      if (isEditing) {
+        const updatedPayment = await connection.financial.updatePayment(editingTransactionId, {
+          amount: parseFloat(transactionData.amount),
+          payment_method: transactionData.payment_method,
+          description: transactionData.description,
+          status: transactionData.status,
+          payment_date: transactionData.payment_date
+        });
 
-      toast.success('Transaction saved successfully');
+        toast.success('Transaction updated successfully');
+        setPayments(prev => prev.map(p => p.id === editingTransactionId ? { ...p, ...updatedPayment } : p));
+      } else {
+        const newPayment = await connection.financial.createPayment({
+          user: selectedTenant.id,
+          amount: parseFloat(transactionData.amount),
+          payment_method: transactionData.payment_method,
+          description: transactionData.description,
+          status: transactionData.status,
+          payment_date: transactionData.payment_date
+        });
+
+        toast.success('Transaction saved successfully');
+        // Update local state immediately with the new payment at the top
+        setPayments(prev => [newPayment, ...prev]);
+      }
+
       setIsTransactionDialogOpen(false);
       resetForm();
-      
-      // Update local state immediately with the new payment at the top
-      setPayments(prev => [newPayment, ...prev]);
       
       // Then reload everything silently in background to ensure all data (analytics, etc.) is in sync
       loadPayments(true);
     } catch (error) {
-      toast.error('Failed to save transaction');
+      toast.error(isEditing ? 'Failed to update transaction' : 'Failed to save transaction');
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeletePayment = async (paymentId) => {
-    if (!paymentId) {
-      toast.error('Invalid payment record ID');
-      return;
-    }
-    
-    if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
-      try {
-        await connection.financial.deletePayment(paymentId);
-        toast.success('Payment record deleted successfully');
-        loadPayments();
-      } catch (error) {
-        console.error('Failed to delete payment:', error);
-        toast.error(error.message || 'Failed to delete payment record');
-      }
-    }
-  };
 
   const resetForm = () => {
     setSelectedTenant(null);
     setSearchQuery('');
     setSearchResults([]);
+    setIsEditing(false);
+    setEditingTransactionId(null);
     setTransactionData({
       amount: '',
       payment_method: 'cash',
       description: 'Monthly Rent',
+      status: 'completed',
       payment_date: new Date().toISOString().split('T')[0]
     });
   };
 
   // Calculate financial summaries
   const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const paidAmount = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const unpaidAmount = payments.filter(p => p.status !== 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const paidAmount = payments.filter(p => p.status === 'completed' || p.status === 'paid').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const unpaidAmount = payments.filter(p => p.status === 'unpaid' || p.status === 'pending').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   // Handle exporting financial report with format choice
   const handleExportReport = async (format) => {
@@ -233,7 +254,7 @@ export function FinancialManagement() {
   };
 
   // Receipt generation logic
-  const handleViewReceipt = (payment) => {
+  const handlePrintReceipt = (payment) => {
     const headers = ['Receipt Item', 'Value'];
     const rows = [
       ['Payment ID', payment.id],
@@ -249,10 +270,12 @@ export function FinancialManagement() {
 
   // Helper function to determine badge styling based on status
   const getStatusBadge = (status) => {
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'paid') {
       return { className: 'bg-[#2E3192] text-white hover:bg-[#2E3192]/90', icon: <CheckCircle className="h-3 w-3 mr-1" /> };
     } else if (status === 'pending') {
       return { className: 'bg-[#F9E81B]/30 text-[#2E3192] hover:bg-[#F9E81B]/40', icon: <Clock className="h-3 w-3 mr-1" /> };
+    } else if (status === 'unpaid') {
+      return { className: 'bg-[#ED1C24] text-white hover:bg-[#ED1C24]/90', icon: <XCircle className="h-3 w-3 mr-1" /> };
     } else {
       return { className: 'bg-[#ED1C24]/10 text-[#ED1C24] hover:bg-[#ED1C24]/20', icon: <XCircle className="h-3 w-3 mr-1" /> };
     }
@@ -415,35 +438,27 @@ export function FinancialManagement() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                    onClick={() => handleViewPayment(payment)}
-                                    title="View Details"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                    onClick={() => handleViewReceipt(payment)}
-                                    title="Receipt"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-red-100 text-red-600"
-                                    onClick={() => handleDeletePayment(payment.id)}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-[160px]">
+                                    <DropdownMenuItem onClick={() => handleViewPayment(payment)} className="cursor-pointer">
+                                      <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>View Details</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEditPayment(payment)} className="cursor-pointer">
+                                      <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>Edit Transaction</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handlePrintReceipt(payment)} className="cursor-pointer">
+                                      <Printer className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>Print Receipt</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           );
@@ -464,90 +479,94 @@ export function FinancialManagement() {
         }}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">New Financial Transaction</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">{isEditing ? 'Edit Transaction' : 'New Financial Transaction'}</DialogTitle>
               <DialogDescription>
-                Search for a tenant and enter payment details to save a new transaction.
+                {isEditing ? 'Update the details for this transaction.' : 'Search for a tenant and enter payment details to save a new transaction.'}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6 py-4">
               {/* Tenant Search Section */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Search Tenant (Name or ID)</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      placeholder="Start typing to search..."
-                      className="pl-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Search Results */}
-                {searchResults.length > 0 && !selectedTenant && (
-                  <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
-                    {searchResults.map((tenant) => (
-                      <div
-                        key={tenant.id}
-                        className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between"
-                        onClick={async () => {
-                          setSelectedTenant(tenant);
-                          setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
-                          setSearchResults([]);
-                          
-                          // Autocomplete the payment amount using the commercial unit rental rate
-                          try {
-                            const unitsResp = await connection.commercialSpace.getUnits({ tenant_id: tenant.id });
-                            const units = Array.isArray(unitsResp) ? unitsResp : (unitsResp.results || []);
-                            const tenantUnit = units.find(u => String(u.tenant) === String(tenant.id)) || units[0];
-                            if (tenantUnit && (tenantUnit.rental_rate || tenantUnit.rentalRate)) {
-                               const rate = tenantUnit.rental_rate || tenantUnit.rentalRate;
-                               setTransactionData(prev => ({ ...prev, amount: String(rate) }));
-                            } else {
-                               // Ensure amount isn't overwritten if not found, or clear it
-                               setTransactionData(prev => ({ ...prev, amount: '' }));
-                            }
-                          } catch (err) {
-                            console.error('Failed to fetch tenant unit for amount auto-fill', err);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-[#2E3192]/10 flex items-center justify-center">
-                            <User className="h-4 w-4 text-[#2E3192]" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{tenant.first_name} {tenant.last_name}</p>
-                            <p className="text-xs text-gray-500">ID: {tenant.id} | {tenant.email}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{tenant.unitNumber || 'No Unit'}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {isSearching && <p className="text-xs text-gray-500">Searching...</p>}
-
-                {/* Selected Tenant Info */}
-                {selectedTenant && (
-                  <div className="p-4 bg-[#F9E81B]/10 border border-[#F9E81B]/30 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-[#2E3192] flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[#2E3192]">{selectedTenant.first_name} {selectedTenant.last_name}</p>
-                        <p className="text-xs text-gray-600">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
-                      </div>
+              {!isEditing && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Search Tenant (Name or ID)</Label>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                      <Input
+                        placeholder="Start typing to search..."
+                        className="pl-9"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedTenant(null)}>Change</Button>
                   </div>
-                )}
-              </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && !selectedTenant && (
+                    <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
+                      {searchResults.map((tenant) => (
+                        <div
+                          key={tenant.id}
+                          className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between"
+                          onClick={async () => {
+                            setSelectedTenant(tenant);
+                            setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
+                            setSearchResults([]);
+                            
+                            // Autocomplete the payment amount using the commercial unit rental rate
+                            try {
+                              const unitsResp = await connection.commercialSpace.getUnits({ tenant_id: tenant.id });
+                              const units = Array.isArray(unitsResp) ? unitsResp : (unitsResp.results || []);
+                              const tenantUnit = units.find(u => String(u.tenant) === String(tenant.id)) || units[0];
+                              if (tenantUnit && (tenantUnit.rental_rate || tenantUnit.rentalRate)) {
+                                 const rate = tenantUnit.rental_rate || tenantUnit.rentalRate;
+                                 setTransactionData(prev => ({ ...prev, amount: String(rate) }));
+                              } else {
+                                 // Ensure amount isn't overwritten if not found, or clear it
+                                 setTransactionData(prev => ({ ...prev, amount: '' }));
+                              }
+                            } catch (err) {
+                              console.error('Failed to fetch tenant unit for amount auto-fill', err);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-[#2E3192]/10 flex items-center justify-center">
+                              <User className="h-4 w-4 text-[#2E3192]" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{tenant.first_name} {tenant.last_name}</p>
+                              <p className="text-xs text-gray-500">ID: {tenant.id} | {tenant.email}</p>
+                            </div>
+                          </div>
+                          <Badge variant="outline">{tenant.unitNumber || 'No Unit'}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {isSearching && <p className="text-xs text-gray-500">Searching...</p>}
+                </div>
+              )}
+
+              {/* Selected Tenant Info */}
+              {selectedTenant && (
+                <div className="p-4 bg-[#F9E81B]/10 border border-[#F9E81B]/30 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-[#2E3192] flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#2E3192]">{selectedTenant.first_name} {selectedTenant.last_name}</p>
+                      <p className="text-xs text-gray-600">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
+                    </div>
+                  </div>
+                  {!isEditing && (
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedTenant(null)}>Change</Button>
+                  )}
+                </div>
+              )}
 
               {/* Transaction Details Section */}
               <div className="grid grid-cols-2 gap-4">
@@ -572,32 +591,55 @@ export function FinancialManagement() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="method">Payment Method</Label>
-                <Select
-                  value={transactionData.payment_method}
-                  onValueChange={(val) => setTransactionData({ ...transactionData, payment_method: val })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="method">Payment Method</Label>
+                  <Select
+                    value={transactionData.payment_method}
+                    onValueChange={(val) => setTransactionData({ ...transactionData, payment_method: val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="gcash">GCash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Payment Status</Label>
+                  <Select
+                    value={transactionData.status}
+                    onValueChange={(val) => setTransactionData({ ...transactionData, status: val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Paid</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="e.g. Monthly Rent"
+                <Select
                   value={transactionData.description}
-                  onChange={(e) => setTransactionData({ ...transactionData, description: e.target.value })}
-                />
+                  onValueChange={(val) => setTransactionData({ ...transactionData, description: val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select description" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly Rent">Monthly Rent</SelectItem>
+                    <SelectItem value="Utilities">Utilities</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -610,7 +652,7 @@ export function FinancialManagement() {
                 disabled={loading}
                 className="bg-[#2E3192] hover:bg-[#1f2170] text-white"
               >
-                {loading ? 'Saving...' : 'Save Transaction'}
+                {loading ? (isEditing ? 'Updating...' : 'Saving...') : (isEditing ? 'Update Transaction' : 'Save Transaction')}
               </Button>
             </DialogFooter>
           </DialogContent>

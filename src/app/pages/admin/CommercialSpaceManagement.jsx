@@ -10,8 +10,9 @@ import { Badge } from '../../components/ui/badge.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function CommercialSpaceManagement() {
   const { user } = useAuth();
@@ -34,6 +35,9 @@ export function CommercialSpaceManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [unitToDelete, setUnitToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Form state for creating new unit
   const [formData, setFormData] = useState({
@@ -251,17 +255,30 @@ export function CommercialSpaceManagement() {
     }
   };
 
-  // Handler for deleting a unit
-  const handleDeleteUnit = async (id) => {
-    if (confirm('Are you sure you want to delete this unit?')) {
-      try {
-        await connection.commercialSpace.deleteUnit(String(id));
-        // Remove deleted unit from state
-        setUnits(units.filter(u => String(u.id) !== String(id)));
-      } catch (error) {
-        console.error('Error deleting unit:', error);
-        alert('Failed to delete unit. Please try again.');
-      }
+  // Handler for deleting a unit — opens confirmation dialog
+  const confirmDeleteUnit = (unit) => {
+    setUnitToDelete(unit);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const executeDeleteUnit = async () => {
+    if (!unitToDelete) return;
+    setIsDeleting(true);
+    try {
+      await connection.commercialSpace.deleteUnit(String(unitToDelete.id));
+      setUnits(prev => prev.filter(u => String(u.id) !== String(unitToDelete.id)));
+      setIsDeleteDialogOpen(false);
+      setUnitToDelete(null);
+      setResultTitle('Unit Archived');
+      setResultMessage('The unit has been moved to Archives. You can restore it from the Archives page.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error deleting unit:', error);
+      setResultTitle('Delete Failed');
+      setResultMessage('Failed to delete unit. Please try again.');
+      setIsResultDialogOpen(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -366,7 +383,6 @@ export function CommercialSpaceManagement() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="occupied">Occupied</SelectItem>
                   <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="reserved">Reserved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -413,22 +429,27 @@ export function CommercialSpaceManagement() {
                         ₱{Number(unit.rental_rate || unit.rentalRate || 0).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#F9E81B]/20" onClick={() => openViewDialog(unit)}>
-                            <Eye className="h-4 w-4 text-gray-500" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#F9E81B]/20" onClick={() => openEditDialog(unit)}>
-                            <Edit className="h-4 w-4 text-[#2E3192]" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-[#ED1C24]/10"
-                            onClick={() => handleDeleteUnit(unit.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-[#ED1C24]" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuItem onClick={() => openViewDialog(unit)} className="cursor-pointer">
+                              <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(unit)} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>Update Unit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => confirmDeleteUnit(unit)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Archive Unit</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -490,8 +511,6 @@ export function CommercialSpaceManagement() {
                     <SelectContent>
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="reserved">Reserved</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -518,96 +537,87 @@ export function CommercialSpaceManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* View Unit Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">Commercial Unit Details</DialogTitle>
-              <DialogDescription>View full details of the selected unit</DialogDescription>
-            </DialogHeader>
-            {selectedUnit && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-gray-500 text-xs">Unit Number</Label>
-                    <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.number || selectedUnit.unitNumber}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <Label className="text-gray-500 text-xs">Floor</Label>
-                    <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.floor}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-gray-500 text-xs">Type</Label>
-                    <div>
-                      <Badge className="bg-[#2E3192]/10 text-[#2E3192] hover:bg-[#2E3192]/20 capitalize">{selectedUnit.type}</Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <Label className="text-gray-500 text-xs">Status</Label>
-                    <div>
-                      <Badge className={`capitalize ${getStatusVariant(selectedUnit.status)}`}>
-                        {selectedUnit.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+       {/* View Unit Dialog */}
+<Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-[#2E3192]">Commercial Unit Details</DialogTitle>
+      <DialogDescription>View full details of the selected unit</DialogDescription>
+    </DialogHeader>
+    {selectedUnit && (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-gray-500 text-xs">Unit Number</Label>
+            <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.number || selectedUnit.unitNumber}</p>
+          </div>
+          <div className="space-y-1 text-right">
+            <Label className="text-gray-500 text-xs">Floor</Label>
+            <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.floor}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-gray-500 text-xs">Type</Label>
+            <div>
+              <Badge className="bg-[#2E3192]/10 text-[#2E3192] hover:bg-[#2E3192]/20 capitalize">{selectedUnit.type}</Badge>
+            </div>
+          </div>
+          <div className="space-y-1 text-right">
+            <Label className="text-gray-500 text-xs">Status</Label>
+            <div>
+              <Badge className={`capitalize ${getStatusVariant(selectedUnit.status)}`}>
+                {selectedUnit.status}
+              </Badge>
+            </div>
+          </div>
+        </div>
 
-                <div className="pt-4 border-t flex justify-between items-center">
-                  <div>
-                    <Label className="text-gray-500 text-xs">Current Tenant</Label>
-                    <p className="font-medium text-gray-900 mt-1">
-                      {selectedUnit.tenant_name || 'No tenant assigned'}
-                    </p>
-                  </div>
-                  {!selectedUnit.tenant_name && (
-                    <Button
-                      size="sm"
-                      className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                      onClick={() => openCreateUserForUnit(selectedUnit)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add User
-                    </Button>
-                  )}
-                </div>
-                 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  {selectedUnit.size && (
-                    <div className="space-y-1">
-                      <Label className="text-gray-500 text-xs">Size</Label>
-                      <p className="font-medium">{selectedUnit.size} sqm</p>
-                    </div>
-                  )}
-                  {(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate) && (
-                    <div className="space-y-1 text-right">
-                      <Label className="text-gray-500 text-xs">Monthly Rent</Label>
-                      <p className="font-semibold text-[#2E3192]">
-                        ₱{Number(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
+        <div className="pt-4 border-t">
+          <div>
+            <Label className="text-gray-500 text-xs">Current Tenant</Label>
+            <p className="font-medium text-gray-900 mt-1">
+              {selectedUnit.tenant_name || 'No tenant assigned'}
+            </p>
+          </div>
+        </div>
+         
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+          {selectedUnit.size && (
+            <div className="space-y-1">
+              <Label className="text-gray-500 text-xs">Size</Label>
+              <p className="font-medium">{selectedUnit.size} sqm</p>
+            </div>
+          )}
+          {(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate) && (
+            <div className="space-y-1 text-right">
+              <Label className="text-gray-500 text-xs">Monthly Rent</Label>
+              <p className="font-semibold text-[#2E3192]">
+                ₱{Number(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate).toLocaleString()}
+              </p>
+            </div>
+          )}
+        </div>
 
-                {selectedUnit.amenities && (
-                  <div className="pt-4 border-t">
-                    <Label className="text-gray-500 text-xs">Amenities</Label>
-                    <p className="text-sm text-gray-600 mt-1">{selectedUnit.amenities}</p>
-                  </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                onClick={() => setIsViewDialogOpen(false)}
-              >
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {selectedUnit.amenities && (
+          <div className="pt-4 border-t">
+            <Label className="text-gray-500 text-xs">Amenities</Label>
+            <p className="text-sm text-gray-600 mt-1">{selectedUnit.amenities}</p>
+          </div>
+        )}
+      </div>
+    )}
+    <DialogFooter>
+      <Button
+        className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+        onClick={() => setIsViewDialogOpen(false)}
+      >
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
         {/* Edit Unit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -726,6 +736,44 @@ export function CommercialSpaceManagement() {
                 onClick={() => setIsResultDialogOpen(false)}
               >
                 OK
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => { if (!open && !isDeleting) { setIsDeleteDialogOpen(false); setUnitToDelete(null); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#ED1C24]">Delete Unit</DialogTitle>
+              <DialogDescription>
+                This unit will be moved to <span className="font-semibold text-[#2E3192]">Archives</span>. You can restore it later from the Archives page.
+              </DialogDescription>
+            </DialogHeader>
+            {unitToDelete && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
+                <p className="font-semibold text-[#2E3192] text-sm">Unit {unitToDelete.number || unitToDelete.unitNumber}</p>
+                <p className="text-xs text-gray-500 capitalize">{unitToDelete.type} · Floor {unitToDelete.floor} · {unitToDelete.status}</p>
+                {unitToDelete.tenant_name && (
+                  <p className="text-xs text-amber-600 font-medium">⚠ Assigned to: {unitToDelete.tenant_name}</p>
+                )}
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                className="border-gray-300"
+                onClick={() => { setIsDeleteDialogOpen(false); setUnitToDelete(null); }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#ED1C24] hover:bg-[#c41920] text-white"
+                onClick={executeDeleteUnit}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Archiving...' : 'Yes, Archive It'}
               </Button>
             </DialogFooter>
           </DialogContent>

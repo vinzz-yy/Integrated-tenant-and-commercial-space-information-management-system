@@ -9,7 +9,6 @@ import connection from '../../connected/connection.js';
 import { 
   Users, 
   PhilippinePeso, 
-  Building, 
   AlertCircle,
   TrendingUp,
   ArrowRight,
@@ -17,7 +16,7 @@ import {
   Calendar,
   ClipboardList
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export function AdminDashboard() {
   // Get current user from auth context and navigation hook
@@ -30,9 +29,7 @@ export function AdminDashboard() {
     totalTenants: 0,
     totalStaff: 0,
     totalRevenue: 0,
-    totalUnits: 0,
-    occupiedUnits: 0,
-    occupancyRate: 0,
+    unpaidAmount: 0,
     pendingCompliance: 0,
     scheduledAppointments: 0,
     revenueGrowth: 0,
@@ -57,7 +54,6 @@ export function AdminDashboard() {
         const [
           usersResp,
           paymentsResp,
-          unitsResp,
           compResp,
           apptResp,
           revenueResp,
@@ -65,7 +61,6 @@ export function AdminDashboard() {
         ] = await Promise.allSettled([
           connection.users.getUsers(),
           connection.financial.getPayments(),
-          connection.commercialSpace.getUnits(),
           connection.documents.getDocuments({ status: 'pending' }),
           connection.events.getAppointments({ status: 'scheduled' }),
           connection.financial.getRevenueAnalytics({ period: '6months' }),
@@ -92,7 +87,8 @@ export function AdminDashboard() {
         if (paymentsResp.status === 'fulfilled') {
           const paymentsData = paymentsResp.value;
           const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.results || []);
-          const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const totalRevenue = payments.filter(p => p.status === 'completed' || p.status === 'paid').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const unpaidAmount = payments.filter(p => p.status === 'unpaid' || p.status === 'pending').reduce((sum, p) => sum + Number(p.amount || 0), 0);
           
           // Calculate revenue growth (compare last month with previous month)
           const sortedPayments = [...payments].sort((a, b) => new Date(b.payment_date || b.created_at) - new Date(a.payment_date || a.created_at));
@@ -115,6 +111,7 @@ export function AdminDashboard() {
           setStats(prev => ({
             ...prev,
             totalRevenue,
+            unpaidAmount,
             revenueGrowth
           }));
         }
@@ -125,10 +122,11 @@ export function AdminDashboard() {
           const revenueChartData = revenueDataValue?.data || (Array.isArray(revenueDataValue) ? revenueDataValue : []);
           
           if (revenueChartData && revenueChartData.length > 0) {
-            // Map keys if necessary (backend now returns month/revenue, but let's be safe)
+            // Map keys if necessary
             const normalizedData = revenueChartData.map(item => ({
               month: item.month || item.name || 'N/A',
-              revenue: Number(item.revenue || item.amount || 0)
+              revenue: Number(item.revenue || 0),
+              unpaid: Number(item.unpaid || 0)
             }));
             setRevenueData(normalizedData);
           }
@@ -149,30 +147,22 @@ export function AdminDashboard() {
               const pDate = new Date(p.payment_date || p.created_at);
               return !isNaN(pDate) && pDate.getMonth() === targetMonth && pDate.getFullYear() === targetYear;
             });
-            const monthRevenue = monthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            
+            const monthRevenue = monthPayments
+              .filter(p => p.status === 'completed' || p.status === 'paid')
+              .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            
+            const monthUnpaid = monthPayments
+              .filter(p => p.status === 'unpaid' || p.status === 'pending')
+              .reduce((sum, p) => sum + Number(p.amount || 0), 0);
             
             generatedRevenueData.push({
               month: monthNames[targetMonth],
-              revenue: monthRevenue
+              revenue: monthRevenue,
+              unpaid: monthUnpaid
             });
           }
           setRevenueData(generatedRevenueData);
-        }
-
-        // Process commercial space data
-        if (unitsResp.status === 'fulfilled') {
-          const unitsData = unitsResp.value;
-          const units = Array.isArray(unitsData) ? unitsData : (unitsData?.results || []);
-          const totalUnits = unitsData?.count || units.length;
-          const occupiedUnits = units.filter(u => u.status === 'occupied' || u.status === 'leased').length;
-          const occupancyRate = totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
-
-          setStats(prev => ({
-            ...prev,
-            totalUnits,
-            occupiedUnits,
-            occupancyRate
-          }));
         }
 
         // Process compliance data
@@ -264,43 +254,36 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Monthly Revenue Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/financial')}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Monthly Revenue
+          {/* Total Revenue Card */}
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors cursor-pointer" onClick={() => navigate('/admin/financial')}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+                Total Revenue
+                <PhilippinePeso className="h-4 w-4 text-[#2E3192]" />
               </CardTitle>
-              <PhilippinePeso className="h-4 w-4 text-[#F9E81B]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#2E3192]">
-                {formatCurrency(stats.totalRevenue)}
-              </div>
-              {stats.revenueGrowth !== 0 && (
-                <p className={`text-xs mt-1 flex items-center gap-1 ${
-                  stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  <TrendingUp className={`h-3 w-3 ${
-                    stats.revenueGrowth >= 0 ? '' : 'transform rotate-180'
-                  }`} />
-                  {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}% from last month
-                </p>
-              )}
+              <div className="text-2xl font-bold text-[#2E3192]">{formatCurrency(stats.totalRevenue)}</div>
+              <p className={`text-xs mt-1 flex items-center gap-1 ${Number(stats.revenueGrowth) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <TrendingUp className={`h-3 w-3 ${Number(stats.revenueGrowth) < 0 ? 'rotate-180' : ''}`} />
+                {stats.revenueGrowth}% from last month
+              </p>
             </CardContent>
           </Card>
 
-          {/* Occupancy Rate Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/commercial-space')}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Occupancy Rate
+          {/* Unpaid Amount Card */}
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors cursor-pointer" onClick={() => navigate('/admin/financial')}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+                Unpaid Amount
+                <AlertCircle className="h-4 w-4 text-[#ED1C24]" />
               </CardTitle>
-              <Building className="h-4 w-4 text-[#2E3192]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#2E3192]">{stats.occupancyRate}%</div>
-              <p className="text-xs text-gray-500 mt-1">
-                {stats.occupiedUnits} of {stats.totalUnits || 0} units occupied
+              <div className="text-2xl font-bold text-[#ED1C24]">{formatCurrency(stats.unpaidAmount)}</div>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                Pending payments
+                <ArrowRight className="h-3 w-3" />
               </p>
             </CardContent>
           </Card>
@@ -328,31 +311,55 @@ export function AdminDashboard() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-[#2E3192]">Revenue Overview</CardTitle>
-              <CardDescription>Monthly revenue (last 6 months)</CardDescription>
+              <CardDescription>Total revenue vs Unpaid amount (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
               {revenueData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => `₱${value/1000}k`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickFormatter={(value) => `₱${value >= 1000 ? (value/1000).toFixed(0) + 'k' : value}`} 
+                    />
                     <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       formatter={(value) => formatCurrency(value)}
                       labelFormatter={(label) => `Month: ${label}`}
                     />
+                    <Legend verticalAlign="top" height={36} align="right" iconType="circle" />
                     <Line 
                       type="monotone" 
                       dataKey="revenue" 
                       stroke="#2E3192" 
-                      strokeWidth={2}
-                      name="Revenue"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: '#2E3192', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 6, strokeWidth: 0 }}
+                      name="Total Revenue"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="unpaid" 
+                      stroke="#ED1C24" 
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                      dot={{ r: 4, fill: '#ED1C24', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 6, strokeWidth: 0 }}
+                      name="Unpaid Amount"
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-gray-500">
-                  No revenue data available
+                  No analytics data available
                 </div>
               )}
             </CardContent>
@@ -362,9 +369,9 @@ export function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-[#2E3192]">Upcoming Appointments</CardTitle>
+                <CardTitle className="text-[#2E3192]">Upcoming Events</CardTitle>
                 <CardDescription>
-                  {stats.scheduledAppointments} scheduled appointments
+                  {stats.scheduledEvents} scheduled events
                 </CardDescription>
               </div>
               <Button

@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-// JWT: Access token (7 days) + Refresh token (30 days)
-// Access token is sent on every request. When it expires (401),
-// the refresh token silently gets a new one from /auth/refresh/.
-
+// access token and refresh token is in the backend Settings.py
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // JWT access token — sent on every API request (7-day lifetime)
@@ -135,8 +132,8 @@ export const authAPI = {
   login: async (email, password) =>          // returns { access, refresh, user }
     api.post('/auth/login/', { email, password }, { skipAuth: true }),
 
-  logout: async () =>
-    api.post('/auth/logout/', null, { skipAuth: true }),
+  logout: async (refreshToken) =>
+    api.post('/auth/logout/', { refresh: refreshToken }, { skipAuth: true }),
 
   refreshToken: async (refreshToken) =>      // auto-called by interceptor on 401
     api.post('/auth/refresh/', { refresh: refreshToken }, { skipAuth: true }),
@@ -147,24 +144,24 @@ export const authAPI = {
   updateCurrentUser: async (userData) =>
     api.patch('/auth/me/', userData),
 };
- // Kunin lahat ng users
- 
+// Kunin lahat ng users
+
 export const userAPI = {
-  getUsers: async (params = {}) => 
+  getUsers: async (params = {}) =>
     api.get('/users/', { params }),
-  
-  getUser: async (id) => 
+
+  getUser: async (id) =>
     api.get(`/users/${id}/`),
-  
-  createUser: async (userData) => 
+
+  createUser: async (userData) =>
     api.post('/users/', userData),
-  
-  updateUser: async (id, userData) => 
+
+  updateUser: async (id, userData) =>
     api.patch(`/users/${id}/`, userData),
-  
-  deleteUser: async (id) => 
+
+  deleteUser: async (id) =>
     api.delete(`/users/${id}/`),
-  
+
   bulkImport: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -177,10 +174,10 @@ export const userAPI = {
 // Mag-upload ng document
 
 export const documentsAPI = {
-  getDocuments: async (params = {}) => 
+  getDocuments: async (params = {}) =>
     api.get('/documents/', { params }),
-  
-  uploadDocument: async (data) => 
+
+  uploadDocument: async (data) =>
     axios.post(`${API_BASE_URL}/documents/`, data, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     }).then(res => res.data),
@@ -193,123 +190,139 @@ export const documentsAPI = {
     }
     return api.patch(`/documents/${id}/`, data);
   },
-  
-  deleteDocument: async (id) => 
+
+  deleteDocument: async (id) =>
     api.delete(`/documents/${id}/`),
-  
-  updateDocumentStatus: async (id, status, notes) => 
+
+  updateDocumentStatus: async (id, status, notes) =>
     api.patch(`/documents/${id}/`, { status, notes }),
 };
 
 // Gumawa ng appointment
- 
+
 export const eventsAPI = {
-  getAppointments: async (params = {}) => 
+  getAppointments: async (params = {}) =>
     api.get('/events/', { params }),
-  
-  createAppointment: async (appointmentData) => 
+
+  createAppointment: async (appointmentData) =>
     api.post('/events/', appointmentData),
-  
-  updateAppointment: async (id, data) => 
+
+  updateAppointment: async (id, data) =>
     api.patch(`/events/${id}/`, data),
-  
-  deleteAppointment: async (id) => 
+
+  deleteAppointment: async (id) =>
     api.delete(`/events/${id}/`),
 };
 
 // Kunin activity logs
- 
+
 export const complianceAPI = {
-  getRequests: async (params = {}) => 
+  getRequests: async (params = {}) =>
     api.get('/compliance/requests/', { params }),
-  
-  createRequest: async (requestData) => 
+
+  createRequest: async (requestData) =>
     api.post('/compliance/requests/', requestData),
-  
-  updateRequest: async (id, data) => 
+
+  updateRequest: async (id, data) =>
     api.patch(`/compliance/requests/${id}/`, data),
-  
-  deleteRequest: async (id) => 
+
+  deleteRequest: async (id) =>
     api.delete(`/compliance/requests/${id}/`),
 };
 
- // Payment
- 
+// Payment
+
 export const financialAPI = {
-  getPayments: async (params = {}) => 
+  getPayments: async (params = {}) =>
     api.get('/financial/payments/', { params }),
-  
-  createPayment: async (paymentData) => 
+
+  createPayment: async (paymentData) =>
     api.post('/financial/payments/', paymentData),
-  
-  processPayment: async (paymentData) => 
+
+  updatePayment: async (id, data) =>
+    api.patch(`/financial/payments/${id}/`, data),
+
+  processPayment: async (paymentData) =>
     api.post('/financial/payments/', paymentData),
-  
-  deletePayment: async (id) => 
+
+  deletePayment: async (id) =>
     api.delete(`/financial/payments/${id}/`),
 
-  getRevenueAnalytics: async (params = {}) => 
+  getRevenueAnalytics: async (params = {}) =>
     api.get('/financial/payments/revenue-analytics/', { params }),
 };
 
 // Mag-assign ng tenant sa unit
- 
+
 export const commercialSpaceAPI = {
-  getUnits: async (params = {}) => 
+  getUnits: async (params = {}) =>
     api.get('/commercial-spaces/units/', { params }),
-  
-  getUnit: async (id) => 
+
+  getUnit: async (id) =>
     api.get(`/commercial-spaces/units/${id}/`),
-  
-  createUnit: async (unitData) => 
+
+  createUnit: async (unitData) =>
     api.post('/commercial-spaces/units/', unitData),
-  
-  updateUnit: async (id, unitData) => 
+
+  updateUnit: async (id, unitData) =>
     api.patch(`/commercial-spaces/units/${id}/`, unitData),
-  
-  deleteUnit: async (id) => 
+
+  deleteUnit: async (id) =>
     api.delete(`/commercial-spaces/units/${id}/`),
-  
-  assignTenant: async (unitId, tenantId) => 
+
+  assignTenant: async (unitId, tenantId) =>
     api.post(`/commercial-spaces/units/${unitId}/assign-tenant/`, {
       tenant_id: tenantId,
     }),
 };
 
 // Gumawa ng maintenance request
- 
+
 export const maintenanceAPI = {
-  getRequests: async (params = {}) => 
+  getRequests: async (params = {}) =>
     api.get('/maintenance/requests/', { params }),
-  
-  createRequest: async (data) => 
+
+  createRequest: async (data) =>
     axios.post(`${API_BASE_URL}/maintenance/requests/`, data, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     }).then(res => res.data),
-  
-  updateRequest: async (id, data) => 
+
+  updateRequest: async (id, data) =>
     api.patch(`/maintenance/requests/${id}/`, data),
-    
-  updateRequestWithFile: async (id, data) => 
+
+  updateRequestWithFile: async (id, data) =>
     axios.patch(`${API_BASE_URL}/maintenance/requests/${id}/`, data, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     }).then(res => res.data),
-    
-  deleteRequest: async (id) => 
+
+  deleteRequest: async (id) =>
     api.delete(`/maintenance/requests/${id}/`),
 };
 
- // Mark lahat ng notifications as read
- 
+// Mark lahat ng notifications as read
+
 export const notificationsAPI = {
-  getNotifications: async (params = {}) => 
+  getNotifications: async (params = {}) =>
     api.get('/notifications/', { params }),
-  
-  markAsRead: async (id) => 
+
+  markAsRead: async (id) =>
     api.patch(`/notifications/${id}/mark-read/`),
-  
-  markAllAsRead: async () => 
+
+  markAllAsRead: async () =>
     api.post('/notifications/mark-all-read/'),
+};
+
+// Archives — admin-only soft-delete recovery
+
+export const archivesAPI = {
+  getArchives: async (type = '') =>
+    api.get('/archives/', { params: type ? { type } : {} }),
+
+  restore: async (id) =>
+    api.post(`/archives/${id}/restore/`),
+
+  permanentDelete: async (id) =>
+    api.delete(`/archives/${id}/`),
 };
 
 // Export lahat ng APIs
@@ -323,4 +336,5 @@ export default {
   commercialSpace: commercialSpaceAPI,
   maintenance: maintenanceAPI,
   notifications: notificationsAPI,
+  archives: archivesAPI,
 };

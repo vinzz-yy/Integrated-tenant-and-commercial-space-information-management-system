@@ -10,7 +10,13 @@ import { Badge } from '../../components/ui/badge.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Search, Plus, Edit, Trash2, Eye, Building, Users, CheckCircle, Wrench } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Building, Users, CheckCircle, Wrench, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu.jsx';
 import connection from '../../connected/connection.js';
 
 export function StaffCommercialSpace() {
@@ -368,7 +374,6 @@ export function StaffCommercialSpace() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="occupied">Occupied</SelectItem>
                   <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="reserved">Reserved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -425,32 +430,30 @@ export function StaffCommercialSpace() {
                           ₱{Number(unit.rental_rate || unit.rentalRate || 0).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-[#F9E81B]/20"
-                              onClick={() => openViewDialog(unit)}
-                            >
-                              <Eye className="h-4 w-4 text-[#2E3192]" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-[#F9E81B]/20"
-                              onClick={() => openEditDialog(unit)}
-                            >
-                              <Edit className="h-4 w-4 text-[#2E3192]" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-[#ED1C24]/10"
-                              onClick={() => handleDeleteUnit(unit.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-[#ED1C24]" />
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px]">
+                              <DropdownMenuItem onClick={() => openViewDialog(unit)} className="cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>View Details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(unit)} className="cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>Edit Unit</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteUnit(unit.id)} 
+                                className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete Unit</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -545,97 +548,89 @@ export function StaffCommercialSpace() {
         </Dialog>
 
         {/* View Unit Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">Commercial Unit Details</DialogTitle>
-              <DialogDescription>View full details of the selected unit</DialogDescription>
-            </DialogHeader>
-            {selectedUnit && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-gray-500 text-xs">Unit Number</Label>
-                    <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.number || selectedUnit.unitNumber}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <Label className="text-gray-500 text-xs">Floor</Label>
-                    <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.floor}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-gray-500 text-xs">Type</Label>
-                    <div>
-                      <Badge className="bg-[#2E3192]/10 text-[#2E3192] hover:bg-[#2E3192]/20 capitalize">
-                        {selectedUnit.type}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <Label className="text-gray-500 text-xs">Status</Label>
-                    <div>
-                      <Badge className={`capitalize ${getStatusColor(selectedUnit.status)}`}>
-                        {selectedUnit.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+<Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-[#2E3192]">Commercial Unit Details</DialogTitle>
+      <DialogDescription>View full details of the selected unit</DialogDescription>
+    </DialogHeader>
+    {selectedUnit && (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-gray-500 text-xs">Unit Number</Label>
+            <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.number || selectedUnit.unitNumber}</p>
+          </div>
+          <div className="space-y-1 text-right">
+            <Label className="text-gray-500 text-xs">Floor</Label>
+            <p className="font-semibold text-lg text-[#2E3192]">{selectedUnit.floor}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-gray-500 text-xs">Type</Label>
+            <div>
+              <Badge className="bg-[#2E3192]/10 text-[#2E3192] hover:bg-[#2E3192]/20 capitalize">
+                {selectedUnit.type}
+              </Badge>
+            </div>
+          </div>
+          <div className="space-y-1 text-right">
+            <Label className="text-gray-500 text-xs">Status</Label>
+            <div>
+              <Badge className={`capitalize ${getStatusColor(selectedUnit.status)}`}>
+                {selectedUnit.status}
+              </Badge>
+            </div>
+          </div>
+        </div>
 
-                <div className="pt-4 border-t flex justify-between items-center">
-                  <div>
-                    <Label className="text-gray-500 text-xs">Current Tenant</Label>
-                    <p className="font-medium text-[#2E3192] mt-1">
-                      {selectedUnit.tenant_name || 'No tenant assigned'}
-                    </p>
-                  </div>
-                  {!selectedUnit.tenant_name && (
-                    <Button
-                      size="sm"
-                      className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                      onClick={() => openCreateUserForUnit(selectedUnit)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add User
-                    </Button>
-                  )}
-                </div>
-                 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  {selectedUnit.size && (
-                    <div className="space-y-1">
-                      <Label className="text-gray-500 text-xs">Size</Label>
-                      <p className="font-medium">{selectedUnit.size} sqm</p>
-                    </div>
-                  )}
-                  {(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate) && (
-                    <div className="space-y-1 text-right">
-                      <Label className="text-gray-500 text-xs">Monthly Rent</Label>
-                      <p className="font-semibold text-[#2E3192]">
-                        ₱{Number(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
+        <div className="pt-4 border-t">
+          <div>
+            <Label className="text-gray-500 text-xs">Current Tenant</Label>
+            <p className="font-medium text-[#2E3192] mt-1">
+              {selectedUnit.tenant_name || 'No tenant assigned'}
+            </p>
+          </div>
+        </div>
+         
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+          {selectedUnit.size && (
+            <div className="space-y-1">
+              <Label className="text-gray-500 text-xs">Size</Label>
+              <p className="font-medium">{selectedUnit.size} sqm</p>
+            </div>
+          )}
+          {(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate) && (
+            <div className="space-y-1 text-right">
+              <Label className="text-gray-500 text-xs">Monthly Rent</Label>
+              <p className="font-semibold text-[#2E3192]">
+                ₱{Number(selectedUnit.monthly_rent || selectedUnit.monthlyRent || selectedUnit.rental_rate || selectedUnit.rentalRate).toLocaleString()}
+              </p>
+            </div>
+          )}
+        </div>
 
-                {selectedUnit.amenities && (
-                  <div className="pt-4 border-t">
-                    <Label className="text-gray-500 text-xs">Amenities</Label>
-                    <p className="text-sm text-gray-600 mt-1">{selectedUnit.amenities}</p>
-                  </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
-                onClick={() => setIsViewDialogOpen(false)}
-              >
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {selectedUnit.amenities && (
+          <div className="pt-4 border-t">
+            <Label className="text-gray-500 text-xs">Amenities</Label>
+            <p className="text-sm text-gray-600 mt-1">{selectedUnit.amenities}</p>
+          </div>
+        )}
+      </div>
+    )}
+    <DialogFooter>
+      <Button
+        className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+        onClick={() => setIsViewDialogOpen(false)}
+      >
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
 
         {/* Edit Unit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -689,8 +684,6 @@ export function StaffCommercialSpace() {
                     <SelectContent>
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="reserved">Reserved</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

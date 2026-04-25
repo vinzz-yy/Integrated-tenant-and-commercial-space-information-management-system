@@ -62,12 +62,21 @@ export function AuthProvider({ children }) {
   };
 
   // Logout: clears all tokens and user data from sessionStorage
-  const logout = () => {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      const refresh = sessionStorage.getItem('refreshToken');
+      if (refresh) {
+        await connection.auth.logout(refresh);
+      }
+    } catch (err) {
+      console.error("Logout API call failed", err);
+    } finally {
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   // Updates user in state and sessionStorage (e.g. after profile edit)

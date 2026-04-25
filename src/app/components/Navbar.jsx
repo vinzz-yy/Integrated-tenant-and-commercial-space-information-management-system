@@ -61,7 +61,7 @@ export function Navbar() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <nav className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
+    <nav className="border-b border-[#2E3192] bg-[#2E3192] sticky top-0 z-50 shadow-sm w-full min-w-[320px]">
       <div className="mx-auto w-full px-2 sm:px-4 lg:px-6">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -74,10 +74,10 @@ export function Navbar() {
 
             {/* Brand name & subtitle */}
             <Link to={getDashboardLink()} className="flex flex-col flex-shrink-0">
-              <span className="font-bold text-sm sm:text-base text-[#2E3192] leading-tight whitespace-nowrap">
+              <span className="font-bold text-sm sm:text-base text-[#F9E81B] leading-tight whitespace-nowrap">
                 LA Union Sky Mall
               </span>
-              <span className="text-[10px] sm:text-[11px] text-gray-500 leading-tight whitespace-nowrap hidden xs:inline">
+              <span className="text-[10px] sm:text-[11px] text-[#F9E81B]/80 leading-tight whitespace-nowrap hidden xs:inline">
                 Integrated Tenant & Commercial Space Management
               </span>
             </Link>
@@ -88,10 +88,10 @@ export function Navbar() {
             <div className="flex items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors outline-none cursor-pointer">
-                    <Bell className="h-5 w-5 text-gray-600" />
+                  <button className="relative p-2 rounded-full hover:bg-white/10 transition-colors outline-none cursor-pointer">
+                    <Bell className="h-5 w-5 text-[#F9E81B]" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#2E3192]"></span>
                     )}
                   </button>
                 </DropdownMenuTrigger>

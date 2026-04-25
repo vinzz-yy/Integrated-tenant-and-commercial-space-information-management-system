@@ -14,12 +14,12 @@ import backgroundLogin from '../images/MANAAAA.jpg';
 export function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  
+
   // State for form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  
+
   // UI state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,47 +46,47 @@ export function Login() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!email || !password) {
       setError('Please enter both email and password');
       return;
     }
-    
+
     if (!email.includes('@')) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     setError('');
     setLoading(true);
-    
+
     try {
       // Attempt login
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
       const user = await login(cleanEmail, cleanPassword);
-      
+
       // Handle "remember me" functionality
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', cleanEmail);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-      
+
       // Store user preferences
       sessionStorage.setItem('lastLogin', new Date().toISOString());
-      
+
       // Redirect based on user role with welcome message
       const roleMessages = {
         admin: 'Welcome back, Administrator!',
         staff: 'Welcome back, Staff Member!',
         tenant: `Welcome back to your commercial space, ${user.firstName || 'Tenant'}!`
       };
-      
+
       // You could show a toast notification here
       console.log(roleMessages[user.role] || 'Welcome back!');
-      
+
       // Navigate to appropriate dashboard
       switch (user.role) {
         case 'admin':
@@ -108,7 +108,7 @@ export function Login() {
     }
   };
 
-  
+
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundLogin})` }}>
       {/* Dark overlay for better readability */}
@@ -117,19 +117,19 @@ export function Login() {
       {/* Center column */}
       <div className="relative w-full max-w-md flex flex-col items-center">
 
-          {/* Logo / brand */}
-          <div className="flex flex-col items-center justify-center gap-3 mb-8">
-            <div className="bg-white/80 p-2 rounded-full backdrop-blur-sm shadow-md">
-              <img 
-                src={mannaLogo}
-                alt="Company Logo" 
-                className="w-20 h-20 object-contain drop-shadow-lg"
-              />
-            </div>
-            <span className="font-black text-3xl text-white tracking-wide drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
-              Manna Mall
-            </span>
+        {/* Logo / brand */}
+        <div className="flex flex-col items-center justify-center gap-3 mb-8">
+          <div className="bg-white/80 p-2 rounded-full backdrop-blur-sm shadow-md">
+            <img
+              src={mannaLogo}
+              alt="Company Logo"
+              className="w-20 h-20 object-contain drop-shadow-lg"
+            />
           </div>
+          <span className="font-black text-3xl text-white tracking-wide drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+            La Union Sky Mall
+          </span>
+        </div>
 
         {/* Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 w-full shadow-xl">
@@ -207,15 +207,15 @@ export function Login() {
 
             {/* Remember me checkbox */}
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="remember" 
+              <Checkbox
+                id="remember"
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
                 disabled={loading}
                 className="w-4 h-4 border-gray-300 data-[state=checked]:bg-[#2E3192] data-[state=checked]:border-[#2E3192]"
               />
-              <Label 
-                htmlFor="remember" 
+              <Label
+                htmlFor="remember"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-gray-600"
               >
                 Remember me
@@ -223,8 +223,8 @@ export function Login() {
             </div>
 
             {/* Submit button with loading state */}
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={loading}
               className={`
                 w-full py-3 h-12 rounded-xl font-bold transition active:scale-95 shadow-lg mt-2 text-base

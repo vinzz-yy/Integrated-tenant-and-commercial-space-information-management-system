@@ -5,7 +5,7 @@ import { Layout } from '../../components/Layout.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
-import { Calendar, ClipboardList, FileCheck, CheckCircle, ArrowRight } from 'lucide-react';
+import { Calendar, ClipboardList, CheckCircle, ArrowRight, PhilippinePeso, AlertCircle } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function StaffDashboard() {
@@ -15,6 +15,7 @@ export function StaffDashboard() {
   // State for storing staff's appointments and requests
   const [appointments, setAppointments] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [unpaidAmount, setUnpaidAmount] = useState(0);
 
   // Load staff data when component mounts
   useEffect(() => {
@@ -26,18 +27,29 @@ export function StaffDashboard() {
     
     const load = async () => {
       try {
-        // Fetch appointments and requests in parallel
-        const appts = await connection.events.getAppointments({ tenant_id: user?.id });
+        // Fetch appointments, requests, and payments in parallel
+        const [appts, reqs, payResult] = await Promise.all([
+          connection.events.getAppointments({ tenant_id: user?.id }),
+          connection.compliance.getRequests({ tenant_id: user?.id }),
+          connection.financial.getPayments()
+        ]);
+        
         const apptList = Array.isArray(appts) ? appts : (appts?.results || []);
         setAppointments(apptList);
         
-        const reqs = await connection.compliance.getRequests({ tenant_id: user?.id });
         const reqList = Array.isArray(reqs) ? reqs : (reqs?.results || []);
         setRequests(reqList);
+
+        const payments = Array.isArray(payResult) ? payResult : (payResult?.results || []);
+        const unpaid = payments
+          .filter(p => p.status === 'unpaid' || p.status === 'pending')
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        setUnpaidAmount(unpaid);
       } catch (e) {
         // Set empty arrays on error
         setAppointments([]); 
         setRequests([]);
+        setUnpaidAmount(0);
       }
     };
     load();
@@ -95,23 +107,6 @@ export function StaffDashboard() {
             </CardContent>
           </Card>
 
-          {/* Pending Reviews Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Compliance')}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Pending Reviews
-                <FileCheck className="h-4 w-4 text-[#2E3192]" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#ED1C24]">0</div>
-              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                Compliance documents
-                <ArrowRight className="h-3 w-3" />
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Active Requests Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/Compliance')}>
             <CardHeader className="pb-2">
@@ -124,6 +119,23 @@ export function StaffDashboard() {
               <div className="text-2xl font-bold text-[#2E3192]">{requests.length}</div>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 Operation requests
+                <ArrowRight className="h-3 w-3" />
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Unpaid Amount Card */}
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/staff/financial')}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+                Unpaid Amount
+                <PhilippinePeso className="h-4 w-4 text-[#ED1C24]" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#ED1C24]">₱{unpaidAmount.toLocaleString('en-PH')}</div>
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                Pending payments
                 <ArrowRight className="h-3 w-3" />
               </p>
             </CardContent>

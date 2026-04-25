@@ -17,12 +17,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
-    'api',
+    'rest_framework', # added
+    'rest_framework_simplejwt', # added
+    'rest_framework_simplejwt.token_blacklist', # added for logout blacklist
+    'corsheaders', # added
+    'api', # added
+    
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # added
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -37,7 +41,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, '..', 'dist')],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -53,6 +57,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
 
+# DATABASE OR DB.SQLITE
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -67,20 +72,24 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# I can add dist back when I want to deploy
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, '..', 'dist'),
-]
+STATICFILES_DIRS = []
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Allow React frontend to access backend CORS
+# URLs are allowed to make requests to this backend
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
+    # http://127.0.0.1:8000/api/ = to open my backend and use this for thunder client
     'http://127.0.0.1:8000',
     'http://localhost:8000',
 ]
 
+#  include credentials (like JWT tokens or cookies)
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
@@ -90,14 +99,16 @@ CSRF_TRUSTED_ORIGINS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # DRF + JWT Authentication
+# React frontend calls an API endpoint, it sends the access token in the request header.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
-
+# access token ,refresh token and dumping refresh token
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }

@@ -2,29 +2,19 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import { cn } from "./utils";
 
-/**
- * DropdownMenu - Menu that appears when clicking a button
- * Used on: User menus, Action menus, Settings menus
- * Screens: All screens - header menus, action buttons, more options
- */
+// DropdownMenu - Root component for dropdown menu
 function DropdownMenu(props) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 
-/**
- * DropdownMenuPortal - Renders menu in a portal
- * Used on: Internal - handles rendering outside component hierarchy
- */
+// DropdownMenuPortal - Renders menu in a portal
 function DropdownMenuPortal(props) {
   return (
     <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
   );
 }
 
-/**
- * DropdownMenuTrigger - Button that opens the dropdown
- * Used on: Menu buttons, user avatars, "More" buttons
- */
+// DropdownMenuTrigger - Button that opens the dropdown
 function DropdownMenuTrigger(props) {
   return (
     <DropdownMenuPrimitive.Trigger
@@ -34,10 +24,7 @@ function DropdownMenuTrigger(props) {
   );
 }
 
-/**
- * DropdownMenuContent - Main menu content container
- * Used on: Contains all dropdown menu items
- */
+// DropdownMenuContent - Main menu content container
 function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
   return (
     <DropdownMenuPrimitive.Portal>
@@ -54,20 +41,14 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
   );
 }
 
-/**
- * DropdownMenuGroup - Group of related menu items
- * Used on: Categorizing menu options
- */
+// DropdownMenuGroup - Groups related menu items
 function DropdownMenuGroup(props) {
   return (
     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
   );
 }
 
-/**
- * DropdownMenuItem - Individual menu item
- * Used on: Each action in the dropdown menu
- */
+// DropdownMenuItem - Individual clickable menu item
 function DropdownMenuItem({ className, inset, variant = "default", ...props }) {
   return (
     <DropdownMenuPrimitive.Item
@@ -83,10 +64,7 @@ function DropdownMenuItem({ className, inset, variant = "default", ...props }) {
   );
 }
 
-/**
- * DropdownMenuCheckboxItem - Checkbox item in menu
- * Used on: Toggleable options in dropdown
- */
+// DropdownMenuCheckboxItem - Toggleable checkbox menu item
 function DropdownMenuCheckboxItem({ className, children, checked, ...props }) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
@@ -108,10 +86,7 @@ function DropdownMenuCheckboxItem({ className, children, checked, ...props }) {
   );
 }
 
-/**
- * DropdownMenuRadioGroup - Group of radio items
- * Used on: Mutually exclusive options in dropdown
- */
+// DropdownMenuRadioGroup - Groups radio items for single selection
 function DropdownMenuRadioGroup(props) {
   return (
     <DropdownMenuPrimitive.RadioGroup
@@ -121,10 +96,7 @@ function DropdownMenuRadioGroup(props) {
   );
 }
 
-/**
- * DropdownMenuRadioItem - Radio item in menu
- * Used on: Single selection options in dropdown
- */
+// DropdownMenuRadioItem - Radio selection menu item
 function DropdownMenuRadioItem({ className, children, ...props }) {
   return (
     <DropdownMenuPrimitive.RadioItem
@@ -145,10 +117,7 @@ function DropdownMenuRadioItem({ className, children, ...props }) {
   );
 }
 
-/**
- * DropdownMenuLabel - Label for menu section
- * Used on: Category headers in dropdown menu
- */
+// DropdownMenuLabel - Section header/label in menu
 function DropdownMenuLabel({ className, inset, ...props }) {
   return (
     <DropdownMenuPrimitive.Label
@@ -163,10 +132,7 @@ function DropdownMenuLabel({ className, inset, ...props }) {
   );
 }
 
-/**
- * DropdownMenuSeparator - Visual divider between menu items
- * Used on: Separating different menu sections
- */
+// DropdownMenuSeparator - Visual divider between sections
 function DropdownMenuSeparator({ className, ...props }) {
   return (
     <DropdownMenuPrimitive.Separator
@@ -177,10 +143,7 @@ function DropdownMenuSeparator({ className, ...props }) {
   );
 }
 
-/**
- * DropdownMenuShortcut - Keyboard shortcut display
- * Used on: Shows keyboard shortcuts next to menu items
- */
+// DropdownMenuShortcut - Keyboard shortcut hint
 function DropdownMenuShortcut({ className, ...props }) {
   return (
     <span
@@ -194,18 +157,12 @@ function DropdownMenuShortcut({ className, ...props }) {
   );
 }
 
-/**
- * DropdownMenuSub - Nested submenu
- * Used on: Menu items with additional options
- */
+// DropdownMenuSub - Nested submenu container
 function DropdownMenuSub(props) {
   return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
 }
 
-/**
- * DropdownMenuSubTrigger - Button that opens submenu
- * Used on: Menu item that expands into submenu
- */
+// DropdownMenuSubTrigger - Button that opens submenu
 function DropdownMenuSubTrigger({ className, inset, children, ...props }) {
   return (
     <DropdownMenuPrimitive.SubTrigger
@@ -223,10 +180,7 @@ function DropdownMenuSubTrigger({ className, inset, children, ...props }) {
   );
 }
 
-/**
- * DropdownMenuSubContent - Content of submenu
- * Used on: Submenu items container
- */
+// DropdownMenuSubContent - Submenu items container
 function DropdownMenuSubContent({ className, ...props }) {
   return (
     <DropdownMenuPrimitive.SubContent

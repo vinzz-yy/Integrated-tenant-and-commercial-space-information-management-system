@@ -14,11 +14,7 @@ function useChart() {
   return context;
 }
 
-/**
- * ChartContainer - Container for data visualization charts
- * Used on: Analytics dashboards, Reports, Statistics displays
- * Screens: Dashboard, Analytics, Reports, Admin panels
- */
+// ChartContainer - Container for data visualization charts
 function ChartContainer({ id, className, children, config, ...props }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
@@ -42,10 +38,7 @@ function ChartContainer({ id, className, children, config, ...props }) {
   );
 }
 
-/**
- * ChartStyle - Dynamically generates chart color styles
- * Used on: Internal - applies theme colors to chart
- */
+// ChartStyle - Dynamically generates chart color styles
 const ChartStyle = ({ id, config }) => {
   const colorConfig = Object.entries(config).filter(
     ([, cfg]) => cfg.theme || cfg.color,
@@ -77,10 +70,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-/**
- * ChartTooltipContent - Custom tooltip content for charts
- * Used on: Hover tooltips showing data values
- */
+// ChartTooltipContent - Custom tooltip for chart hover data
 function ChartTooltipContent({
   active,
   payload,
@@ -197,10 +187,7 @@ function ChartTooltipContent({
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-/**
- * ChartLegendContent - Legend for chart data series
- * Used on: Chart legend showing data categories
- */
+// ChartLegendContent - Legend showing chart data categories
 function ChartLegendContent({
   className,
   hideIcon = false,

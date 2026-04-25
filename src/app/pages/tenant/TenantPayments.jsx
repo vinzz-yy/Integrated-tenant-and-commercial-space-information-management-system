@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, FileText, Table as TableIcon, CreditCard, PhilippinePeso } from 'lucide-react';
+import { Download, FileText, Table as TableIcon, CreditCard, PhilippinePeso, MoreVertical, Eye, Printer } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, printToPDF } from '../../exporting/export.js';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
+import { Label } from '../../components/ui/label.jsx';
 
 export function TenantPayments() {
   const { user } = useAuth();
@@ -17,6 +19,8 @@ export function TenantPayments() {
   
   // State for financial data
   const [payments, setPayments] = useState([]);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   // Redirect if not tenant
   useEffect(() => {
@@ -34,8 +38,8 @@ export function TenantPayments() {
   }, [user]);
 
   // Calculate financial summaries
-  const paidTotal = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const unpaidAmount = payments.filter(p => p.status !== 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const paidTotal = payments.filter(p => p.status === 'completed' || p.status === 'paid').reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const unpaidAmount = payments.filter(p => p.status === 'unpaid' || p.status === 'pending').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   // Export combined invoices and payments
   const handleExport = async (format) => {
@@ -55,7 +59,7 @@ export function TenantPayments() {
   };
 
   // Receipt generation logic
-  const handleViewReceipt = (payment) => {
+  const handlePrintReceipt = (payment) => {
     const headers = ['Receipt Item', 'Value'];
     const rows = [
       ['Payment ID', payment.id],
@@ -66,6 +70,11 @@ export function TenantPayments() {
       ['Description', payment.description || 'N/A']
     ];
     printToPDF(headers, rows, `Receipt - ${payment.id}`);
+  };
+
+  const handleViewDetails = (payment) => {
+    setSelectedPayment(payment);
+    setIsViewDialogOpen(true);
   };
 
   return (
@@ -192,15 +201,23 @@ export function TenantPayments() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewReceipt(payment)}
-                            className="text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20"
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Receipt
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px]">
+                              <DropdownMenuItem onClick={() => handleViewDetails(payment)} className="cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>View Details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrintReceipt(payment)} className="cursor-pointer">
+                                <Printer className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>Print Receipt</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -210,6 +227,50 @@ export function TenantPayments() {
             </div>
           </CardContent>
         </Card>
+
+        {/* View Details Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-[#2E3192]">Payment Details</DialogTitle>
+              <DialogDescription>Full details for Payment #{selectedPayment?.id}</DialogDescription>
+            </DialogHeader>
+            {selectedPayment && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-gray-500">Payment ID</Label>
+                    <p className="font-semibold text-[#2E3192]">{selectedPayment.id}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-gray-500">Amount</Label>
+                    <p className="font-semibold text-[#2E3192]">₱{Number(selectedPayment.amount || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-gray-500">Date</Label>
+                    <p className="font-semibold text-[#2E3192]">{selectedPayment.payment_date}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-gray-500">Method</Label>
+                    <p className="font-semibold text-[#2E3192] capitalize">{selectedPayment.payment_method}</p>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-gray-500">Status</Label>
+                    <div className="mt-1">
+                      <Badge className={selectedPayment.status === 'completed' ? 'bg-[#2E3192] text-white' : 'bg-[#ED1C24] text-white'}>
+                        {selectedPayment.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-gray-500">Description</Label>
+                    <p className="text-gray-700">{selectedPayment.description || 'No description provided.'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

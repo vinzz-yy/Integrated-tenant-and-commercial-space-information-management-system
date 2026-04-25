@@ -10,7 +10,13 @@ import { Textarea } from '../../components/ui/textarea.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { FileText, Download, CheckCircle, XCircle, Clock, FileCheck, AlertTriangle } from 'lucide-react';
+import { FileText, Download, CheckCircle, XCircle, Clock, FileCheck, AlertTriangle, MoreVertical, ClipboardCheck } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu.jsx';
 import connection from '../../connected/connection.js';
 
 export function Documents() {
@@ -214,24 +220,23 @@ export function Documents() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDownload(doc)}
-                              className="text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openReviewDialog(doc)}
-                              className="text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20"
-                            >
-                              Review
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px]">
+                              <DropdownMenuItem onClick={() => handleDownload(doc)} className="cursor-pointer">
+                                <Download className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>Download</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openReviewDialog(doc)} className="cursor-pointer">
+                                <ClipboardCheck className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                <span>Review</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))

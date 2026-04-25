@@ -11,32 +11,40 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Search, Plus, Edit, Trash2, Download, FileText, Table as TableIcon } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu.jsx';
 import connection from '../../connected/connection.js';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
-import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
 
 export function StaffUserManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // State for storing tenant users data
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [availableUnits, setAvailableUnits] = useState([]);
   
+  // Search filter state
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Dialog visibility states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   
+  // Loading states for async operations
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
   
+  // Form state for creating/editing tenants
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -49,6 +57,7 @@ export function StaffUserManagement() {
     leaseEndDate: '',
   });
 
+  // Normalizes user object to ensure consistent field names
   const normalizeUser = (u) => {
     const leaseStart = u.leaseStartDate ?? u.lease_start_date ?? u.profile?.lease_start_date;
     const leaseEnd = u.leaseEndDate ?? u.lease_end_date ?? u.profile?.lease_end_date;
@@ -62,6 +71,8 @@ export function StaffUserManagement() {
     };
   };
 
+// Sorts users in descending order by ID
+ 
   const sortUsersDesc = (list) => {
     return [...list].sort((a, b) => {
       const aNum = Number(a?.id);
@@ -73,6 +84,8 @@ export function StaffUserManagement() {
     });
   };
 
+  //Loads tenant users and available units when component mounts
+ 
   useEffect(() => {
     if (user?.role !== 'staff') {
       navigate('/');
@@ -105,6 +118,8 @@ export function StaffUserManagement() {
     load();
   }, [user, navigate]);
 
+  // Filters tenants based on search query
+   
   useEffect(() => {
     let filtered = users;
     
@@ -119,6 +134,8 @@ export function StaffUserManagement() {
     setFilteredUsers(filtered);
   }, [searchQuery, users]);
 
+  //Creates a new tenant user with form data
+  
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
@@ -148,6 +165,8 @@ export function StaffUserManagement() {
     }
   };
 
+  //Updates an existing tenant's information
+  
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
     
@@ -178,6 +197,7 @@ export function StaffUserManagement() {
     }
   };
 
+  // Deletes a tenant
   const handleDeleteUser = async (userId) => {
     if (confirm('Are you sure you want to delete this tenant?')) {
       try {
@@ -190,44 +210,7 @@ export function StaffUserManagement() {
     }
   };
 
-  const handleExport = async (format) => {
-    try {
-      setIsExporting(true);
-      
-      const rowsUsers = sortUsersDesc(users);
-      
-      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Unit Number', 'Lease Start', 'Lease End'];
-      const rows = rowsUsers.map(user => [
-        user.id,
-        user.email,
-        user.firstName || '',
-        user.lastName || '',
-        user.role || '',
-        user.phone || '',
-        user.unitNumber || '',
-        user.leaseStartDate || '',
-        user.leaseEndDate || ''
-      ]);
-
-      if (format === 'csv') {
-        exportToCSV(headers, rows, 'tenants_export.csv');
-      } else if (format === 'excel') {
-        exportToExcel(headers, rows, 'tenants_export.xls', 'Tenants Export');
-      } else if (format === 'word') {
-        exportToWord(headers, rows, 'tenants_export.doc', 'Tenants Export');
-      } else if (format === 'docx') {
-        await exportToDocx(headers, rows, 'tenants_export.docx', 'Tenants Export');
-      } else if (format === 'pdf') {
-        printToPDF(headers, rows, 'Tenants Export');
-      }
-    } catch (error) {
-      console.error('Error exporting tenants:', error);
-      alert('Failed to export tenants. Please try again.');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
+  // Resets form data
   const resetForm = () => {
     setFormData({
       email: '',
@@ -236,12 +219,14 @@ export function StaffUserManagement() {
       role: 'tenant',
       phone: '',
       unitNumber: '',
+      password: '',
       leaseStartDate: '',
       leaseEndDate: '',
     });
     setSelectedUser(null);
   };
 
+  // Opens edit dialog 
   const openEditDialog = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -271,37 +256,7 @@ export function StaffUserManagement() {
             </p>
           </div>
           <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="border-gray-300" disabled={isExporting}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {isExporting ? 'Exporting...' : 'Export'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF (Print)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('docx')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Word (.docx)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('word')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Word (.doc)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('excel')}>
-                  <TableIcon className="h-4 w-4 mr-2" />
-                  Excel (.xls)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('csv')}>
-                  <TableIcon className="h-4 w-4 mr-2" />
-                  CSV (.csv)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
+            {/* Add tenant button */}
             <Button
               className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
               onClick={() => setIsCreateDialogOpen(true)}
@@ -319,6 +274,7 @@ export function StaffUserManagement() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4">
+              {/* Search input */}
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -332,7 +288,7 @@ export function StaffUserManagement() {
           </CardContent>
         </Card>
 
-        {/* Users table */}
+        {/* Tenants table */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-[#2E3192]">Tenants ({filteredUsers.length})</CardTitle>
@@ -373,13 +329,18 @@ export function StaffUserManagement() {
                         </div>
                       </TableCell>
                       
+                      {/* User email */}
                       <TableCell className="text-sm">{user.email}</TableCell>
+                      
+                      {/* User phone */}
                       <TableCell className="text-sm">{user.phone || '-'}</TableCell>
                       
+                      {/* User unit number */}
                       <TableCell className="text-sm">
                         {user.unitNumber || '-'}
                       </TableCell>
                       
+                      {/* User lease period */}
                       <TableCell className="text-xs text-gray-500 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span>Start: {user.leaseStartDate ? String(user.leaseStartDate).split('T')[0] : '-'}</span>
@@ -387,31 +348,35 @@ export function StaffUserManagement() {
                         </div>
                       </TableCell>
                       
+                      {/* User status */}
                       <TableCell>
                         <Badge className="bg-green-100 text-green-700 hover:bg-green-200 capitalize">
                           {user.status || 'active'}
                         </Badge>
                       </TableCell>
                       
+                      {/* Action buttons */}
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                            onClick={() => openEditDialog(user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-[#ED1C24]/10"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-[#ED1C24]" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuItem onClick={() => openEditDialog(user)} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>Edit Tenant</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)} 
+                              className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Tenant</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -432,6 +397,7 @@ export function StaffUserManagement() {
             </DialogHeader>
             
             <div className="grid grid-cols-2 gap-4">
+              {/* First name */}
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-[#2E3192] font-medium">First Name</Label>
                 <Input
@@ -442,6 +408,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Last name */}
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-[#2E3192] font-medium">Last Name</Label>
                 <Input
@@ -452,6 +419,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Email */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="email" className="text-[#2E3192] font-medium">Email</Label>
                 <Input
@@ -463,6 +431,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Password */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="password" className="text-[#2E3192] font-medium">Password</Label>
                 <Input
@@ -474,11 +443,13 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Role (disabled, always Tenant) */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Role</Label>
                 <Input value="Tenant" disabled className="bg-gray-100" />
               </div>
               
+              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-[#2E3192] font-medium">Phone</Label>
                 <Input
@@ -489,6 +460,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Unit Number */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
                 <Select 
@@ -517,6 +489,7 @@ export function StaffUserManagement() {
                 </Select>
               </div>
 
+              {/* Lease Start Date */}
               <div className="space-y-2">
                 <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
                 <Input
@@ -527,6 +500,8 @@ export function StaffUserManagement() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              
+              {/* Lease End Date */}
               <div className="space-y-2">
                 <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
                 <Input
@@ -583,6 +558,7 @@ export function StaffUserManagement() {
             </DialogHeader>
             
             <div className="grid grid-cols-2 gap-4">
+              {/* First name */}
               <div className="space-y-2">
                 <Label htmlFor="editFirstName" className="text-[#2E3192] font-medium">First Name</Label>
                 <Input
@@ -593,6 +569,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Last name */}
               <div className="space-y-2">
                 <Label htmlFor="editLastName" className="text-[#2E3192] font-medium">Last Name</Label>
                 <Input
@@ -603,6 +580,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Email */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="editEmail" className="text-[#2E3192] font-medium">Email</Label>
                 <Input
@@ -614,11 +592,13 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Role (disabled, always Tenant) */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Role</Label>
                 <Input value="Tenant" disabled className="bg-gray-100" />
               </div>
               
+              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="editPhone" className="text-[#2E3192] font-medium">Phone</Label>
                 <Input
@@ -629,6 +609,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
+              {/* Unit Number */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="editUnitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
                 <Select 
@@ -657,6 +638,7 @@ export function StaffUserManagement() {
                 </Select>
               </div>
 
+              {/* Lease Start Date */}
               <div className="space-y-2">
                 <Label htmlFor="editLeaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
                 <Input
@@ -667,6 +649,8 @@ export function StaffUserManagement() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              
+              {/* Lease End Date */}
               <div className="space-y-2">
                 <Label htmlFor="editLeaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
                 <Input

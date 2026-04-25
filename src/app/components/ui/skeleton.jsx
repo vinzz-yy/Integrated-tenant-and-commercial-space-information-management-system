@@ -1,10 +1,7 @@
 import { cn } from "./utils";
 
-/**
- * Skeleton - Loading placeholder that pulses
- * Used on: Shows loading state while content fetches
- * Screens: All screens during data fetching - dashboards, profiles, lists
- */
+// Used on: Shows loading state while content fetches
+
 function Skeleton({ className, ...props }) {
   return (
     <div

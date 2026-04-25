@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent } from '../../components/ui/tabs.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
-import { Search, Eye, Edit, Plus, Calendar } from 'lucide-react';
+import { Search, Eye, Edit, Plus, Calendar, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function TenantAppointments() {
   const { user } = useAuth();
@@ -420,24 +421,23 @@ export function TenantAppointments() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openViewDialog(apt)}
-                                    className="text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openEditDialog(apt)}
-                                    className="text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-[160px]">
+                                    <DropdownMenuItem onClick={() => openViewDialog(apt)} className="cursor-pointer">
+                                      <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>View Details</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openEditDialog(apt)} className="cursor-pointer">
+                                      <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>Edit Appointment</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           );

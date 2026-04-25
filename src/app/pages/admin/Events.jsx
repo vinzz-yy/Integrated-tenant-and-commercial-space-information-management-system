@@ -18,13 +18,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
 import api from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function Events() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // State declarations
   const [appointments, setAppointments] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
 
@@ -32,7 +34,6 @@ export function Events() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -52,6 +53,7 @@ export function Events() {
     status: 'scheduled',
   });
 
+  // Helper: Get user display name
   const getUserLabel = (u) => {
     if (!u) return '';
     const first = u.firstName ?? u.first_name ?? '';
@@ -60,6 +62,7 @@ export function Events() {
     return name || u.email || '';
   };
 
+  // Helper: Get initials from name for avatar
   const getInitials = (value) => {
     const str = String(value || '').trim();
     if (!str) return '?';
@@ -69,6 +72,7 @@ export function Events() {
     return (a + b).toUpperCase();
   };
 
+  // Parse date string to Date object
   const parseDateOnly = (dateStr) => {
     if (!dateStr) return null;
     const [y, m, d] = String(dateStr).split('-').map((v) => Number(v));
@@ -77,6 +81,7 @@ export function Events() {
     return Number.isNaN(dt.getTime()) ? null : dt;
   };
 
+  // Date range helpers for filtering
   const getStartOfWeek = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -106,6 +111,7 @@ export function Events() {
     return d;
   };
 
+  // Get status label for display
   const statusLabel = (status) => {
     switch (status) {
       case 'scheduled':
@@ -121,6 +127,7 @@ export function Events() {
     }
   };
 
+  // Get status variant for badge styling
   const statusVariant = (status) => {
     switch (status) {
       case 'cancelled':
@@ -138,6 +145,7 @@ export function Events() {
   const appointmentKey = (apt) => String(apt?.id ?? '');
   const UNASSIGNED_VALUE = '__unassigned__';
 
+  // Reset form to initial state
   const resetForm = () => {
     setFormData({
       title: '',
@@ -150,6 +158,7 @@ export function Events() {
     setSelectedAppointment(null);
   };
 
+  // Filter appointments based on search, date, and status
   const filteredAppointments = useMemo(() => {
     const today = new Date();
     const start =
@@ -174,17 +183,16 @@ export function Events() {
     return appointments
       .filter((apt) => {
         if (!apt) return false;
+        // Filter by status
         if (statusFilter !== 'all' && String(apt.status || 'scheduled') !== statusFilter) return false;
-        if (assigneeFilter !== 'all') {
-          const tenantId = String(apt.tenantId ?? apt.tenant_id ?? '');
-          if (tenantId !== String(assigneeFilter)) return false;
-        }
+        // Filter by date range
         if (start && end) {
           const aptDate = parseDateOnly(apt.date);
           if (!aptDate) return false;
           const ms = aptDate.getTime();
           if (ms < start.getTime() || ms > end.getTime()) return false;
         }
+        // Filter by search query
         if (query) {
           const hay = [apt.title, apt.location, apt.assignedTo, apt.date, apt.time, apt.status]
             .filter(Boolean)
@@ -200,8 +208,9 @@ export function Events() {
         if (da !== db) return db - da;
         return String(b.time || '').localeCompare(String(a.time || ''), undefined, { numeric: true });
       });
-  }, [appointments, searchQuery, dateFilter, statusFilter, assigneeFilter]);
+  }, [appointments, searchQuery, dateFilter, statusFilter]);
 
+  // Selection handlers for bulk operations
   const allVisibleSelected =
     filteredAppointments.length > 0 &&
     filteredAppointments.every((a) => selectedIds.includes(appointmentKey(a)));
@@ -229,7 +238,7 @@ export function Events() {
       return;
     }
 
-    // Async function to fetch appointments from API
+    // Fetch appointments from API
     const load = async () => {
       try {
         const resp = await api.events.getAppointments();
@@ -241,13 +250,13 @@ export function Events() {
           setStaffUsers(usersList);
         } catch { }
       } catch (e) {
-        // Set empty array on error to prevent undefined issues
         setAppointments([]);
       }
     };
     load();
   }, [user, navigate]);
 
+  // Create new appointment
   const handleCreateAppointment = async () => {
     if (!formData.title || !formData.date || !formData.time) {
       setResultTitle('Missing Required Fields');
@@ -266,9 +275,10 @@ export function Events() {
       };
       const created = await api.events.createAppointment(payload);
       setAppointments((prev) => [...prev, created]);
-      const createdTenantId = String(created?.tenantId ?? created?.tenant_id ?? '');
-      const createdStatus = String(created?.status || 'scheduled');
+      
+      // Auto-adjust filters to show new appointment
       const createdDate = parseDateOnly(created?.date);
+      const createdStatus = String(created?.status || 'scheduled');
       const query = searchQuery.trim().toLowerCase();
 
       if (query) {
@@ -280,7 +290,6 @@ export function Events() {
       }
 
       if (statusFilter !== 'all' && createdStatus !== statusFilter) setStatusFilter('all');
-      if (assigneeFilter !== 'all' && createdTenantId !== String(assigneeFilter)) setAssigneeFilter('all');
 
       if (dateFilter !== 'all' && createdDate) {
         const today = new Date();
@@ -320,6 +329,7 @@ export function Events() {
     }
   };
 
+  // Open edit dialog with selected appointment data
   const openEditDialog = (apt) => {
     setSelectedAppointment(apt);
     setFormData({
@@ -333,11 +343,13 @@ export function Events() {
     setIsEditDialogOpen(true);
   };
 
+  // Open view dialog for selected appointment
   const openViewDialog = (apt) => {
     setSelectedAppointment(apt);
     setIsViewDialogOpen(true);
   };
 
+  // Update existing appointment
   const handleUpdateAppointment = async () => {
     if (!selectedAppointment) return;
     if (!formData.title || !formData.date || !formData.time) {
@@ -370,6 +382,7 @@ export function Events() {
     }
   };
 
+  // Delete single appointment
   const handleDeleteAppointment = async (id) => {
     try {
       await api.events.deleteAppointment(String(id));
@@ -381,6 +394,7 @@ export function Events() {
     }
   };
 
+  // Delete multiple selected appointments
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (!confirm(`Delete ${selectedIds.length} appointment(s)?`)) return;
@@ -397,6 +411,7 @@ export function Events() {
   return (
     <Layout role="admin">
       <div className="space-y-6">
+        {/* Header Section */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-[#2E3192]">
@@ -426,6 +441,7 @@ export function Events() {
           </div>
         </div>
 
+        {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="appointments">
             <Card className="mt-4">
@@ -436,7 +452,9 @@ export function Events() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Filters Bar */}
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  {/* Search Input */}
                   <div className="relative w-full md:max-w-md">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
@@ -446,6 +464,7 @@ export function Events() {
                       className="pl-10 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                     />
                   </div>
+                  {/* Date & Status Filters */}
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Select value={dateFilter} onValueChange={setDateFilter}>
                       <SelectTrigger className="w-full sm:w-[170px] border-gray-200">
@@ -470,22 +489,10 @@ export function Events() {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                      <SelectTrigger className="w-full sm:w-[180px] border-gray-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Assigned: All</SelectItem>
-                        {staffUsers.map((s) => (
-                          <SelectItem key={String(s.id)} value={String(s.id)}>
-                            {getUserLabel(s)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
+                {/* Appointments Table */}
                 <div className="rounded-md border border-gray-200 overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -514,21 +521,25 @@ export function Events() {
                           const assigned = apt.assignedTo || 'Unassigned';
                           return (
                             <TableRow key={id} className="hover:bg-[#F9E81B]/5">
+                              {/* Checkbox Column */}
                               <TableCell>
                                 <Checkbox checked={checked} onCheckedChange={() => toggleSelectOne(id)} />
                               </TableCell>
+                              {/* Time & Date Column */}
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium text-[#2E3192]">{apt.time || '-'}</span>
                                   <span className="text-xs text-gray-500">{apt.date || '-'}</span>
                                 </div>
                               </TableCell>
+                              {/* Title & Location Column */}
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium">{apt.title || '-'}</span>
                                   <span className="text-xs text-gray-500">{apt.location || ''}</span>
                                 </div>
                               </TableCell>
+                              {/* Assigned To Column */}
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-7 w-7">
@@ -540,6 +551,7 @@ export function Events() {
                                   <span className="text-sm">{assigned}</span>
                                 </div>
                               </TableCell>
+                              {/* Status Dropdown */}
                               <TableCell>
                                 <Select
                                   value={apt.status || 'scheduled'}
@@ -563,33 +575,32 @@ export function Events() {
                                   </SelectContent>
                                 </Select>
                               </TableCell>
+                              {/* Action Buttons */}
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                    onClick={() => openViewDialog(apt)}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                                    onClick={() => openEditDialog(apt)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-[#ED1C24]/10"
-                                    onClick={() => handleDeleteAppointment(apt.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-[#ED1C24]" />
-                                  </Button>
-                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-[160px]">
+                                    <DropdownMenuItem onClick={() => openViewDialog(apt)} className="cursor-pointer">
+                                      <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>View Details</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openEditDialog(apt)} className="cursor-pointer">
+                                      <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                      <span>Edit Appointment</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDeleteAppointment(apt.id)} 
+                                      className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      <span>Delete</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           );
@@ -617,6 +628,7 @@ export function Events() {
               <DialogDescription>Create and assign an appointment.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
+              {/* Title Field */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Title *</Label>
                 <Input
@@ -626,6 +638,7 @@ export function Events() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              {/* Date & Time Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#2E3192] font-medium">Date *</Label>
@@ -646,6 +659,7 @@ export function Events() {
                   />
                 </div>
               </div>
+              {/* Location Field */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Location</Label>
                 <Input
@@ -655,6 +669,7 @@ export function Events() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              {/* Assigned To Field */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Assigned To</Label>
                 <Select
@@ -775,6 +790,7 @@ export function Events() {
               <DialogDescription>Update appointment details.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
+              {/* Title Field */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Title *</Label>
                 <Input
@@ -783,6 +799,7 @@ export function Events() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              {/* Date & Time Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#2E3192] font-medium">Date *</Label>
@@ -803,6 +820,7 @@ export function Events() {
                   />
                 </div>
               </div>
+              {/* Location Field */}
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Location</Label>
                 <Input
@@ -811,6 +829,7 @@ export function Events() {
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
               </div>
+              {/* Assigned To & Status Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[#2E3192] font-medium">Assigned To</Label>
@@ -871,8 +890,7 @@ export function Events() {
               <DialogDescription>{resultMessage}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+              <Button                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
                 onClick={() => setIsResultDialogOpen(false)}
               >
                 OK

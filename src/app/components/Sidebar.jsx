@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { cn } from './ui/utils';
-import { LayoutDashboard, Users, FileCheck, Calendar, Settings, PhilippinePeso, Building, ClipboardList, CreditCard, Wrench, UserCog, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, FileCheck, Calendar, Settings, PhilippinePeso, Building, ClipboardList, CreditCard, Wrench, LogOut, ChevronRight, Archive } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog.jsx';
@@ -19,14 +19,13 @@ const adminMenuItems = {
     { icon: Calendar, label: 'Events', path: '/admin/Events' },
   ],
   system: [
-    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+    { icon: Archive, label: 'Archives', path: '/admin/archives' },
   ]
 };
 
 const staffMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/staff' },
-    { icon: UserCog, label: 'My Profile', path: '/staff/profile' },
     { icon: Users, label: 'User Profiles', path: '/staff/users' },
     { icon: PhilippinePeso, label: 'Financial', path: '/staff/financial' },
     { icon: Building, label: 'Commercial Space', path: '/staff/commercial-space' },
@@ -42,7 +41,6 @@ const staffMenuItems = {
 const tenantMenuItems = {
   management: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/tenant' },
-    { icon: UserCog, label: 'My Profile', path: '/tenant/profile' },
     { icon: Building, label: 'Commercial Space', path: '/tenant/commercial-space' },
     { icon: CreditCard, label: 'Payments', path: '/tenant/payments' },
     { icon: FileCheck, label: 'Documents', path: '/tenant/compliance' },

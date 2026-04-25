@@ -6,8 +6,18 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import UserProfile, Document, Appointment, Unit, MaintenanceRequest, Notification, Payment
+from .models import UserProfile, Document, Appointment, Unit, MaintenanceRequest, Notification, Payment, ArchivedRecord
 from .serializers import (UserSerializer,DocumentSerializer,AppointmentSerializer,UnitSerializer,MaintenanceRequestSerializer,NotificationSerializer,PaymentSerializer,)
+
+
+def _archive(record_type, original_id, data_dict, deleted_by):
+    """Helper: serialize and store a soft-deleted record."""
+    ArchivedRecord.objects.create(
+        record_type=record_type,
+        original_id=str(original_id),
+        data=data_dict,
+        deleted_by=deleted_by,
+    )
 
 # AUTH
 
@@ -28,9 +38,16 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    # Logout - tanggalin tokens sa frontend
+    # Logout - blacklist the refresh token
     def post(self, request):
-        return Response({"detail": "Logged out"})
+        try:
+            refresh_token = request.data.get("refresh")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            return Response({"detail": "Successfully logged out"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeView(APIView):
@@ -52,6 +69,15 @@ class MeView(APIView):
             user.last_name = last_name
         if email:
             user.email = email
+        
+        # Password update
+        current_password = data.get("currentPassword")
+        new_password = data.get("newPassword")
+        if current_password and new_password:
+            if not user.check_password(current_password):
+                return Response({"detail": "Current password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(new_password)
+            
         user.save()
         
         # Update profile fields
@@ -188,11 +214,19 @@ class UsersViewSet(viewsets.ModelViewSet):
         # Map frontend camelCase to snake_case for the User model
         if "firstName" in data: data["first_name"] = data.get("firstName")
         if "lastName" in data: data["last_name"] = data.get("lastName")
+
+        # Handle optional password update — must be hashed via set_password()
+        new_password = data.pop('password', None) or data.pop('newPassword', None)
         
         # Use serializer for updating
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+
+        # Apply the new password after serializer save (so it's properly hashed)
+        if new_password:
+            instance.set_password(str(new_password))
+            instance.save(update_fields=['password'])
         
         # Re-fetch the instance to ensure we have the latest data for the response
         instance.refresh_from_db()
@@ -206,13 +240,17 @@ class UsersViewSet(viewsets.ModelViewSet):
         user_role = getattr(getattr(request.user, "profile", None), "role", "")
         is_admin = getattr(request.user, "is_staff", False) or user_role == "admin"
         
-        target_role = getattr(instance.profile, "role", "") if instance.profile else ""
+        target_role = getattr(instance.profile, "role", "") if hasattr(instance, 'profile') and instance.profile else ""
         is_staff_deleting_tenant = user_role == "staff" and target_role == "tenant"
         
         if not (is_admin or is_staff_deleting_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-            
-        return super().destroy(request, *args, **kwargs)
+
+        # Soft-archive instead of permanent delete
+        serializer = self.get_serializer(instance)
+        _archive('user', instance.pk, serializer.data, request.user)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["post"], url_path="bulk-import", permission_classes=[permissions.IsAdminUser], parser_classes=[MultiPartParser, FormParser])
     def bulk_import(self, request):
@@ -338,6 +376,19 @@ class UnitsViewSet(viewsets.ModelViewSet):
         if tenant_id:
             return qs.filter(tenant_id=tenant_id)
         return Unit.objects.none()
+
+    def destroy(self, request, *args, **kwargs):
+        # Soft-archive unit before deleting
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_admin_or_staff = getattr(request.user, "is_staff", False) or user_role in ("admin", "staff")
+        if not is_admin_or_staff:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        _archive('unit', instance.pk, serializer.data, request.user)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"], url_path="assign-tenant")
     def assign_tenant(self, request, pk=None):
@@ -482,24 +533,28 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
         
         if not is_staff_or_admin:
             return Response({"detail": "Forbidden: Only admin and staff can delete payment records."}, status=status.HTTP_403_FORBIDDEN)
-            
+
         try:
-            return super().destroy(request, *args, **kwargs)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            _archive('transaction', instance.pk, serializer.data, request.user)
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"detail": f"Delete failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=["get"], url_path="revenue-analytics")
     def revenue_analytics(self, request):
         # Simple revenue analytics
-        from django.db.models import Sum
+        from django.db.models import Sum, Q
         from django.utils import timezone
         import datetime
 
         # Get total revenue
-        total_revenue = Payment.objects.filter(status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
+        total_revenue = Payment.objects.filter(status__in=['completed', 'paid']).aggregate(Sum('amount'))['amount__sum'] or 0
         
-        # Get monthly revenue (last 6 months)
-        monthly_revenue = []
+        # Get monthly analytics (last 6 months)
+        monthly_data = []
         today = timezone.now().date()
         for i in range(5, -1, -1):
             # Calculate months correctly
@@ -511,14 +566,131 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
             
             month_date = datetime.date(year, month, 1)
             month_name = month_date.strftime('%b')
-            amount = Payment.objects.filter(
-                status='completed',
+            
+            # Paid revenue
+            revenue = Payment.objects.filter(
+                Q(status='completed') | Q(status='paid'),
                 payment_date__year=year,
                 payment_date__month=month
             ).aggregate(Sum('amount'))['amount__sum'] or 0
-            monthly_revenue.append({'month': month_name, 'revenue': float(amount)})
+            
+            # Unpaid revenue
+            unpaid = Payment.objects.filter(
+                Q(status='unpaid') | Q(status='pending'),
+                payment_date__year=year,
+                payment_date__month=month
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            monthly_data.append({
+                'month': month_name, 
+                'revenue': float(revenue),
+                'unpaid': float(unpaid)
+            })
 
         return Response({
             "total_revenue": float(total_revenue),
-            "data": monthly_revenue
+            "data": monthly_data
         })
+
+
+# ARCHIVES
+
+class ArchivesViewSet(viewsets.ViewSet):
+    """Admin-only: list, restore, or permanently delete archived records."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _require_admin(self, request):
+        user_role = getattr(getattr(request.user, "profile", None), "role", "")
+        is_admin = getattr(request.user, "is_staff", False) or user_role == "admin"
+        return is_admin
+
+    def list(self, request):
+        """GET /archives/ — list all archived records, optionally filtered by type."""
+        if not self._require_admin(request):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        qs = ArchivedRecord.objects.all()
+        record_type = request.query_params.get("type")
+        if record_type:
+            qs = qs.filter(record_type=record_type)
+        return Response([r.to_dict() for r in qs])
+
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, pk=None):
+        """POST /archives/{id}/restore/ — restore a record (Users only for now)."""
+        if not self._require_admin(request):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            record = ArchivedRecord.objects.get(pk=pk)
+        except ArchivedRecord.DoesNotExist:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        restored_data = {}
+        if record.record_type == 'user':
+            data = record.data
+            email = data.get('email', '')
+            # Avoid duplicate username/email
+            if User.objects.filter(email=email).exists():
+                return Response({"detail": f"A user with email '{email}' already exists. Cannot restore."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=None,  # admin must reset the password
+                first_name=data.get('firstName') or data.get('first_name', ''),
+                last_name=data.get('lastName') or data.get('last_name', ''),
+            )
+            role = data.get('role', 'staff')
+            UserProfile.objects.create(
+                user=user,
+                role=role,
+                phone=data.get('phone', ''),
+                department=data.get('department', ''),
+                unitNumber=data.get('unitNumber', ''),
+            )
+            restored_data = UserSerializer(user).data
+
+        elif record.record_type == 'transaction':
+            data = record.data
+            try:
+                user_id = data.get('user')
+                user_obj = User.objects.get(pk=user_id) if user_id else None
+            except User.DoesNotExist:
+                user_obj = None
+            payment = Payment.objects.create(
+                user=user_obj,
+                amount=data.get('amount', 0),
+                payment_method=data.get('payment_method', 'cash'),
+                description=data.get('description', ''),
+                status=data.get('status', 'completed'),
+                payment_date=data.get('payment_date'),
+            )
+            restored_data = PaymentSerializer(payment).data
+
+        elif record.record_type == 'unit':
+            data = record.data
+            unit = Unit.objects.create(
+                number=data.get('number', ''),
+                unit_number=data.get('unit_number', ''),
+                type=data.get('type', 'residential'),
+                floor=data.get('floor', 1),
+                status='available',
+            )
+            restored_data = UnitSerializer(unit).data
+
+        else:
+            return Response({"detail": f"Restore for type '{record.record_type}' is not yet supported."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        record.delete()  # remove from archive after restore
+        return Response({"detail": "Restored successfully.", "data": restored_data})
+
+    def destroy(self, request, pk=None):
+        """DELETE /archives/{id}/ — permanently delete from archive."""
+        if not self._require_admin(request):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            record = ArchivedRecord.objects.get(pk=pk)
+        except ArchivedRecord.DoesNotExist:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+        record.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

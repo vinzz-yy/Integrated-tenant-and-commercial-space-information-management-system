@@ -11,10 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Search, Plus, Edit, Trash2, Download, FileText, Table as TableIcon } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
-import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
 
 export function UserManagement() {
   const { user } = useAuth();
@@ -39,12 +38,9 @@ export function UserManagement() {
   // Loading states for async operations
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState('pdf');
 
   // Form state for creating/editing users
   const [formData, setFormData] = useState({
@@ -60,6 +56,10 @@ export function UserManagement() {
     leaseEndDate: '',
   });
 
+  /**
+   * Normalizes user object to ensure consistent field names
+   * Converts snake_case to camelCase and formats dates
+   */
   const normalizeUser = (u) => {
     const leaseStart = u.leaseStartDate ?? u.lease_start_date ?? u.profile?.lease_start_date;
     const leaseEnd = u.leaseEndDate ?? u.lease_end_date ?? u.profile?.lease_end_date;
@@ -73,6 +73,10 @@ export function UserManagement() {
     };
   };
 
+  /**
+   * Sorts users in descending order by ID
+   * Handles both numeric and string IDs
+   */
   const sortUsersDesc = (list) => {
     return [...list].sort((a, b) => {
       const aNum = Number(a?.id);
@@ -84,7 +88,10 @@ export function UserManagement() {
     });
   };
 
-  // Load users when component mounts
+  /**
+   * Loads users and available units when component mounts
+   * Redirects non-admin users to home page
+   */
   useEffect(() => {
     // Redirect if user is not an admin
     if (user?.role !== 'admin') {
@@ -119,7 +126,10 @@ export function UserManagement() {
     load();
   }, [user, navigate]);
 
-  // Filter users when search query or role filter changes
+  /**
+   * Filters users based on search query and role selection
+   * Updates filteredUsers state whenever filters change
+   */
   useEffect(() => {
     let filtered = users;
 
@@ -140,7 +150,10 @@ export function UserManagement() {
     setFilteredUsers(filtered);
   }, [searchQuery, roleFilter, users]);
 
-  // Handle creating a new user
+  /**
+   * Creates a new user with form data
+   * Shows success/error dialog after completion
+   */
   const handleCreateUser = async () => {
     try {
       setIsCreating(true);
@@ -169,7 +182,10 @@ export function UserManagement() {
     }
   };
 
-  // Handle updating an existing user
+  /**
+   * Updates an existing user's information
+   * Only updates password if a new one is provided
+   */
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
@@ -199,12 +215,17 @@ export function UserManagement() {
     }
   };
 
-  // Handle deleting a user
+  /**
+   * Opens delete confirmation dialog for a user
+   */
   const confirmDeleteUser = (userId) => {
     setUserToDelete(userId);
     setIsDeleteDialogOpen(true);
   };
 
+  /**
+   * Executes user deletion after confirmation
+   */
   const executeDeleteUser = async () => {
     if (!userToDelete) return;
     try {
@@ -218,56 +239,9 @@ export function UserManagement() {
     }
   };
 
-  // Handle exporting users with format choice
-  const handleExport = async (format) => {
-    try {
-      setIsExporting(true);
-
-      // Fetch all users data
-      const allUsersResp = await connection.users.getUsers();
-      const allUsers = Array.isArray(allUsersResp) ? allUsersResp : (allUsersResp?.results || []);
-      const rowsUsers = sortUsersDesc(
-        allUsers.map((user) => ({
-          ...user,
-          firstName: user.firstName ?? user.first_name ?? '',
-          lastName: user.lastName ?? user.last_name ?? '',
-        }))
-      );
-
-      const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'Department', 'Unit Number', 'Lease Start', 'Lease End'];
-      const rows = rowsUsers.map(user => [
-        user.id,
-        user.email,
-        user.firstName || '',
-        user.lastName || '',
-        user.role || '',
-        user.phone || '',
-        user.department || '',
-        user.unitNumber || '',
-        user.leaseStartDate || '',
-        user.leaseEndDate || ''
-      ]);
-
-      if (format === 'csv') {
-        exportToCSV(headers, rows, 'users_export.csv');
-      } else if (format === 'excel') {
-        exportToExcel(headers, rows, 'users_export.xls', 'Users Export');
-      } else if (format === 'word') {
-        exportToWord(headers, rows, 'users_export.doc', 'Users Export');
-      } else if (format === 'docx') {
-        await exportToDocx(headers, rows, 'users_export.docx', 'Users Export');
-      } else if (format === 'pdf') {
-        printToPDF(headers, rows, 'Users Export');
-      }
-    } catch (error) {
-      console.error('Error exporting users:', error);
-      alert('Failed to export users. Please try again.');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // Reset form to initial state
+  /**
+   * Resets form data to initial empty state
+   */
   const resetForm = () => {
     setFormData({
       email: '',
@@ -277,13 +251,16 @@ export function UserManagement() {
       phone: '',
       unitNumber: '',
       department: '',
+      password: '',
       leaseStartDate: '',
       leaseEndDate: '',
     });
     setSelectedUser(null);
   };
 
-  // Open edit dialog with selected user's data
+  /**
+   * Opens edit dialog and populates form with selected user's data
+   */
   const openEditDialog = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -314,37 +291,6 @@ export function UserManagement() {
             </p>
           </div>
           <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="border-gray-300" disabled={isExporting}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {isExporting ? 'Exporting...' : 'Export'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF (Print)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('docx')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Word (.docx)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('word')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Word (.doc)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('excel')}>
-                  <TableIcon className="h-4 w-4 mr-2" />
-                  Excel (.xls)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('csv')}>
-                  <TableIcon className="h-4 w-4 mr-2" />
-                  CSV (.csv)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Add user button */}
             <Button
               className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
@@ -472,24 +418,23 @@ export function UserManagement() {
 
                       {/* Action buttons */}
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-[#F9E81B]/20 text-[#2E3192]"
-                            onClick={() => openEditDialog(user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-[#ED1C24]/10"
-                            onClick={() => confirmDeleteUser(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-[#ED1C24]" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuItem onClick={() => openEditDialog(user)} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>Update User</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => confirmDeleteUser(user.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete User</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -718,7 +663,7 @@ export function UserManagement() {
                 />
               </div>
 
-              {/* Email (full width) */}
+              {/* Email */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="editEmail" className="text-[#2E3192] font-medium">Email</Label>
                 <Input

@@ -9,10 +9,11 @@ import { Label } from '../../components/ui/label.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
-import { Upload, FileText, FileCheck, Clock, XCircle, Eye, Edit, Trash2 } from 'lucide-react';
+import { Upload, FileText, FileCheck, Clock, XCircle, Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { toast } from 'sonner';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function TenantCompliance() {
   const { user } = useAuth();
@@ -269,17 +270,27 @@ export function TenantCompliance() {
                         <Badge className={statusBadge.className}>
                           {statusBadge.text}
                         </Badge>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E3192] hover:bg-[#2E3192]/10" onClick={() => window.open(fullUrl, '_blank')} title="View">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => handleOpenEdit(doc)} title="Edit">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => handleOpenDelete(doc)} title="Delete">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuItem onClick={() => window.open(fullUrl, '_blank')} className="cursor-pointer">
+                              <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>View Document</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenEdit(doc)} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>Edit Document</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenDelete(doc)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Document</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   );

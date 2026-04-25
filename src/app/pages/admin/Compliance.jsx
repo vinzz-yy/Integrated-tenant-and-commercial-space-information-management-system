@@ -11,8 +11,9 @@ import { Label } from '../../components/ui/label.jsx';
 import {Dialog,DialogContent, DialogDescription,DialogFooter, DialogHeader,DialogTitle,} from '../../components/ui/dialog.jsx';
 import {Select,SelectContent,SelectItem,SelectTrigger, SelectValue,} from '../../components/ui/select.jsx';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '../../components/ui/table.jsx';
-import { Search, Plus, ClipboardList, Clock, CheckCircle, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, ClipboardList, Clock, CheckCircle, Pencil, Trash2, MoreVertical } from 'lucide-react';
 import connection from '../../connected/connection.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 
 export function Compliance() {
   const { user } = useAuth();
@@ -101,7 +102,7 @@ export function Compliance() {
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        tenant: formData.assignedTo ? String(formData.assignedTo) : undefined,
+        tenant: formData.assignedTo ? Number(formData.assignedTo) : null,
       };
       
       if (isEditMode && editingId) {
@@ -139,11 +140,18 @@ export function Compliance() {
   };
 
   const handleEditClick = (request) => {
+    // If tenant/assignedTo is an object, extract the ID. Otherwise use it as is.
+    const getAssigneeId = (val) => {
+      if (!val) return '';
+      if (typeof val === 'object' && val.id) return String(val.id);
+      return String(val);
+    };
+
     setFormData({
       title: request.title || '',
       type: request.type || request.request_type || 'Technical',
       description: request.description || '',
-      assignedTo: request.tenant || request.assignedTo || '',
+      assignedTo: getAssigneeId(request.tenant || request.assignedTo),
       date: request.date || request.createdAt || request.created_at || '',
     });
     setEditingId(request.id);
@@ -335,14 +343,23 @@ export function Compliance() {
                       <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
                       <TableCell className="text-sm">{formatDate(request.createdAt || request.created_at)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEditClick(request)} className="h-8 w-8 p-0 border-[#2E3192] text-[#2E3192]">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteRequest(request.id)} className="h-8 w-8 p-0 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuItem onClick={() => handleEditClick(request)} className="cursor-pointer">
+                              <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
+                              <span>Update Request</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteRequest(request.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Request</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

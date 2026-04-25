@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
 import { Textarea } from '../../components/ui/textarea.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
-import { Download, FileText, CheckCircle, XCircle, Clock, Table as TableIcon, Plus, Search, User, Trash2, Eye } from 'lucide-react';
+import { Download, FileText, CheckCircle, XCircle, Clock, Table as TableIcon, Plus, Search, User, Trash2, Eye, Pencil, MoreVertical, Printer } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
 import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
@@ -26,10 +26,31 @@ export function StaffFinancial() {
   const [loading, setLoading] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState(null);
 
   const handleViewPayment = (payment) => {
     setSelectedPayment(payment);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditPayment = (payment) => {
+    setIsEditing(true);
+    setEditingTransactionId(payment.id);
+    setSelectedTenant({
+      id: payment.user || payment.tenant_id,
+      first_name: payment.tenant_name?.split(' ')[0] || '',
+      last_name: payment.tenant_name?.split(' ').slice(1).join(' ') || '',
+      unitNumber: payment.unitNumber,
+    });
+    setTransactionData({
+      amount: String(payment.amount),
+      payment_method: payment.payment_method || 'cash',
+      description: payment.description || '',
+      status: payment.status || 'completed',
+      payment_date: payment.payment_date || new Date().toISOString().split('T')[0]
+    });
+    setIsTransactionDialogOpen(true);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +62,7 @@ export function StaffFinancial() {
     amount: '',
     payment_method: 'cash',
     description: 'Monthly Rent',
+    status: 'completed',
     payment_date: new Date().toISOString().split('T')[0]
   });
 
@@ -115,47 +137,42 @@ export function StaffFinancial() {
 
     setLoading(true);
     try {
-      const newPayment = await connection.financial.createPayment({
-        user: selectedTenant.id,
-        amount: parseFloat(transactionData.amount),
-        payment_method: transactionData.payment_method,
-        description: transactionData.description,
-        status: 'completed',
-        payment_date: transactionData.payment_date
-      });
+      if (isEditing) {
+        const updatedPayment = await connection.financial.updatePayment(editingTransactionId, {
+          amount: parseFloat(transactionData.amount),
+          payment_method: transactionData.payment_method,
+          description: transactionData.description,
+          status: transactionData.status,
+          payment_date: transactionData.payment_date
+        });
 
-      toast.success('Transaction saved successfully');
+        toast.success('Transaction updated successfully');
+        setPayments(prev => prev.map(p => p.id === editingTransactionId ? { ...p, ...updatedPayment } : p));
+      } else {
+        const newPayment = await connection.financial.createPayment({
+          user: selectedTenant.id,
+          amount: parseFloat(transactionData.amount),
+          payment_method: transactionData.payment_method,
+          description: transactionData.description,
+          status: transactionData.status,
+          payment_date: transactionData.payment_date
+        });
+
+        toast.success('Transaction saved successfully');
+        // Update local state immediately with the new payment at the top
+        setPayments(prev => [newPayment, ...prev]);
+      }
+
       setIsTransactionDialogOpen(false);
       resetForm();
-      
-      // Update local state immediately with the new payment at the top
-      setPayments(prev => [newPayment, ...prev]);
       
       // Then reload silently from server
       loadPayments(true);
     } catch (error) {
-      toast.error('Failed to save transaction');
+      toast.error(isEditing ? 'Failed to update transaction' : 'Failed to save transaction');
       console.error(error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeletePayment = async (paymentId) => {
-    if (!paymentId) {
-      toast.error('Invalid payment record ID');
-      return;
-    }
-
-    if (window.confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) {
-      try {
-        await connection.financial.deletePayment(paymentId);
-        toast.success('Payment record deleted successfully');
-        loadPayments();
-      } catch (error) {
-        console.error('Failed to delete payment:', error);
-        toast.error(error.message || 'Failed to delete payment record');
-      }
     }
   };
 
@@ -163,10 +180,13 @@ export function StaffFinancial() {
     setSelectedTenant(null);
     setSearchQuery('');
     setSearchResults([]);
+    setIsEditing(false);
+    setEditingTransactionId(null);
     setTransactionData({
       amount: '',
       payment_method: 'cash',
       description: 'Monthly Rent',
+      status: 'completed',
       payment_date: new Date().toISOString().split('T')[0]
     });
   };
@@ -199,7 +219,7 @@ export function StaffFinancial() {
     }
   };
 
-  const handleViewReceipt = (payment) => {
+  const handlePrintReceipt = (payment) => {
     const headers = ['Receipt Item', 'Value'];
     const rows = [
       ['Payment ID', payment.id],
@@ -217,9 +237,12 @@ export function StaffFinancial() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
+      case 'paid':
         return <CheckCircle className="h-3 w-3 mr-1" />;
       case 'pending':
         return <Clock className="h-3 w-3 mr-1" />;
+      case 'unpaid':
+        return <XCircle className="h-3 w-3 mr-1" />;
       default:
         return <XCircle className="h-3 w-3 mr-1" />;
     }
@@ -227,12 +250,14 @@ export function StaffFinancial() {
 
   // Replaced with brand-color system from second code
   const getStatusBadge = (status) => {
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'paid') {
       return { className: 'bg-[#2E3192] text-white hover:bg-[#2E3192]/90' };
     } else if (status === 'pending') {
       return { className: 'bg-[#F9E81B]/30 text-[#2E3192] hover:bg-[#F9E81B]/40' };
-    } else {
+    } else if (status === 'unpaid') {
       return { className: 'bg-[#ED1C24] text-white hover:bg-[#ED1C24]/90' };
+    } else {
+      return { className: 'bg-[#ED1C24]/10 text-[#ED1C24] hover:bg-[#ED1C24]/20' };
     }
   };
 
@@ -287,6 +312,50 @@ export function StaffFinancial() {
             </Button>
           </div>
         </div>
+
+        {/* Financial summary cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Paid Payments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                ₱{payments
+                  .filter(p => p.status === 'completed' || p.status === 'paid')
+                  .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+                  .toLocaleString('en-PH')}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Unpaid Payments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#ED1C24]">
+                ₱{payments
+                  .filter(p => p.status === 'unpaid' || p.status === 'pending')
+                  .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+                  .toLocaleString('en-PH')}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Total Transactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#2E3192]">{payments.length}</div>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Payments table */}
         <Card>
@@ -337,35 +406,27 @@ export function StaffFinancial() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewPayment(payment)}
-                                className="border-gray-300"
-                                title="View Details"
-                              >
-                                <Eye className="h-4 w-4 text-[#2E3192]" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewReceipt(payment)}
-                                className="border-gray-300"
-                                title="Receipt"
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-red-200 hover:bg-red-50 text-red-600"
-                                onClick={() => handleDeletePayment(payment.id)}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4 text-[#2E3192]" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-[160px]">
+                                <DropdownMenuItem onClick={() => handleViewPayment(payment)} className="cursor-pointer">
+                                  <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                  <span>View Details</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditPayment(payment)} className="cursor-pointer">
+                                  <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                  <span>Edit Status</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePrintReceipt(payment)} className="cursor-pointer">
+                                  <Printer className="mr-2 h-4 w-4 text-[#2E3192]" />
+                                  <span>Print Receipt</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       );
@@ -384,28 +445,30 @@ export function StaffFinancial() {
         }}>
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">New Financial Transaction</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">{isEditing ? 'Edit Transaction' : 'New Financial Transaction'}</DialogTitle>
               <DialogDescription>
-                Search for a tenant and enter payment details to save a new transaction.
+                {isEditing ? 'Update the details for this transaction.' : 'Search for a tenant and enter payment details to save a new transaction.'}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               {/* Tenant Search Section */}
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">
-                  Search Tenant (Name or ID) <span className="text-[#ED1C24]">*</span>
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Start typing to search..."
-                    className="pl-9 border-gray-200"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+              {!isEditing && (
+                <div className="space-y-2">
+                  <Label className="text-[#2E3192] font-medium">
+                    Search Tenant (Name or ID) <span className="text-[#ED1C24]">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Start typing to search..."
+                      className="pl-9 border-gray-200"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Search Results */}
               {searchResults.length > 0 && !selectedTenant && (
@@ -465,14 +528,16 @@ export function StaffFinancial() {
                       <p className="text-xs text-gray-500">Unit: {selectedTenant.unitNumber || 'N/A'} | Status: {selectedTenant.role}</p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedTenant(null)}
-                    className="text-[#2E3192]"
-                  >
-                    Change
-                  </Button>
+                  {!isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedTenant(null)}
+                      className="text-[#2E3192]"
+                    >
+                      Change
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -505,35 +570,59 @@ export function StaffFinancial() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="method" className="text-[#2E3192] font-medium">
-                  Payment Method <span className="text-[#ED1C24]">*</span>
-                </Label>
-                <Select
-                  value={transactionData.payment_method}
-                  onValueChange={(val) => setTransactionData({ ...transactionData, payment_method: val })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="method" className="text-[#2E3192] font-medium">
+                    Payment Method <span className="text-[#ED1C24]">*</span>
+                  </Label>
+                  <Select
+                    value={transactionData.payment_method}
+                    onValueChange={(val) => setTransactionData({ ...transactionData, payment_method: val })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="gcash">GCash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status" className="text-[#2E3192] font-medium">
+                    Payment Status <span className="text-[#ED1C24]">*</span>
+                  </Label>
+                  <Select
+                    value={transactionData.status}
+                    onValueChange={(val) => setTransactionData({ ...transactionData, status: val })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Paid</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-[#2E3192] font-medium">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="e.g. Monthly Rent"
-                  className="border-gray-200"
+                <Select
                   value={transactionData.description}
-                  onChange={(e) => setTransactionData({ ...transactionData, description: e.target.value })}
-                />
+                  onValueChange={(val) => setTransactionData({ ...transactionData, description: val })}
+                >
+                  <SelectTrigger className="border-gray-200">
+                    <SelectValue placeholder="Select description" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly Rent">Monthly Rent</SelectItem>
+                    <SelectItem value="Utilities">Utilities</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -546,7 +635,7 @@ export function StaffFinancial() {
                 disabled={loading}
                 className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
               >
-                {loading ? 'Saving...' : 'Save Transaction'}
+                {loading ? (isEditing ? 'Updating...' : 'Saving...') : (isEditing ? 'Update Transaction' : 'Save Transaction')}
               </Button>
             </DialogFooter>
           </DialogContent>

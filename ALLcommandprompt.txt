@@ -1,6 +1,10 @@
 PYTHON
 # Navigate to your backend directory
 cd "c:\Users\vncea\OneDrive\Desktop\react\my-react-app\backend"
+cd my-react-app\backend
+cd my-react-app
+
+
 
 # Create and activate virtual environment (recommended)
 python -m venv venv
@@ -36,6 +40,7 @@ npm install
 npm start
 # OR
 npm run dev
+cd my-react-app
 
 
 GITHUB
