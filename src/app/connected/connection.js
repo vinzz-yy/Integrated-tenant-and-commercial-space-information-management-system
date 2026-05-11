@@ -61,7 +61,7 @@ api.interceptors.response.use(
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
         if (window.location.pathname !== '/') window.location.href = '/';
-        return Promise.reject(new Error('Session expired. Please log in again.'));
+        return Promise.reject(new Error('your email and password are incorrect'));
       }
 
       // Already refreshing — queue this request and wait
@@ -101,7 +101,7 @@ api.interceptors.response.use(
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
         if (window.location.pathname !== '/') window.location.href = '/';
-        return Promise.reject(new Error('Session expired. Please log in again.'));
+        return Promise.reject(new Error('your email and password are incorrect'));
       } finally {
         isRefreshing = false;
       }

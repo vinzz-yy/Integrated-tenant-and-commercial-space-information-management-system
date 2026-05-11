@@ -67,16 +67,6 @@ export function Login() {
       const cleanPassword = password.trim();
       const user = await login(cleanEmail, cleanPassword);
 
-      // Block tenant access until admin approval (tenants default to pending when status missing)
-      if (user.role === 'tenant' && (user.status || 'pending') !== 'active') {
-        setError(
-          (user.status || 'pending') === 'pending'
-            ? 'Your tenant account is pending approval by the administrator.'
-            : 'Your tenant account has been rejected. Please contact support.'
-        );
-        return;
-      }
-
       // Handle "remember me" functionality
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', cleanEmail);

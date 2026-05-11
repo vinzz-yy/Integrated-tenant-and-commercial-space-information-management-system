@@ -24,6 +24,13 @@ export function AuthProvider({ children }) {
       // Re-fetch profile in background to get latest data
       connection.auth.getCurrentUser()
         .then(profile => {
+          // Check if account is still active
+          if (profile.status && profile.status !== 'active') {
+            console.warn("Account is no longer active. Logging out.");
+            logout();
+            return;
+          }
+          
           const updatedProfile = {
             ...profile,
             firstName: profile.firstName || profile.first_name || '',
@@ -32,7 +39,13 @@ export function AuthProvider({ children }) {
           setUser(updatedProfile);
           sessionStorage.setItem('user', JSON.stringify(updatedProfile));
         })
-        .catch(err => console.error("Failed to refresh user profile", err));
+        .catch(err => {
+          console.error("Failed to refresh user profile", err);
+          // If profile fetch fails with 401 or 403, log out
+          if (err.message.includes('401') || err.message.includes('403')) {
+            logout();
+          }
+        });
     }
   }, []);
 

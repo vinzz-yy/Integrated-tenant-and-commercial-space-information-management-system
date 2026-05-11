@@ -33,6 +33,17 @@ class LoginView(APIView):
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         if not user.check_password(password):
             return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check user status - prevent login if not active
+        profile = getattr(user, 'profile', None)
+        if profile and profile.status != 'active':
+            if profile.status == 'pending':
+                return Response({"detail": "your account is not identified"}, status=status.HTTP_403_FORBIDDEN)
+            elif profile.status == 'rejected':
+                return Response({"detail": "Your account has been rejected. Please contact support."}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response({"detail": f"Account status: {profile.status}. Please contact the administrator."}, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
         return Response({"access": str(refresh.access_token), "refresh": str(refresh), "user": UserSerializer(user).data})
 
