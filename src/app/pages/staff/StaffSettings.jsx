@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { Layout } from '../../components/Layout.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
+import { Alert, AlertDescription } from '../../components/ui/alert.jsx';
+import { Checkbox } from '../../components/ui/checkbox.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
-import { Camera, User, Mail, Phone, Briefcase, Save, X, Settings, Lock } from 'lucide-react';
+import { Camera, User, Mail, Phone, Briefcase, Save, X, Settings, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import connection from '../../connected/connection.js';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx';
 
 export function StaffSettings() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -29,10 +33,44 @@ export function StaffSettings() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [saveStatus, setSaveStatus] = useState(''); // '', 'saving', 'saved', 'error'
   const [errorMessage, setErrorMessage] = useState('');
+  const [showForcePasswordModal, setShowForcePasswordModal] = useState(false);
+  const [showPasswordChangedModal, setShowPasswordChangedModal] = useState(false);
+  const [suppressForcePasswordModal, setSuppressForcePasswordModal] = useState(false);
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      const raw = localStorage.getItem('staffSettingsPreferences');
+      return raw ? JSON.parse(raw) : { emailUpdates: true, showSecurityTips: true };
+    } catch {
+      return { emailUpdates: true, showSecurityTips: true };
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('staffSettingsPreferences', JSON.stringify(preferences));
+    } catch {
+      // ignore
+    }
+  }, [preferences]);
 
   useEffect(() => {
     if (user?.role !== 'staff') navigate('/');
   }, [user, navigate]);
+
+  const mustChangePassword =
+    Boolean(user?.mustChangePassword) ||
+    Boolean(user?.must_change_password) ||
+    Boolean(user?.profile?.must_change_password);
+
+  useEffect(() => {
+    if (suppressForcePasswordModal) return;
+    if ((mustChangePassword || location.state?.forcedPasswordChange) && !showPasswordChangedModal) {
+      setShowForcePasswordModal(true);
+    }
+  }, [mustChangePassword, location.state, suppressForcePasswordModal, showPasswordChangedModal]);
 
   // Keep form in sync if user context refreshes
   useEffect(() => {
@@ -46,6 +84,7 @@ export function StaffSettings() {
         currentPassword: '',
         newPassword: '',
       });
+      setConfirmNewPassword('');
     }
   }, [user]);
 
@@ -68,6 +107,47 @@ export function StaffSettings() {
       alert('Please fill in all required fields');
       return;
     }
+
+    const wantsPasswordChange = Boolean(formData.newPassword);
+    if (wantsPasswordChange) {
+      if (!formData.currentPassword) {
+        setErrorMessage('Please enter your current password.');
+        setSaveStatus('error');
+        setTimeout(() => {
+          setSaveStatus('');
+          setErrorMessage('');
+        }, 3000);
+        return;
+      }
+      if (String(formData.newPassword).length < 8) {
+        setErrorMessage('New password must be at least 8 characters.');
+        setSaveStatus('error');
+        setTimeout(() => {
+          setSaveStatus('');
+          setErrorMessage('');
+        }, 3000);
+        return;
+      }
+      if (formData.newPassword !== confirmNewPassword) {
+        setErrorMessage('New password and confirmation do not match.');
+        setSaveStatus('error');
+        setTimeout(() => {
+          setSaveStatus('');
+          setErrorMessage('');
+        }, 3000);
+        return;
+      }
+    }
+
+    if ((mustChangePassword || location.state?.forcedPasswordChange) && !formData.newPassword) {
+      setErrorMessage('Please set a new password to continue.');
+      setSaveStatus('error');
+      setTimeout(() => {
+        setSaveStatus('');
+        setErrorMessage('');
+      }, 3000);
+      return;
+    }
     try {
       setSaveStatus('saving');
       const saved = await connection.auth.updateCurrentUser({
@@ -85,6 +165,7 @@ export function StaffSettings() {
         email: saved.email || formData.email,
         phone: saved.phone || formData.phone,
         department: saved.department || formData.department,
+        mustChangePassword: saved.mustChangePassword ?? false,
       });
       if (avatarFile) {
         const newAvatarUrl = avatarPreview || user?.avatar;
@@ -95,7 +176,18 @@ export function StaffSettings() {
       setAvatarPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
+      setConfirmNewPassword('');
       setSaveStatus('saved');
+      if (wantsPasswordChange) {
+        // Ensure the force-password modal does not come back after a successful change
+        updateUser({ mustChangePassword: false });
+        setSuppressForcePasswordModal(true);
+        setShowForcePasswordModal(false);
+        setShowPasswordChangedModal(true);
+        if (location.state?.forcedPasswordChange) {
+          navigate('/staff/settings', { replace: true, state: {} });
+        }
+      }
       setTimeout(() => setSaveStatus(''), 2500);
     } catch (err) {
       setErrorMessage(err.message || 'Failed to save. Please try again.');
@@ -109,21 +201,74 @@ export function StaffSettings() {
 
   return (
     <Layout role="staff">
-      <div className="space-y-6">
+      <Dialog
+        open={showForcePasswordModal}
+        onOpenChange={(open) => {
+          // Allow closing the modal, but keep route-guard forcing Settings until password is changed
+          setShowForcePasswordModal(open);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#2E3192]">Change your password</DialogTitle>
+            <DialogDescription>
+              Your account is using a default password. Please set a new password to continue using the system.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              className="bg-[#2E3192] hover:bg-[#1f2170] text-white"
+              onClick={() => setShowForcePasswordModal(false)}
+            >
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPasswordChangedModal} onOpenChange={setShowPasswordChangedModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#2E3192]">Password change successful</DialogTitle>
+            <DialogDescription>Your password has been changed successfully.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button className="bg-[#2E3192] hover:bg-[#1f2170] text-white" onClick={() => setShowPasswordChangedModal(false)}>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-[#2E3192] flex items-center gap-2">
-            <Settings className="h-7 w-7" />
-            Settings
-          </h1>
-          <p className="text-gray-600 mt-1">Manage your account and personal information</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#2E3192] flex items-center gap-2">
+              <Settings className="h-7 w-7" />
+              Settings
+            </h1>
+            <p className="text-gray-600 mt-1">Manage your account and personal information</p>
+          </div>
+          <div className="text-xs text-gray-500">
+            Changes save to your account immediately.
+          </div>
         </div>
 
-        {/* Section label */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-[#2E3192] uppercase tracking-wider">My Profile</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+        {(saveStatus === 'saved' || saveStatus === 'error') && (
+          <Alert
+            className={
+              saveStatus === 'saved'
+                ? 'border-green-200 bg-green-50 text-green-800'
+                : 'border-red-200 bg-red-50 text-red-800'
+            }
+          >
+            <AlertDescription>
+              {saveStatus === 'saved'
+                ? 'Saved successfully.'
+                : (errorMessage || 'Failed to save. Please try again.')}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -188,10 +333,44 @@ export function StaffSettings() {
             </Card>
 
             {/* Right — Form fields */}
-            <Card className="lg:col-span-2 border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-[#2E3192] flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5" /> Account Overview
+                  </CardTitle>
+                  <CardDescription>Quick details about your staff account.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="rounded-lg border border-gray-200 bg-white p-3">
+                    <p className="text-xs text-gray-500">Role</p>
+                    <p className="font-semibold text-[#2E3192] capitalize">{user?.role || 'staff'}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-3">
+                    <p className="text-xs text-gray-500">User ID</p>
+                    <p className="font-semibold text-[#2E3192]">{user?.id ?? '-'}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-3">
+                    <p className="text-xs text-gray-500">Department</p>
+                    <p className="font-semibold text-[#2E3192]">{user?.department || '-'}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-3">
+                    <p className="text-xs text-gray-500">Last login</p>
+                    <p className="font-semibold text-[#2E3192]">
+                      {(() => {
+                        const v = sessionStorage.getItem('lastLogin');
+                        if (!v) return '-';
+                        try { return new Date(v).toLocaleString(); } catch { return String(v); }
+                      })()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
               <CardHeader>
                 <CardTitle className="text-[#2E3192]">Profile Information</CardTitle>
-                <CardDescription>Update your personal details</CardDescription>
+                <CardDescription>Keep your contact details up to date.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Name row */}
@@ -263,68 +442,110 @@ export function StaffSettings() {
                   />
                 </div>
 
-                {/* Change Password Section */}
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-sm font-semibold text-[#2E3192] uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Lock className="h-4 w-4" /> Change Password
-                  </h3>
+              </CardContent>
+              </Card>
+
+              <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-[#2E3192] flex items-center gap-2">
+                    <Lock className="h-5 w-5" /> Security
+                  </CardTitle>
+                  <CardDescription>Update your password to keep your account secure.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {preferences.showSecurityTips && (
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                      Tip: Use a unique password you don’t use on other sites.
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="sf-currentPassword" title="Current Password" className="text-[#2E3192] font-medium flex items-center gap-2">
-                        Current Password
-                      </Label>
+                      <Label htmlFor="sf-currentPassword" className="text-[#2E3192] font-medium">Current Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="sf-currentPassword"
+                          type={showPasswords ? 'text' : 'password'}
+                          value={formData.currentPassword}
+                          onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B] pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords((v) => !v)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                          aria-label={showPasswords ? 'Hide password' : 'Show password'}
+                        >
+                          {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sf-newPassword" className="text-[#2E3192] font-medium">New Password</Label>
                       <Input
-                        id="sf-currentPassword"
-                        type="password"
-                        value={formData.currentPassword}
-                        onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                        placeholder="••••••••"
+                        id="sf-newPassword"
+                        type={showPasswords ? 'text' : 'password'}
+                        value={formData.newPassword}
+                        onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                        placeholder="Enter a strong password"
+                        className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                      />
+                      <p className="text-xs text-gray-500">Use at least 8 characters.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sf-confirmNewPassword" className="text-[#2E3192] font-medium">Confirm New Password</Label>
+                      <Input
+                        id="sf-confirmNewPassword"
+                        type={showPasswords ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Re-enter new password"
                         className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="sf-newPassword" title="New Password" className="text-[#2E3192] font-medium flex items-center gap-2">
-                        New Password
-                      </Label>
-                      <Input
-                        id="sf-newPassword"
-                        type="password"
-                        value={formData.newPassword}
-                        onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                        placeholder="••••••••"
-                        className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                      />
-                      <p className="text-[10px] text-gray-500 mt-1">Leave blank if you don't want to change password</p>
+                      <Label className="text-[#2E3192] font-medium">Preferences</Label>
+                      <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3">
+                        <Checkbox
+                          checked={Boolean(preferences.showSecurityTips)}
+                          onCheckedChange={(v) => setPreferences((p) => ({ ...p, showSecurityTips: v === true }))}
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-[#2E3192]">Show security tips</p>
+                          <p className="text-xs text-gray-500">Helpful reminders on this page.</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
-                  <Button
-                    type="submit"
-                    disabled={saveStatus === 'saving'}
-                    className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold h-11 px-6"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? '✓ Saved!' : 'Save Changes'}
-                  </Button>
-                  {avatarFile && (
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => { setAvatarFile(null); setAvatarPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11"
+                      type="submit"
+                      disabled={saveStatus === 'saving'}
+                      className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold h-11 px-6"
                     >
-                      Cancel Photo Change
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
                     </Button>
-                  )}
-                  {saveStatus === 'error' && (
-                    <p className="text-sm text-[#ED1C24] self-center">{errorMessage}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    {avatarFile && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => { setAvatarFile(null); setAvatarPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11"
+                      >
+                        Cancel Photo Change
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+            </div>
           </div>
         </form>
       </div>

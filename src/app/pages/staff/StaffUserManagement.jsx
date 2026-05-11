@@ -52,7 +52,6 @@ export function StaffUserManagement() {
     role: 'tenant',
     phone: '',
     unitNumber: '',
-    password: '',
     leaseStartDate: '',
     leaseEndDate: '',
   });
@@ -137,17 +136,28 @@ export function StaffUserManagement() {
   //Creates a new tenant user with form data
   
   const handleCreateUser = async () => {
+    // Basic validation
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      setResultTitle('Validation Error');
+      setResultMessage('Please fill in all required fields (Email, First Name, Last Name).');
+      setIsResultDialogOpen(true);
+      return;
+    }
+
     try {
       setIsCreating(true);
       const payload = { 
         ...formData, 
         role: 'tenant',
+        status: 'pending',
         first_name: formData.firstName,
         last_name: formData.lastName,
         unit_number: formData.unitNumber,
         lease_start_date: formData.leaseStartDate || null,
         lease_end_date: formData.leaseEndDate || null,
       };
+      // Always use backend default password ("password") for staff-created tenants
+      delete payload.password;
       const created = await connection.users.createUser(payload);
       setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
@@ -158,7 +168,7 @@ export function StaffUserManagement() {
     } catch (error) {
       console.error('Error creating user:', error);
       setResultTitle('Failed Adding Tenant');
-      setResultMessage(error?.message || 'Failed adding tenant. Please try again.');
+      setResultMessage(error?.response?.data?.detail || error?.message || 'Failed adding tenant. Please try again.');
       setIsResultDialogOpen(true);
     } finally {
       setIsCreating(false);
@@ -219,7 +229,6 @@ export function StaffUserManagement() {
       role: 'tenant',
       phone: '',
       unitNumber: '',
-      password: '',
       leaseStartDate: '',
       leaseEndDate: '',
     });
@@ -350,9 +359,24 @@ export function StaffUserManagement() {
                       
                       {/* User status */}
                       <TableCell>
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 capitalize">
-                          {user.status || 'active'}
-                        </Badge>
+                        {(() => {
+                          const effectiveStatus =
+                            user.role === 'tenant' ? (user.status || 'pending') : (user.status || 'active');
+
+                          return (
+                            <Badge
+                              className={
+                                effectiveStatus === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 capitalize'
+                                  : effectiveStatus === 'rejected'
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200 capitalize'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200 capitalize'
+                              }
+                            >
+                              {effectiveStatus}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       
                       {/* Action buttons */}
@@ -431,17 +455,7 @@ export function StaffUserManagement() {
                 />
               </div>
               
-              {/* Password */}
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="password" className="text-[#2E3192] font-medium">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                />
-              </div>
+          
               
               {/* Role (disabled, always Tenant) */}
               <div className="space-y-2">

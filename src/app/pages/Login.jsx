@@ -67,6 +67,16 @@ export function Login() {
       const cleanPassword = password.trim();
       const user = await login(cleanEmail, cleanPassword);
 
+      // Block tenant access until admin approval (tenants default to pending when status missing)
+      if (user.role === 'tenant' && (user.status || 'pending') !== 'active') {
+        setError(
+          (user.status || 'pending') === 'pending'
+            ? 'Your tenant account is pending approval by the administrator.'
+            : 'Your tenant account has been rejected. Please contact support.'
+        );
+        return;
+      }
+
       // Handle "remember me" functionality
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', cleanEmail);
@@ -107,7 +117,6 @@ export function Login() {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundLogin})` }}>
@@ -171,38 +180,38 @@ export function Login() {
               />
             </div>
 
-            {/* Password input with show/hide toggle */}
+            {/* Password input with show/hide icon */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-xs font-semibold text-[#2E3192] uppercase tracking-wider"
-                >
-                  Password
-                </label>
+              <label
+                htmlFor="password"
+                className="text-xs font-semibold text-[#2E3192] uppercase tracking-wider"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  autoComplete="current-password"
+                  required
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F9E81B] focus:border-[#F9E81B] transition h-11 pr-10"
+                />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-sm text-[#ED1C24] hover:text-[#c41920] underline transition focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 transition focus:outline-none"
                 >
                   {showPassword ? (
-                    <span className="flex items-center gap-1"><EyeOff className="w-3.5 h-3.5" /> Hide</span>
+                    <EyeOff className="w-4 h-4" />
                   ) : (
-                    <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> Show</span>
+                    <Eye className="w-4 h-4" />
                   )}
                 </button>
               </div>
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={loading}
-                autoComplete="current-password"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F9E81B] focus:border-[#F9E81B] transition h-11"
-              />
             </div>
 
             {/* Remember me checkbox */}

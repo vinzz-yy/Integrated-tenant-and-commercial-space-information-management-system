@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Download, TrendingUp, FileText, Table as TableIcon, Plus, Search, User, CheckCircle, XCircle, Clock, Eye, Pencil, MoreVertical, Printer } from 'lucide-react';
 import connection from '../../connected/connection.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu.jsx';
-import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF } from '../../exporting/export.js';
+import { exportToCSV, exportToExcel, exportToWord, exportToDocx, printToPDF, exportToPDF } from '../../exporting/export.js';
 import { toast } from 'sonner';
 
 export function FinancialManagement() {
@@ -245,6 +245,8 @@ export function FinancialManagement() {
       } else if (format === 'docx') {
         await exportToDocx(headers, rows, 'financial_report.docx', 'Financial Report');
       } else if (format === 'pdf') {
+        exportToPDF(headers, rows, 'financial_report.pdf', 'Financial Report');
+      } else if (format === 'print') {
         printToPDF(headers, rows, 'Financial Report');
       }
     } catch (error) {
@@ -303,17 +305,17 @@ export function FinancialManagement() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExportReport('pdf')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF (Print)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExportReport('word')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Word (.doc)
+                <DropdownMenuItem onClick={() => handleExportReport('print')}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportReport('docx')}>
                   <FileText className="h-4 w-4 mr-2" />
                   Word (.docx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportReport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF (.pdf)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportReport('excel')}>
                   <TableIcon className="h-4 w-4 mr-2" />

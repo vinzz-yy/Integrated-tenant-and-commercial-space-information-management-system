@@ -1,5 +1,7 @@
 // Client-side export: CSV, Excel, Word, DOCX, PDF
 import { Document, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType } from 'docx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Build HTML table with styling
 const buildTableHTML = (headers, rows, title = '') => {
@@ -94,4 +96,25 @@ export const printToPDF = (headers, rows, title = 'Export') => {
       setTimeout(cleanup, 500);
     }
   };
+};
+
+// Export as PDF file (downloads directly)
+export const exportToPDF = (headers, rows, filename = 'export.pdf', title = 'Export') => {
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(18);
+  doc.text(title, 14, 22);
+  
+  // Add table
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    startY: 30,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [46, 49, 146], textColor: 255 }, // #2E3192 color
+  });
+  
+  doc.save(filename);
 };

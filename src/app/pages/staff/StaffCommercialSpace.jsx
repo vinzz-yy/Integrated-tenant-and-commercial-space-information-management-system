@@ -40,10 +40,10 @@ export function StaffCommercialSpace() {
   
   const [formData, setFormData] = useState({
     unitNumber: '',
-    floor: 1,
+    floor: '1',
     size: 0,
     type: 'Retail',
-    rentalRate: 0,
+    rentalRate: '',
     status: 'available',
     tenantId: 'none',
   });
@@ -111,12 +111,14 @@ export function StaffCommercialSpace() {
 
   const handleCreateUnit = async () => {
     try {
+      const floorNum = Number.parseInt(String(formData.floor ?? '').trim(), 10);
+      const rentalNum = Number.parseFloat(String(formData.rentalRate ?? '').trim());
       const created = await connection.commercialSpace.createUnit({
         number: formData.unitNumber,
-        floor: formData.floor,
+        floor: Number.isFinite(floorNum) ? floorNum : 0,
         type: formData.type.toLowerCase(),
         status: formData.status,
-        rental_rate: formData.rentalRate,
+        rental_rate: Number.isFinite(rentalNum) ? rentalNum : 0,
       });
       const resp = await connection.commercialSpace.getUnits();
       const list = Array.isArray(resp) ? resp : (resp?.results || []);
@@ -138,10 +140,10 @@ export function StaffCommercialSpace() {
     setSelectedUnit(unit);
     setFormData({
       unitNumber: unit.number || unit.unitNumber || '',
-      floor: Number(unit.floor) || 0,
+      floor: String(Number(unit.floor) || 0),
       size: Number(unit.size) || 0,
       type: (unit.type || 'Retail'),
-      rentalRate: Number(unit.rental_rate || unit.rentalRate || 0),
+      rentalRate: String(Number(unit.rental_rate || unit.rentalRate || 0)),
       status: unit.status || 'available',
       tenantId: unit.tenant_id ? String(unit.tenant_id) : 'none',
     });
@@ -205,12 +207,14 @@ export function StaffCommercialSpace() {
   const handleUpdateUnit = async () => {
     if (!selectedUnit) return;
     try {
+      const floorNum = Number.parseInt(String(formData.floor ?? '').trim(), 10);
+      const rentalNum = Number.parseFloat(String(formData.rentalRate ?? '').trim());
       const payload = {
         number: formData.unitNumber,
-        floor: formData.floor,
+        floor: Number.isFinite(floorNum) ? floorNum : 0,
         type: (formData.type || '').toLowerCase(),
         status: formData.status,
-        rental_rate: formData.rentalRate,
+        rental_rate: Number.isFinite(rentalNum) ? rentalNum : 0,
       };
       
       if (formData.tenantId && formData.tenantId !== 'none') {
@@ -487,7 +491,7 @@ export function StaffCommercialSpace() {
                   <Input
                     type="number"
                     value={formData.floor}
-                    onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                     className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
@@ -527,7 +531,7 @@ export function StaffCommercialSpace() {
                 <Input
                   type="number"
                   value={formData.rentalRate}
-                  onChange={(e) => setFormData({ ...formData, rentalRate: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, rentalRate: e.target.value })}
                   placeholder="e.g., 15000"
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />
@@ -655,7 +659,7 @@ export function StaffCommercialSpace() {
                   <Input
                     type="number"
                     value={formData.floor}
-                    onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                     className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
@@ -694,7 +698,7 @@ export function StaffCommercialSpace() {
                 <Input
                   type="number"
                   value={formData.rentalRate}
-                  onChange={(e) => setFormData({ ...formData, rentalRate: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setFormData({ ...formData, rentalRate: e.target.value })}
                   placeholder="e.g., 15000"
                   className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                 />

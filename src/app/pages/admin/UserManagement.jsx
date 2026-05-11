@@ -51,19 +51,16 @@ export function UserManagement() {
     phone: '',
     unitNumber: '',
     department: '',
-    password: '',
     leaseStartDate: '',
     leaseEndDate: '',
   });
 
-  /**
-   * Normalizes user object to ensure consistent field names
-   * Converts snake_case to camelCase and formats dates
-   */
+  // Normalizes user object to ensure consistent field names
+  
   const normalizeUser = (u) => {
     const leaseStart = u.leaseStartDate ?? u.lease_start_date ?? u.profile?.lease_start_date;
     const leaseEnd = u.leaseEndDate ?? u.lease_end_date ?? u.profile?.lease_end_date;
-    
+
     return {
       ...u,
       firstName: u.firstName ?? u.first_name ?? '',
@@ -73,10 +70,8 @@ export function UserManagement() {
     };
   };
 
-  /**
-   * Sorts users in descending order by ID
-   * Handles both numeric and string IDs
-   */
+  //  Sorts users in descending order by ID
+  
   const sortUsersDesc = (list) => {
     return [...list].sort((a, b) => {
       const aNum = Number(a?.id);
@@ -88,10 +83,8 @@ export function UserManagement() {
     });
   };
 
-  /**
-   * Loads users and available units when component mounts
-   * Redirects non-admin users to home page
-   */
+  // Loads users and available units when component mounts
+ 
   useEffect(() => {
     // Redirect if user is not an admin
     if (user?.role !== 'admin') {
@@ -126,10 +119,8 @@ export function UserManagement() {
     load();
   }, [user, navigate]);
 
-  /**
-   * Filters users based on search query and role selection
-   * Updates filteredUsers state whenever filters change
-   */
+  //Filters users based on search query and role selection
+  
   useEffect(() => {
     let filtered = users;
 
@@ -150,21 +141,30 @@ export function UserManagement() {
     setFilteredUsers(filtered);
   }, [searchQuery, roleFilter, users]);
 
-  /**
-   * Creates a new user with form data
-   * Shows success/error dialog after completion
-   */
+  // Creates a new staff user with form data (admin cannot directly create tenants)
+
   const handleCreateUser = async () => {
+    // Basic validation
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      setResultTitle('Validation Error');
+      setResultMessage('Please fill in all required fields (Email, First Name, Last Name).');
+      setIsResultDialogOpen(true);
+      return;
+    }
+
     try {
       setIsCreating(true);
       const payload = {
         ...formData,
+        role: 'staff',
         first_name: formData.firstName,
         last_name: formData.lastName,
         unit_number: formData.unitNumber,
         lease_start_date: formData.leaseStartDate || null,
         lease_end_date: formData.leaseEndDate || null,
       };
+      // Always use backend default password ("password")
+      delete payload.password;
       const created = await connection.users.createUser(payload);
       setUsers((prev) => sortUsersDesc([...prev, normalizeUser(created)]));
       setIsCreateDialogOpen(false);
@@ -175,17 +175,48 @@ export function UserManagement() {
     } catch (error) {
       console.error('Error creating user:', error);
       setResultTitle('Failed Adding User');
-      setResultMessage('Failed adding user. Please try again.');
+      setResultMessage(
+        error?.response?.data?.detail ||
+        error?.message ||
+        'Failed adding user. Please try again.'
+      );
       setIsResultDialogOpen(true);
     } finally {
       setIsCreating(false);
     }
   };
 
-  /**
-   * Updates an existing user's information
-   * Only updates password if a new one is provided
-   */
+  // Approve / Decline tenant accounts created by staff
+
+  const updateTenantStatus = async (userId, status) => {
+    try {
+      const updated = await connection.users.updateUser(String(userId), { status });
+      setUsers((prev) =>
+        sortUsersDesc(
+          prev.map((u) => (String(u.id) === String(userId) ? normalizeUser(updated) : u))
+        )
+      );
+      setResultTitle(status === 'active' ? 'Tenant Approved' : 'Tenant Rejected');
+      setResultMessage(
+        status === 'active'
+          ? 'The tenant has been approved successfully.'
+          : 'The tenant has been rejected.'
+      );
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error updating tenant status:', error);
+      setResultTitle('Status Update Failed');
+      setResultMessage(
+        error?.response?.data?.detail ||
+        error?.message ||
+        'Failed to update tenant status. Please try again.'
+      );
+      setIsResultDialogOpen(true);
+    }
+  };
+
+  // Updates an existing user's information
+ 
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
@@ -207,25 +238,32 @@ export function UserManagement() {
       );
       setIsEditDialogOpen(false);
       resetForm();
+      setResultTitle('Update Successful');
+      setResultMessage('The user has been updated successfully.');
+      setIsResultDialogOpen(true);
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user. Please try again.');
+      setResultTitle('Failed Updating User');
+      setResultMessage(
+        error?.response?.data?.detail ||
+        error?.message ||
+        'Failed to update user. Please try again.'
+      );
+      setIsResultDialogOpen(true);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  /**
-   * Opens delete confirmation dialog for a user
-   */
+  // Opens delete confirmation dialog for a user
+
   const confirmDeleteUser = (userId) => {
     setUserToDelete(userId);
     setIsDeleteDialogOpen(true);
   };
 
-  /**
-   * Executes user deletion after confirmation
-   */
+  // Executes user deletion after confirmation
+  
   const executeDeleteUser = async () => {
     if (!userToDelete) return;
     try {
@@ -239,9 +277,8 @@ export function UserManagement() {
     }
   };
 
-  /**
-   * Resets form data to initial empty state
-   */
+  // Resets form data to initial empty state
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -251,16 +288,14 @@ export function UserManagement() {
       phone: '',
       unitNumber: '',
       department: '',
-      password: '',
       leaseStartDate: '',
       leaseEndDate: '',
     });
     setSelectedUser(null);
   };
 
-  /**
-   * Opens edit dialog and populates form with selected user's data
-   */
+  // Opens edit dialog and populates form with selected user's data
+
   const openEditDialog = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -411,9 +446,24 @@ export function UserManagement() {
 
                       {/* User status */}
                       <TableCell>
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 capitalize">
-                          {user.status || 'active'}
-                        </Badge>
+                        {(() => {
+                          const effectiveStatus =
+                            user.role === 'tenant' ? (user.status || 'pending') : (user.status || 'active');
+
+                          return (
+                            <Badge
+                              className={
+                                effectiveStatus === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 capitalize'
+                                  : effectiveStatus === 'rejected'
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200 capitalize'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200 capitalize'
+                              }
+                            >
+                              {effectiveStatus}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
 
                       {/* Action buttons */}
@@ -429,6 +479,30 @@ export function UserManagement() {
                               <Edit className="mr-2 h-4 w-4 text-[#2E3192]" />
                               <span>Update User</span>
                             </DropdownMenuItem>
+                            {(() => {
+                              const effectiveStatus =
+                                user.role === 'tenant' ? (user.status || 'pending') : (user.status || 'active');
+                              const canModerateTenant = user.role === 'tenant' && effectiveStatus === 'pending';
+
+                              if (!canModerateTenant) return null;
+
+                              return (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => updateTenantStatus(user.id, 'active')}
+                                  className="cursor-pointer text-green-700 focus:text-green-700 focus:bg-green-100"
+                                >
+                                  <span>Approve Tenant</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateTenantStatus(user.id, 'rejected')}
+                                  className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
+                                >
+                                  <span>Reject Tenant</span>
+                                </DropdownMenuItem>
+                              </>
+                              );
+                            })()}
                             <DropdownMenuItem onClick={() => confirmDeleteUser(user.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>Delete User</span>
@@ -444,13 +518,13 @@ export function UserManagement() {
           </CardContent>
         </Card>
 
-        {/* Create User Dialog */}
+        {/* Create Staff User Dialog (admin cannot directly create tenants) */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">Create New User</DialogTitle>
+              <DialogTitle className="text-[#2E3192]">Create New Staff User</DialogTitle>
               <DialogDescription>
-                Add a new user to the system
+                Add a new staff user to the system
               </DialogDescription>
             </DialogHeader>
 
@@ -490,33 +564,11 @@ export function UserManagement() {
                 />
               </div>
 
-              {/* Password (full width) */}
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="password" className="text-[#2E3192] font-medium">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                />
-              </div>
 
-              {/* Role select */}
+              {/* Role (fixed to Staff for admin-created users) */}
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-[#2E3192] font-medium">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="tenant">Tenant</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-[#2E3192] font-medium">Role</Label>
+                <Input value="Staff" disabled className="bg-gray-100" />
               </div>
 
               {/* Phone */}
@@ -560,7 +612,7 @@ export function UserManagement() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
                     <Input

@@ -6,19 +6,21 @@ class UserSerializer(serializers.ModelSerializer):
     
     # Kunin ang fields mula sa UserProfile model
     role = serializers.CharField(source='profile.role', required=False, allow_blank=True, allow_null=True)
+    status = serializers.CharField(source='profile.status', required=False, allow_blank=True, allow_null=True)
     avatar = serializers.URLField(source='profile.avatar', required=False, allow_null=True)
     phone = serializers.CharField(source='profile.phone', required=False, allow_blank=True, allow_null=True)
     department = serializers.CharField(source='profile.department', required=False, allow_blank=True, allow_null=True)
     unitNumber = serializers.CharField(source='profile.unitNumber', required=False, allow_blank=True, allow_null=True)
     leaseStartDate = serializers.DateField(source='profile.lease_start_date', required=False, allow_null=True)
     leaseEndDate = serializers.DateField(source='profile.lease_end_date', required=False, allow_null=True)
+    mustChangePassword = serializers.BooleanField(source='profile.must_change_password', required=False)
     
     # Password ay write-only para hindi ma-expose 
     password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "role", "avatar", "phone", "department", "unitNumber", "leaseStartDate", "leaseEndDate", "password"]
+        fields = ["id", "email", "first_name", "last_name", "role", "status", "mustChangePassword", "avatar", "phone", "department", "unitNumber", "leaseStartDate", "leaseEndDate", "password"]
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})

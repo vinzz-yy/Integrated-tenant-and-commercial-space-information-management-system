@@ -81,6 +81,12 @@
 }
 
 @layer base {
+  /* Hide browser-default password reveal button */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

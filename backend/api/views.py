@@ -77,6 +77,11 @@ class MeView(APIView):
             if not user.check_password(current_password):
                 return Response({"detail": "Current password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(new_password)
+            # Clear "must change password" after successful update
+            profile = getattr(user, "profile", None)
+            if profile:
+                profile.must_change_password = False
+                profile.save(update_fields=["must_change_password"])
             
         user.save()
         
@@ -144,38 +149,74 @@ class UsersViewSet(viewsets.ModelViewSet):
         if not (is_admin or is_staff_creating_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         
-        data = request.data.copy()
-        
-        # Convert frontend fields to backend fields if necessary
-        if "firstName" in data: data["first_name"] = data.pop("firstName")
-        if "lastName" in data: data["last_name"] = data.pop("lastName")
-        
-        # Ensure lease dates are correctly mapped for UserProfile
-        lease_start = data.get('lease_start_date') or data.get('leaseStartDate')
-        lease_end = data.get('lease_end_date') or data.get('leaseEndDate')
-        
-        password = data.pop('password', None)
-        email = data.get('email')
-        
+        # Helper to safely extract a scalar value from request.data
+        # (QueryDict.get() can return lists; plain dict.get() returns scalars)
+        def _get(key, default=''):
+            val = request.data.get(key, default)
+            if isinstance(val, list):
+                val = val[0] if val else default
+            return val if val is not None else default
+
+        email = _get('email')
+        if not email:
+            return Response({"detail": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=email).exists():
+            return Response({"detail": "A user with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Resolve first/last name from camelCase or snake_case
+        first_name = _get('firstName') or _get('first_name')
+        last_name = _get('lastName') or _get('last_name')
+
+        role = _get('role', 'staff')
+
+        password = _get('password') or None
+        must_change_password = False
+        # Default password rules:
+        # - admin creating staff with no password → default password and force change on first login
+        # - staff creating tenant with no password → default password and force change on first login
+        if not password and ((is_admin and role == 'staff') or (user_role == 'staff' and role == 'tenant')):
+            password = 'password'
+            must_change_password = True
+        if not password:
+            return Response({"detail": "Password is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Resolve lease dates from camelCase or snake_case
+        lease_start = _get('leaseStartDate') or _get('lease_start_date') or None
+        lease_end = _get('leaseEndDate') or _get('lease_end_date') or None
+        if lease_start == '': lease_start = None
+        if lease_end == '': lease_end = None
+
+        # Tenant approval status:
+        # - staff-created tenants default to pending
+        # - admin-created users default to active (model default)
+        requested_status = _get('status') or None
+        profile_status = requested_status
+        if role == 'tenant' and user_role == 'staff':
+            profile_status = 'pending'
+        phone = _get('phone')
+        department = _get('department')
+        # Accept either camelCase or snake_case for unit number
+        unit_number = _get('unitNumber') or _get('unit_number')
+
         user = User.objects.create_user(
             username=email,
             email=email,
             password=password,
-            first_name=data.get('first_name', ''),
-            last_name=data.get('last_name', '')
+            first_name=first_name,
+            last_name=last_name,
         )
-        
-        role = data.get('role', 'staff')
-        unit_number = data.get('unitNumber', '')
         
         UserProfile.objects.create(
             user=user,
             role=role,
-            phone=data.get('phone', ''),
-            department=data.get('department', ''),
+            status=profile_status or 'active',
+            must_change_password=must_change_password,
+            phone=phone,
+            department=department,
             unitNumber=unit_number,
             lease_start_date=lease_start,
-            lease_end_date=lease_end
+            lease_end_date=lease_end,
         )
         
         # Automatic unit assignment logic
@@ -208,15 +249,41 @@ class UsersViewSet(viewsets.ModelViewSet):
         
         if not (is_admin or is_staff_editing_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-            
-        data = request.data.copy()
         
-        # Map frontend camelCase to snake_case for the User model
-        if "firstName" in data: data["first_name"] = data.get("firstName")
-        if "lastName" in data: data["last_name"] = data.get("lastName")
+        # Helper to safely extract a scalar value from request.data
+        def _get(key, default=None):
+            val = request.data.get(key, default)
+            if isinstance(val, list):
+                val = val[0] if val else default
+            return val if val is not None else default
+
+        # Build a clean dict for the serializer
+        data = {}
+        if _get('email'): data['email'] = _get('email')
+        if _get('firstName') or _get('first_name'):
+            data['first_name'] = _get('firstName') or _get('first_name')
+        if _get('lastName') or _get('last_name'):
+            data['last_name'] = _get('lastName') or _get('last_name')
+        if _get('role'): data['role'] = _get('role')
+        
+        # Status (tenant approval) — admin only
+        if is_admin and _get('status') is not None:
+            data['status'] = _get('status')
+        if _get('phone') is not None: data['phone'] = _get('phone', '')
+        if _get('department') is not None: data['department'] = _get('department', '')
+        
+        # Unit number — accept camelCase or snake_case
+        unit_val = _get('unitNumber') or _get('unit_number')
+        if unit_val is not None: data['unitNumber'] = unit_val
+        
+        # Lease dates
+        lease_start = _get('leaseStartDate') or _get('lease_start_date')
+        lease_end = _get('leaseEndDate') or _get('lease_end_date')
+        if lease_start is not None: data['leaseStartDate'] = lease_start or None
+        if lease_end is not None: data['leaseEndDate'] = lease_end or None
 
         # Handle optional password update — must be hashed via set_password()
-        new_password = data.pop('password', None) or data.pop('newPassword', None)
+        new_password = _get('password') or _get('newPassword')
         
         # Use serializer for updating
         serializer = self.get_serializer(instance, data=data, partial=True)
@@ -245,6 +312,18 @@ class UsersViewSet(viewsets.ModelViewSet):
         
         if not (is_admin or is_staff_deleting_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        # If deleting a tenant, release any occupied units back to available
+        try:
+            if target_role == "tenant":
+                Unit.objects.filter(tenant=instance).update(
+                    tenant=None,
+                    tenant_name=None,
+                    status="available",
+                )
+        except Exception:
+            # Best-effort cleanup; do not block deletion
+            pass
 
         # Soft-archive instead of permanent delete
         serializer = self.get_serializer(instance)

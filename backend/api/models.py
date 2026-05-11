@@ -8,12 +8,18 @@ class UserProfile(models.Model):
     # User profile
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=16, choices=[('admin', 'admin'), ('staff', 'staff'), ('tenant', 'tenant')])
+    status = models.CharField(
+        max_length=16,
+        choices=[('pending', 'pending'), ('active', 'active'), ('rejected', 'rejected')],
+        default='active'
+    )
     avatar = models.URLField(blank=True, null=True)
     phone = models.CharField(max_length=32, blank=True, null=True)
     department = models.CharField(max_length=64, blank=True, null=True)
     unitNumber = models.CharField(max_length=32, blank=True, null=True)
     lease_start_date = models.DateField(blank=True, null=True)
     lease_end_date = models.DateField(blank=True, null=True)
+    must_change_password = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.user.get_full_name()} ({self.role})'
@@ -25,6 +31,8 @@ class UserProfile(models.Model):
             'firstName': self.user.first_name,
             'lastName': self.user.last_name,
             'role': self.role,
+            'status': self.status,
+            'mustChangePassword': self.must_change_password,
             'avatar': self.avatar,
             'phone': self.phone,
             'department': self.department,
