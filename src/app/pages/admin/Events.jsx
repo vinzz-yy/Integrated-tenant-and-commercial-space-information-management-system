@@ -35,13 +35,16 @@ const statusBadgeClass = {
 const normalizeEvent = (e) => ({
   ...e,
   id: e.id,
-  title: e.title || 'Untitled Event',
+  title: e.title || e.category || 'Untitled Event',
+  category: e.category || e.title || 'General',
   date: e.date || '',
   time: e.time || '',
   location: e.location || '',
   status: e.status || 'scheduled',
-  assignedTo: e.assignedTo || e.tenant?.name || e.tenant?.email || 'Unassigned',
-  tenant: e.tenant || null,
+  assignedTo: e.assignedTo || 'Unassigned',
+  assignedToId: e.assignedToId || e.assigned_to || null,
+  tenantName: e.tenantName || 'Unknown',
+  tenantId: e.tenantId || e.tenant || null,
 });
 
 const formatDate = (d) => {
@@ -64,6 +67,8 @@ export function Events() {
   const navigate = useNavigate();
 
   const [events, setEvents] = useState([]);
+  const [staffUsers, setStaffUsers] = useState([]);
+  const [units, setUnits] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -78,13 +83,14 @@ export function Events() {
   const [resultMessage, setResultMessage] = useState('');
 
   const [formData, setFormData] = useState({
-    title: '',
+    category: 'General',
     date: '',
     time: '',
     location: '',
     assignedTo: '',
+    tenantId: '',
+    status: 'scheduled',
   });
-  const [staffUsers, setStaffUsers] = useState([]);
 
   // Date filter helpers
   const getStartOfWeek = (date) => {
@@ -132,9 +138,10 @@ export function Events() {
 
     const load = async () => {
       try {
-        const [resp, usersResp] = await Promise.all([
+        const [resp, usersResp, unitsResp] = await Promise.all([
           connection.events.getAppointments(),
           connection.users.getUsers(),
+          connection.commercialSpace.getUnits(),
         ]);
         const list = (Array.isArray(resp) ? resp : (resp?.results || []))
           .map(normalizeEvent)
@@ -146,7 +153,10 @@ export function Events() {
         setEvents(list);
 
         const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
-        setStaffUsers(usersList.filter((u) => (u.role || '').toLowerCase() === 'staff'));
+        setStaffUsers(usersList);
+        
+        const unitsList = Array.isArray(unitsResp) ? unitsResp : (unitsResp?.results || []);
+        setUnits(unitsList);
       } catch (error) {
         setResultTitle('Failed to Load Events Data');
         setResultMessage(error?.message || 'Please try refreshing this page.');
@@ -215,34 +225,37 @@ export function Events() {
   }, [events]);
 
   const openCreateDialog = () => {
-    setFormData({ title: '', date: '', time: '', location: '', assignedTo: '' });
+    setFormData({ category: 'General', date: '', time: '', location: '', assignedTo: '', tenantId: '', status: 'scheduled' });
     setIsEditMode(false);
     setEditingId(null);
     setIsCreateDialogOpen(true);
   };
 
   const handleSaveEvent = async () => {
-    if (!formData.title.trim() || !formData.date || !formData.time) {
+    if (!formData.category || !formData.date || !formData.time || !formData.location) {
       setResultTitle('Validation Error');
-      setResultMessage('Please provide title, date, and time.');
+      setResultMessage('Please fill up all the fields');
       setIsResultDialogOpen(true);
       return;
     }
 
     try {
       const payload = {
-        title: formData.title.trim(),
+        title: formData.category, // Category replaces title
+        category: formData.category,
         date: formData.date,
         time: formData.time,
         location: formData.location.trim(),
-        tenant_id: formData.assignedTo ? Number(formData.assignedTo) : null,
+        status: formData.status,
+        tenant: formData.tenantId ? Number(formData.tenantId) : null,
+        assigned_to: formData.assignedTo ? Number(formData.assignedTo) : null,
       };
 
       if (isEditMode && editingId) {
         const updated = normalizeEvent(await connection.events.updateAppointment(editingId, payload));
         setEvents((prev) => prev.map((e) => (String(e.id) === String(editingId) ? updated : e)));
         setResultTitle('Update Successful');
-        setResultMessage('The event has been updated.');
+        setResultMessage('The event has been updated and assigned.');
       } else {
         const created = normalizeEvent(await connection.events.createAppointment({ ...payload, status: 'scheduled' }));
         setEvents((prev) => [created, ...prev]);
@@ -253,7 +266,7 @@ export function Events() {
       setIsCreateDialogOpen(false);
       setIsEditMode(false);
       setEditingId(null);
-      setFormData({ title: '', date: '', time: '', location: '', assignedTo: '' });
+      setFormData({ title: '', date: '', time: '', location: '', assignedTo: '', tenantId: '', status: 'scheduled' });
       setIsResultDialogOpen(true);
     } catch (error) {
       setResultTitle('Failed Saving Event');
@@ -264,11 +277,13 @@ export function Events() {
 
   const handleEditClick = (event) => {
     setFormData({
-      title: event.title || '',
+      category: event.category || 'General',
       date: event.date || '',
       time: event.time || '',
       location: event.location || '',
-      assignedTo: event.tenant?.id ? String(event.tenant.id) : '',
+      assignedTo: event.assignedToId ? String(event.assignedToId) : '',
+      tenantId: event.tenantId ? String(event.tenantId) : '',
+      status: event.status || 'scheduled',
     });
     setEditingId(event.id);
     setIsEditMode(true);
@@ -374,9 +389,10 @@ export function Events() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="text-[#2E3192] font-semibold">Event</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Event Details</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Date & Time</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Location</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Tenant</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Assigned To</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="text-right text-[#2E3192] font-semibold">Actions</TableHead>
@@ -386,32 +402,28 @@ export function Events() {
                   {filteredEvents.map((event) => (
                     <TableRow key={event.id} className="hover:bg-[#F9E81B]/5">
                       <TableCell>
-                        <p className="font-medium text-[#2E3192]">{event.title}</p>
-                        <p className="text-xs text-gray-500">Event ID: {event.id}</p>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-[#2E3192]">{event.category}</span>
+                          <span className="text-[10px] text-gray-400">ID: {event.id}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm flex items-center gap-1">
-                            <Calendar className="h-3 w-3 text-gray-400" />
-                            {formatDate(event.date)}
-                          </span>
-                          <span className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            {event.time || 'TBD'}
-                          </span>
+                        <div className="flex flex-col text-sm">
+                          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatDate(event.date)}</span>
+                          <span className="text-xs text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> {event.time || 'TBD'}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-gray-400" />
-                          {event.location || '-'}
-                        </span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.location || '-'}</span>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3 text-gray-400" />
-                          {event.assignedTo || 'Unassigned'}
-                        </span>
+                      <TableCell className="text-sm">{event.tenantName}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-full bg-[#2E3192]/10 flex items-center justify-center text-[#2E3192] text-[10px] font-bold">
+                            {event.assignedTo === 'Unassigned' ? 'U' : event.assignedTo.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </div>
+                          <span className="text-sm">{event.assignedTo}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={`${statusBadgeClass[event.status] || statusBadgeClass.scheduled} capitalize`}>
@@ -469,23 +481,32 @@ export function Events() {
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
               <DialogTitle className="text-[#2E3192]">{isEditMode ? 'Edit Event' : 'Create New Event'}</DialogTitle>
-              <DialogDescription>
-                {isEditMode ? 'Update event details and assignment.' : 'Schedule a new community event or appointment.'}
-              </DialogDescription>
+              <DialogDescription>{isEditMode ? 'Update event details and assignment.' : 'Schedule a new event or appointment.'}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Event Title *</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., Community Meeting, Unit Inspection"
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                />
+                <Label className="text-[#2E3192] font-medium">Category <span className="text-red-500">*</span></Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(val) => setFormData({ ...formData, category: val })}
+                >
+                  <SelectTrigger className="border-gray-200 focus:ring-[#F9E81B]">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="Inspection">Inspection</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Meeting">Meeting</SelectItem>
+                    <SelectItem value="Compliance">Compliance</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Date *</Label>
+                  <Label className="text-[#2E3192] font-medium">Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
                     value={formData.date}
@@ -494,7 +515,7 @@ export function Events() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Time *</Label>
+                  <Label className="text-[#2E3192] font-medium">Time <span className="text-red-500">*</span></Label>
                   <Input
                     type="time"
                     value={formData.time}
@@ -503,29 +524,84 @@ export function Events() {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Location</Label>
-                <Input
+                <Label className="text-[#2E3192] font-medium">Location <span className="text-red-500">*</span></Label>
+                <Select
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g., Clubhouse, Unit A-101, Virtual Meeting"
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Assign to Staff</Label>
-                <Select 
-                  value={formData.assignedTo || 'none'} 
-                  onValueChange={(value) => setFormData({ ...formData, assignedTo: value === 'none' ? '' : value })}
+                  onValueChange={(val) => setFormData({ ...formData, location: val })}
                 >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue placeholder="Select staff member" />
+                  <SelectTrigger className="border-gray-200 focus:ring-[#F9E81B]">
+                    <SelectValue placeholder="Select unit location" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {staffUsers.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {getDisplayName(s)}
+                    <div className="px-2 py-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Available Units</p>
+                      {units.map(unit => {
+                        const unitNum = unit.number || unit.unit_number;
+                        return (
+                          <SelectItem key={unit.id} value={`Unit ${unitNum}`}>Unit {unitNum}</SelectItem>
+                        );
+                      })}
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[#2E3192] font-medium">Tenant</Label>
+                  <Select
+                    value={formData.tenantId || "none"}
+                    onValueChange={(val) => setFormData({ ...formData, tenantId: val === "none" ? "" : val })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue placeholder="Select tenant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Tenant</SelectItem>
+                      {staffUsers.filter(u => u.role === 'tenant').map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {getDisplayName(u)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[#2E3192] font-medium">Assign Staff</Label>
+                  <Select
+                    value={formData.assignedTo || "none"}
+                    onValueChange={(val) => setFormData({ ...formData, assignedTo: val === "none" ? "" : val })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue placeholder="Assign staff" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {staffUsers.filter(u => u.role === 'staff' || u.role === 'admin').map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {getDisplayName(u)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => setFormData({ ...formData, status: val })}
+                >
+                  <SelectTrigger className="border-gray-200">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABELS[s] || s}
                       </SelectItem>
                     ))}
                   </SelectContent>

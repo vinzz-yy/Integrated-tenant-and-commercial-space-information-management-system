@@ -33,8 +33,10 @@ const normalizeRequest = (r) => ({
   type: r.type || r.request_type || 'Technical',
   status: r.status || 'pending',
   createdAt: r.createdAt || r.created_at || '',
-  assignedTo: r.assignedTo || r.assigned_to || '',
+  assignedTo: r.assignedTo || 'Unassigned',
+  tenantName: r.tenantName || 'Unknown Tenant',
   tenant: r.tenant || null,
+  assignedToId: r.assigned_to || null,
 });
 
 export function Compliance() {
@@ -185,14 +187,14 @@ export function Compliance() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         type: formData.type,
-        tenant: formData.assignedTo ? Number(formData.assignedTo) : null,
+        assigned_to: formData.assignedTo && formData.assignedTo !== 'none' ? Number(formData.assignedTo) : null,
       };
 
       if (isEditMode && editingId) {
         const updated = normalizeRequest(await connection.compliance.updateRequest(editingId, payload));
         setRequests((prev) => prev.map((r) => (String(r.id) === String(editingId) ? updated : r)));
         setResultTitle('Update Successful');
-        setResultMessage('The request has been updated.');
+        setResultMessage('The request has been updated and assigned.');
       } else {
         const created = normalizeRequest(await connection.compliance.createRequest({ ...payload, status: 'pending' }));
         setRequests((prev) => [created, ...prev]);
@@ -217,7 +219,7 @@ export function Compliance() {
       title: request.title || '',
       type: request.type || 'Technical',
       description: request.description || '',
-      assignedTo: getAssigneeId(request.tenant || request.assignedTo),
+      assignedTo: getAssigneeId(request.assignedToId || request.assigned_to),
     });
     setEditingId(request.id);
     setIsEditMode(true);
@@ -318,6 +320,7 @@ export function Compliance() {
                     <TableHead className="text-[#2E3192] font-semibold">Request</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Type</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Description</TableHead>
+                    <TableHead className="text-[#2E3192] font-semibold">Tenant</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Assigned To</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Status</TableHead>
                     <TableHead className="text-[#2E3192] font-semibold">Created</TableHead>
@@ -333,6 +336,7 @@ export function Compliance() {
                       </TableCell>
                       <TableCell className="text-sm">{request.type}</TableCell>
                       <TableCell className="text-sm max-w-[280px] truncate">{request.description || '-'}</TableCell>
+                      <TableCell className="text-sm">{request.tenantName || 'Unknown'}</TableCell>
                       <TableCell className="text-sm">{request.assignedTo || 'Unassigned'}</TableCell>
                       <TableCell>
                         <Badge className={`${statusBadgeClass[request.status] || statusBadgeClass.pending} capitalize`}>
@@ -397,39 +401,36 @@ export function Compliance() {
                 <Label className="text-[#2E3192] font-medium">Title</Label>
                 <Input
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Request title"
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
+                  disabled
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed text-black disabled:opacity-100"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Type</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger className="border-gray-200"><SelectValue /></SelectTrigger>
-                    <SelectContent>{TYPE_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Assign to Staff</Label>
-                  <Select value={String(formData.assignedTo || '')} onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}>
-                    <SelectTrigger className="border-gray-200"><SelectValue placeholder="Select staff" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Unassigned</SelectItem>
-                      {staffUsers.map((s) => <SelectItem key={s.id} value={String(s.id)}>{getDisplayName(s)}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#2E3192] font-medium">Assign to Staff</Label>
+                <Select
+                  value={formData.assignedTo || "none"}
+                  onValueChange={(val) => setFormData({ ...formData, assignedTo: val === "none" ? "" : val })}
+                >
+                  <SelectTrigger className="border-gray-200 focus:ring-[#F9E81B]">
+                    <SelectValue placeholder="Select staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {staffUsers.filter(u => u.role === 'staff' || u.role === 'admin').map((u) => (
+                      <SelectItem key={u.id} value={String(u.id)}>
+                        {getDisplayName(u)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div className="space-y-2">
                 <Label className="text-[#2E3192] font-medium">Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe the issue, location, and expected action..."
-                  rows={5}
-                  className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                />
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-[80px] text-sm text-black">
+                  {formData.description || 'No description provided.'}
+                </div>
               </div>
             </div>
             <DialogFooter>

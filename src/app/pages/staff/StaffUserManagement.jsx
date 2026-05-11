@@ -44,6 +44,11 @@ export function StaffUserManagement() {
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
   
+  // Delete confirmation state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   // Form state for creating/editing tenants
   const [formData, setFormData] = useState({
     email: '',
@@ -136,10 +141,30 @@ export function StaffUserManagement() {
   //Creates a new tenant user with form data
   
   const handleCreateUser = async () => {
-    // Basic validation
-    if (!formData.email || !formData.firstName || !formData.lastName) {
+    // Strict validation for all fields
+    const requiredFields = [
+      { key: 'firstName', label: 'First Name' },
+      { key: 'lastName', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'unitNumber', label: 'Unit Number' },
+      { key: 'leaseStartDate', label: 'Lease Start Date' },
+      { key: 'leaseEndDate', label: 'Lease End Date' },
+    ];
+
+    const missingFields = requiredFields.filter(f => !formData[f.key] || formData[f.key].trim() === '');
+
+    if (missingFields.length > 0) {
       setResultTitle('Validation Error');
-      setResultMessage('Please fill in all required fields (Email, First Name, Last Name).');
+      setResultMessage('Please fill up all the fields');
+      setIsResultDialogOpen(true);
+      return;
+    }
+
+    // Email format validation
+    if (!formData.email.includes('@')) {
+      setResultTitle('Validation Error');
+      setResultMessage('Please enter a valid email address.');
       setIsResultDialogOpen(true);
       return;
     }
@@ -208,15 +233,31 @@ export function StaffUserManagement() {
   };
 
   // Deletes a tenant
-  const handleDeleteUser = async (userId) => {
-    if (confirm('Are you sure you want to delete this tenant?')) {
-      try {
-        await connection.users.deleteUser(String(userId));
-        setUsers((prev) => prev.filter((u) => String(u.id) !== String(userId)));
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Failed to delete tenant. Please try again.');
-      }
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      await connection.users.deleteUser(String(userToDelete.id));
+      setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)));
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+      
+      setResultTitle('Tenant Deleted');
+      setResultMessage('The tenant has been deleted successfully.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setResultTitle('Delete Failed');
+      setResultMessage('Failed to delete tenant. Please try again.');
+      setIsResultDialogOpen(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -393,7 +434,7 @@ export function StaffUserManagement() {
                               <span>Edit Tenant</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteUser(user.id)} 
+                              onClick={() => handleDeleteUser(user)} 
                               className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -423,7 +464,7 @@ export function StaffUserManagement() {
             <div className="grid grid-cols-2 gap-4">
               {/* First name */}
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-[#2E3192] font-medium">First Name</Label>
+                <Label htmlFor="firstName" className="text-[#2E3192] font-medium">First Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -434,7 +475,7 @@ export function StaffUserManagement() {
               
               {/* Last name */}
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-[#2E3192] font-medium">Last Name</Label>
+                <Label htmlFor="lastName" className="text-[#2E3192] font-medium">Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -445,7 +486,7 @@ export function StaffUserManagement() {
               
               {/* Email */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="email" className="text-[#2E3192] font-medium">Email</Label>
+                <Label htmlFor="email" className="text-[#2E3192] font-medium">Email <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   type="email"
@@ -455,17 +496,15 @@ export function StaffUserManagement() {
                 />
               </div>
               
-          
-              
               {/* Role (disabled, always Tenant) */}
               <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Role</Label>
+                <Label className="text-[#2E3192] font-medium">Role <span className="text-red-500">*</span></Label>
                 <Input value="Tenant" disabled className="bg-gray-100" />
               </div>
               
               {/* Phone */}
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-[#2E3192] font-medium">Phone</Label>
+                <Label htmlFor="phone" className="text-[#2E3192] font-medium">Phone <span className="text-red-500">*</span></Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -476,7 +515,7 @@ export function StaffUserManagement() {
               
               {/* Unit Number */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
+                <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number <span className="text-red-500">*</span></Label>
                 <Select 
                   value={formData.unitNumber || "none"} 
                   onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
@@ -505,7 +544,7 @@ export function StaffUserManagement() {
 
               {/* Lease Start Date */}
               <div className="space-y-2">
-                <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date <span className="text-red-500">*</span></Label>
                 <Input
                   id="leaseStartDate"
                   type="date"
@@ -517,7 +556,7 @@ export function StaffUserManagement() {
               
               {/* Lease End Date */}
               <div className="space-y-2">
-                <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date <span className="text-red-500">*</span></Label>
                 <Input
                   id="leaseEndDate"
                   type="date"
@@ -687,6 +726,37 @@ export function StaffUserManagement() {
                 disabled={isUpdating}
               >
                 {isUpdating ? 'Updating...' : 'Update Tenant'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[#2E3192]">Delete Tenant</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this tenant? This action cannot be undone.
+                {userToDelete && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <p className="font-semibold text-[#2E3192]">{userToDelete.firstName} {userToDelete.lastName}</p>
+                    <p className="text-xs text-gray-500">{userToDelete.email}</p>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" className="border-gray-300" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="bg-[#ED1C24] hover:bg-[#c1151b]"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Tenant'}
               </Button>
             </DialogFooter>
           </DialogContent>

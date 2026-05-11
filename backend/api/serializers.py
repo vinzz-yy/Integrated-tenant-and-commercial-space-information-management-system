@@ -78,24 +78,39 @@ class AppointmentSerializer(serializers.ModelSerializer):
    
     # Custom fields
     assignedTo = serializers.SerializerMethodField()
+    assignedToId = serializers.IntegerField(source="assigned_to_id", read_only=True)
     tenantId = serializers.IntegerField(source="tenant_id", read_only=True)
+    tenantName = serializers.SerializerMethodField()
 
     def get_assignedTo(self, obj):
-        
-        # Kunin ang pangalan ng assigned tenant
+        # Kunin ang pangalan ng assigned staff
         try:
-            u = obj.tenant
+            u = obj.assigned_to
             if not u:
                 return "Unassigned"
             name = f"{u.first_name or ''} {u.last_name or ''}".strip()
-            return name or u.email
+            return name or u.email or u.username
         except Exception:
             return "Unassigned"
 
+    def get_tenantName(self, obj):
+        # Kunin ang pangalan ng tenant
+        try:
+            u = obj.tenant
+            if not u:
+                return "Unknown"
+            name = f"{u.first_name or ''} {u.last_name or ''}".strip()
+            return name or u.email or u.username
+        except Exception:
+            return "Unknown"
+
     class Meta:
         model = Appointment
-        fields = ["id", "tenant", "tenantId", "assignedTo", "title", "date", "time", "location", "status"]
-        extra_kwargs = {"tenant": {"write_only": True, "required": False, "allow_null": True}}
+        fields = ["id", "tenant", "tenantId", "tenantName", "assigned_to", "assignedToId", "assignedTo", "title", "category", "date", "time", "location", "status"]
+        extra_kwargs = {
+            "tenant": {"write_only": True, "required": False, "allow_null": True},
+            "assigned_to": {"required": False, "allow_null": True}
+        }
 
 
 class UnitSerializer(serializers.ModelSerializer):
@@ -133,24 +148,40 @@ class UnitSerializer(serializers.ModelSerializer):
 class MaintenanceRequestSerializer(serializers.ModelSerializer):
     # Custom fields
     assignedTo = serializers.SerializerMethodField()
+    assignedToId = serializers.IntegerField(source="assigned_to_id", read_only=True)
+    tenantName = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     type = serializers.CharField(source="request_type", required=False)
     
     class Meta:
         model = MaintenanceRequest
-        fields = ["id", "tenant", "assignedTo", "title", "description", "attachment", "type", "status", "created_at", "createdAt"]
-        extra_kwargs = {"tenant": {"write_only": True}}
+        fields = ["id", "tenant", "tenantName", "assigned_to", "assignedToId", "assignedTo", "title", "description", "attachment", "type", "status", "created_at", "createdAt"]
+        extra_kwargs = {
+            "tenant": {"write_only": True, "required": False},
+            "assigned_to": {"required": False, "allow_null": True}
+        }
     
     def get_assignedTo(self, obj):
+        # Kunin ang pangalan ng staff na naka-assign
+        try:
+            u = obj.assigned_to
+            if not u:
+                return "Unassigned"
+            name = f"{u.first_name or ''} {u.last_name or ''}".strip()
+            return name or u.email or u.username
+        except Exception:
+            return "Unassigned"
+
+    def get_tenantName(self, obj):
         # Kunin ang pangalan ng tenant na nag-request
         try:
             u = obj.tenant
             if not u:
-                return "Unassigned"
+                return "Unknown"
             name = f"{u.first_name or ''} {u.last_name or ''}".strip()
-            return name or u.email
+            return name or u.email or u.username
         except Exception:
-            return "Unassigned"
+            return "Unknown"
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -161,23 +192,11 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
     # Custom fields para sa payment info
-    tenant_name = serializers.SerializerMethodField()
+    tenant_name = serializers.CharField(required=False, allow_null=True)
+    tenant_email = serializers.EmailField(required=False, allow_null=True)
     tenant_id = serializers.IntegerField(source='user.id', read_only=True)
-
-    def get_tenant_name(self, obj):
-        # Kunin ang pangalan ng tenant na nagbayad
-        try:
-            user = obj.user
-            if not user:
-                return "Unassigned"
-            first = user.first_name or ""
-            last = user.last_name or ""
-            name = f"{first} {last}".strip()
-            return name or user.email or user.username
-        except Exception:
-            return "Unassigned"
 
     class Meta:
         model = Payment
-        fields = ["id", "amount", "payment_method", "description", "status", "payment_date", "created_at", "tenant_name", "tenant_id", "user"]
+        fields = ["id", "amount", "payment_method", "description", "status", "payment_date", "created_at", "tenant_name", "tenant_email", "tenant_id", "user"]
       

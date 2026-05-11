@@ -137,7 +137,11 @@ export function FinancialManagement() {
 
       setIsSearching(true);
       try {
-        const resp = await connection.users.getUsers({ role: 'tenant', search: searchQuery });
+        const resp = await connection.users.getUsers({ 
+          role: 'tenant', 
+          search: searchQuery,
+          status: 'active'
+        });
         setSearchResults(Array.isArray(resp) ? resp : (resp.results || []));
       } catch (error) {
         console.error('Tenant search failed:', error);
@@ -159,6 +163,16 @@ export function FinancialManagement() {
     if (!transactionData.amount || isNaN(transactionData.amount)) {
       toast.error('Please enter a valid amount');
       return;
+    }
+
+    // Logic: If status is completed/paid, force method to be something other than 'none'
+    if (transactionData.status === 'completed' && transactionData.payment_method === 'none') {
+      transactionData.payment_method = 'cash'; // Default to cash if paid
+    }
+    
+    // Logic: If status is unpaid, default method to 'none'
+    if (transactionData.status === 'unpaid') {
+      transactionData.payment_method = 'none';
     }
 
     setLoading(true);
@@ -510,7 +524,7 @@ export function FinancialManagement() {
                       {searchResults.map((tenant) => (
                         <div
                           key={tenant.id}
-                          className="p-3 hover:bg-[#F9E81B]/10 cursor-pointer flex items-center justify-between"
+                          className="p-3 border-b last:border-0 flex items-center justify-between hover:bg-[#F9E81B]/10 cursor-pointer"
                           onClick={async () => {
                             setSelectedTenant(tenant);
                             setSearchQuery(tenant.first_name + ' ' + tenant.last_name);
@@ -545,6 +559,14 @@ export function FinancialManagement() {
                           <Badge variant="outline">{tenant.unitNumber || 'No Unit'}</Badge>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Not Found Message */}
+                  {searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && !selectedTenant && (
+                    <div className="p-4 border border-red-100 bg-red-50 rounded-md flex items-center gap-3 text-red-600">
+                      <XCircle className="h-5 w-5" />
+                      <p className="text-sm font-medium">tenant not found</p>
                     </div>
                   )}
 
@@ -604,6 +626,7 @@ export function FinancialManagement() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None (Unpaid)</SelectItem>
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="credit_card">Credit Card</SelectItem>
@@ -615,7 +638,15 @@ export function FinancialManagement() {
                   <Label htmlFor="status">Payment Status</Label>
                   <Select
                     value={transactionData.status}
-                    onValueChange={(val) => setTransactionData({ ...transactionData, status: val })}
+                    onValueChange={(val) => {
+                      const updates = { status: val };
+                      if (val === 'unpaid') {
+                        updates.payment_method = 'none';
+                      } else if (val === 'completed' && transactionData.payment_method === 'none') {
+                        updates.payment_method = 'cash';
+                      }
+                      setTransactionData({ ...transactionData, ...updates });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />

@@ -24,6 +24,8 @@ export function TenantMaintenance() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   
   // Form state for new request
   const [formData, setFormData] = useState({
@@ -42,10 +44,26 @@ export function TenantMaintenance() {
   useEffect(() => {
     const load = async () => {
       const resp = await connection.maintenance.getRequests({ tenant_id: user?.id });
-      setRequests(Array.isArray(resp) ? resp : (resp?.results || []));
+      const rawRequests = Array.isArray(resp) ? resp : (resp?.results || []);
+      setRequests(rawRequests.map(normalizeRequest));
     };
     load();
   }, [user]);
+
+  const normalizeRequest = (r) => ({
+    ...r,
+    id: r.id,
+    title: r.title || 'Untitled Request',
+    description: r.description || '',
+    type: r.type || r.request_type || 'medium',
+    status: r.status || 'pending',
+    createdAt: r.createdAt || r.created_at ? new Date(r.createdAt || r.created_at).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    }) : '',
+    assignedTo: r.assignedTo || 'Unassigned',
+  });
 
   // Handle submitting an operation request
   const handleSubmitRequest = async () => {
@@ -71,7 +89,8 @@ export function TenantMaintenance() {
       
       // Refresh requests list
       const resp = await connection.maintenance.getRequests({ tenant_id: user?.id });
-      setRequests(Array.isArray(resp) ? resp : (resp?.results || []));
+      const rawRequests = Array.isArray(resp) ? resp : (resp?.results || []);
+      setRequests(rawRequests.map(normalizeRequest));
     } catch (error) {
       console.error('Error saving request:', error);
       toast.error('Failed to save maintenance request. Please try again.');
@@ -90,12 +109,19 @@ export function TenantMaintenance() {
     setIsCreateDialogOpen(true);
   };
 
-  const handleDeleteRequest = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this maintenance request?")) return;
+  const handleDeleteClick = (id) => {
+    setDeletingId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingId) return;
     try {
-      await connection.maintenance.deleteRequest(id);
-      setRequests(requests.filter(r => String(r.id) !== String(id)));
+      await connection.maintenance.deleteRequest(deletingId);
+      setRequests(requests.filter(r => String(r.id) !== String(deletingId)));
       toast.success('Maintenance request deleted successfully!');
+      setIsDeleteDialogOpen(false);
+      setDeletingId(null);
     } catch (error) {
       console.error('Error deleting:', error);
       toast.error('Failed to delete maintenance request.');
@@ -213,15 +239,16 @@ export function TenantMaintenance() {
                       <p className="text-sm text-gray-600 mt-1">
                         {request.description}
                       </p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <p className="text-xs text-gray-500">
-                          Created: {request.createdAt}
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2">
+                        <p className="text-xs text-gray-500 flex items-center">
+                          <span className="font-medium mr-1 text-gray-700">Created:</span> {request.createdAt}
                         </p>
-                        {request.assignedTo && (
-                          <p className="text-xs text-gray-500">
-                            Assigned to: {request.assignedTo}
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-500 flex items-center">
+                          <span className="font-medium mr-1 text-gray-700">Assigned to:</span> 
+                          <span className={request.assignedTo === 'Unassigned' ? 'text-gray-400 italic' : 'text-[#2E3192] font-semibold'}>
+                            {request.assignedTo}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -243,7 +270,7 @@ export function TenantMaintenance() {
                             <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
                             <span>Edit Request</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteRequest(request.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                          <DropdownMenuItem onClick={() => handleDeleteClick(request.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Delete Request</span>
                           </DropdownMenuItem>
@@ -312,6 +339,33 @@ export function TenantMaintenance() {
                 className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
               >
                 {isEditMode ? 'Update Request' : 'Submit Request'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle className="text-[#2E3192]">Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this maintenance request? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDeleteDialogOpen(false)}
+                className="flex-1 sm:flex-none border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmDelete}
+                className="flex-1 sm:flex-none bg-[#ED1C24] hover:bg-[#ED1C24]/90 text-white"
+              >
+                Delete
               </Button>
             </DialogFooter>
           </DialogContent>

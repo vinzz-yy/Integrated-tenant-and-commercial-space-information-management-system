@@ -38,9 +38,8 @@ class LoginView(APIView):
         profile = getattr(user, 'profile', None)
         if profile and profile.status != 'active':
             if profile.status == 'pending':
-                return Response({"detail": "your account is not identified"}, status=status.HTTP_403_FORBIDDEN)
-            elif profile.status == 'rejected':
-                return Response({"detail": "Your account has been rejected. Please contact support."}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"detail": "Your account is not identified"}, status=status.HTTP_403_FORBIDDEN)
+           
             else:
                 return Response({"detail": f"Account status: {profile.status}. Please contact the administrator."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -135,6 +134,10 @@ class UsersViewSet(viewsets.ModelViewSet):
         role_param = self.request.query_params.get("role")
         if role_param:
             qs = qs.filter(profile__role=role_param)
+            
+        status_param = self.request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(profile__status=status_param)
             
         search_param = self.request.query_params.get("search")
         if search_param:
@@ -239,7 +242,9 @@ class UsersViewSet(viewsets.ModelViewSet):
                 if unit:
                     unit.tenant = user
                     unit.tenant_name = f"{user.first_name} {user.last_name}".strip() or user.username
-                    unit.status = 'occupied'
+                    # If tenant is pending (created by staff), set status to 'reserved'
+                    # If tenant is active (created by admin), set status to 'occupied'
+                    unit.status = 'reserved' if profile_status == 'pending' else 'occupied'
                     unit.save()
             except Exception:
                 pass
@@ -299,7 +304,18 @@ class UsersViewSet(viewsets.ModelViewSet):
         # Use serializer for updating
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
+        
+        # Check if status is being updated to 'active'
+        old_status = getattr(instance.profile, "status", "") if instance.profile else ""
+        new_status = data.get('status')
+        status_becoming_active = old_status == 'pending' and new_status == 'active'
+        
         self.perform_update(serializer)
+
+        # If status was approved (pending -> active), update linked commercial unit to 'occupied'
+        if status_becoming_active:
+            from .models import Unit
+            Unit.objects.filter(tenant=instance, status='reserved').update(status='occupied')
 
         # Apply the new password after serializer save (so it's properly hashed)
         if new_password:
@@ -324,15 +340,18 @@ class UsersViewSet(viewsets.ModelViewSet):
         if not (is_admin or is_staff_deleting_tenant):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
-        # If deleting a tenant, release any occupied units back to available
+        # Release any commercial units associated with this tenant
+        # This works for both 'occupied' and 'reserved' units
         try:
             if target_role == "tenant":
+                from .models import Unit
                 Unit.objects.filter(tenant=instance).update(
                     tenant=None,
                     tenant_name=None,
                     status="available",
                 )
-        except Exception:
+        except Exception as e:
+            print(f"Error releasing unit on user delete: {e}")
             # Best-effort cleanup; do not block deletion
             pass
 
@@ -590,6 +609,15 @@ class FinancialPaymentsViewSet(viewsets.ModelViewSet):
         role = getattr(getattr(user, "profile", None), "role", "")
         if role == 'tenant':
             return qs.filter(user=user)
+            
+        # For admin/staff, exclude payments from tenants that are currently pending or rejected.
+        # However, always include payments from deleted users (user is null) so that financial history remains.
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(user__isnull=True) | 
+            ~Q(user__profile__status__in=['pending', 'rejected'])
+        )
+        
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -737,6 +765,10 @@ class ArchivesViewSet(viewsets.ViewSet):
                 department=data.get('department', ''),
                 unitNumber=data.get('unitNumber', ''),
             )
+            # Re-link transactions that were preserved (where user was set to NULL)
+            # We match by the tenant_email which is more reliable than name
+            Payment.objects.filter(user__isnull=True, tenant_email=user.email).update(user=user)
+            
             restored_data = UserSerializer(user).data
 
         elif record.record_type == 'transaction':

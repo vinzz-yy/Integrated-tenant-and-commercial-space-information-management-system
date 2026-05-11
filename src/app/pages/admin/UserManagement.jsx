@@ -144,10 +144,38 @@ export function UserManagement() {
   // Creates a new staff user with form data (admin cannot directly create tenants)
 
   const handleCreateUser = async () => {
-    // Basic validation
-    if (!formData.email || !formData.firstName || !formData.lastName) {
+    // Strict validation for all fields
+    const requiredFields = [
+      { key: 'firstName', label: 'First Name' },
+      { key: 'lastName', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+    ];
+
+    // Add role-specific required fields
+    if (formData.role === 'staff') {
+      requiredFields.push({ key: 'department', label: 'Department' });
+    } else if (formData.role === 'tenant') {
+      requiredFields.push(
+        { key: 'unitNumber', label: 'Unit Number' },
+        { key: 'leaseStartDate', label: 'Lease Start Date' },
+        { key: 'leaseEndDate', label: 'Lease End Date' }
+      );
+    }
+
+    const missingFields = requiredFields.filter(f => !formData[f.key] || (typeof formData[f.key] === 'string' && formData[f.key].trim() === ''));
+
+    if (missingFields.length > 0) {
       setResultTitle('Validation Error');
-      setResultMessage('Please fill in all required fields (Email, First Name, Last Name).');
+      setResultMessage('Please fill up all the fields');
+      setIsResultDialogOpen(true);
+      return;
+    }
+
+    // Email format validation
+    if (!formData.email.includes('@')) {
+      setResultTitle('Validation Error');
+      setResultMessage('Please enter a valid email address.');
       setIsResultDialogOpen(true);
       return;
     }
@@ -532,7 +560,7 @@ export function UserManagement() {
             <div className="grid grid-cols-2 gap-4">
               {/* First name */}
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-[#2E3192] font-medium">First Name</Label>
+                <Label htmlFor="firstName" className="text-[#2E3192] font-medium">First Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -543,7 +571,7 @@ export function UserManagement() {
 
               {/* Last name */}
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-[#2E3192] font-medium">Last Name</Label>
+                <Label htmlFor="lastName" className="text-[#2E3192] font-medium">Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -554,7 +582,7 @@ export function UserManagement() {
 
               {/* Email (full width) */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="email" className="text-[#2E3192] font-medium">Email</Label>
+                <Label htmlFor="email" className="text-[#2E3192] font-medium">Email <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   type="email"
@@ -567,13 +595,13 @@ export function UserManagement() {
 
               {/* Role (fixed to Staff for admin-created users) */}
               <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Role</Label>
+                <Label className="text-[#2E3192] font-medium">Role <span className="text-red-500">*</span></Label>
                 <Input value="Staff" disabled className="bg-gray-100" />
               </div>
 
               {/* Phone */}
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-[#2E3192] font-medium">Phone</Label>
+                <Label htmlFor="phone" className="text-[#2E3192] font-medium">Phone <span className="text-red-500">*</span></Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -586,7 +614,7 @@ export function UserManagement() {
               {formData.role === 'tenant' && (
                 <>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number</Label>
+                    <Label htmlFor="unitNumber" className="text-[#2E3192] font-medium">Unit Number <span className="text-red-500">*</span></Label>
                     <Select
                       value={formData.unitNumber || "none"}
                       onValueChange={(value) => setFormData({ ...formData, unitNumber: value === "none" ? "" : value })}
@@ -614,7 +642,7 @@ export function UserManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date</Label>
+                    <Label htmlFor="leaseStartDate" className="text-[#2E3192] font-medium">Lease Start Date <span className="text-red-500">*</span></Label>
                     <Input
                       id="leaseStartDate"
                       type="date"
@@ -624,7 +652,7 @@ export function UserManagement() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date</Label>
+                    <Label htmlFor="leaseEndDate" className="text-[#2E3192] font-medium">Lease End Date <span className="text-red-500">*</span></Label>
                     <Input
                       id="leaseEndDate"
                       type="date"
@@ -638,7 +666,7 @@ export function UserManagement() {
 
               {formData.role === 'staff' && (
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="department" className="text-[#2E3192] font-medium">Department</Label>
+                  <Label htmlFor="department" className="text-[#2E3192] font-medium">Department <span className="text-red-500">*</span></Label>
                   <Input
                     id="department"
                     value={formData.department}

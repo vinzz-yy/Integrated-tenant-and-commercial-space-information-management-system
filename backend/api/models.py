@@ -45,7 +45,9 @@ class UserProfile(models.Model):
 class Appointment(models.Model):
     # Appointment
     tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments', blank=True, null=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_appointments', blank=True, null=True)
     title = models.CharField(max_length=128)
+    category = models.CharField(max_length=64, default='General')
     date = models.DateField()
     time = models.CharField(max_length=32)
     location = models.CharField(max_length=128, blank=True, null=True)
@@ -61,7 +63,10 @@ class Appointment(models.Model):
     def to_dict(self):
         return {
             'id': str(self.id),
+            'tenant': self.tenant.id if self.tenant else None,
+            'assigned_to': self.assigned_to.id if self.assigned_to else None,
             'title': self.title,
+            'category': self.category,
             'date': self.date.isoformat(),
             'time': self.time,
             'status': self.status,
@@ -70,20 +75,39 @@ class Appointment(models.Model):
 
 class Payment(models.Model):
     # Payment
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments', blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='payments', blank=True, null=True)
+    tenant_name = models.CharField(max_length=255, blank=True, null=True)
+    tenant_email = models.EmailField(max_length=255, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=32, default='cash')
+    payment_method = models.CharField(max_length=32, default='none')
     description = models.TextField(blank=True, null=True)
     status = models.CharField(
         max_length=16,
         choices=[('pending', 'pending'), ('completed', 'completed'), ('failed', 'failed'), ('unpaid', 'unpaid')],
-        default='completed'
+        default='unpaid'
     )
     payment_date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        # Logic: If status is unpaid, default method to 'none'
+        if self.status == 'unpaid' and (not self.payment_method or self.payment_method == 'cash'):
+            self.payment_method = 'none'
+        
+        # If payment is being completed and method is none, force it to cash or stay as is if provided
+        if self.status == 'completed' and self.payment_method == 'none':
+            self.payment_method = 'cash'
+
+        # Auto-populate tenant info if user is provided
+        if self.user:
+            if not self.tenant_name:
+                self.tenant_name = f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username or self.user.email
+            if not self.tenant_email:
+                self.tenant_email = self.user.email
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f'Payment #{self.id} - {self.amount}'
+        return f'Payment #{self.id} - {self.amount} ({self.tenant_name or self.tenant_email or "Unknown"})'
 
     def to_dict(self):
         return {
@@ -94,6 +118,8 @@ class Payment(models.Model):
             'status': self.status,
             'payment_date': self.payment_date.isoformat(),
             'created_at': self.created_at.isoformat(),
+            'tenant_name': self.tenant_name,
+            'tenant_email': self.tenant_email,
         }
 
 
@@ -203,6 +229,7 @@ class Unit(models.Model):
 class MaintenanceRequest(models.Model):
     # Maintenance request
     tenant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='maintenance_requests')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='assigned_maintenance', blank=True, null=True)
     title = models.CharField(max_length=128)
     description = models.TextField(blank=True, null=True)
     attachment = models.FileField(upload_to='maintenance/', blank=True, null=True)
@@ -221,6 +248,7 @@ class MaintenanceRequest(models.Model):
         return {
             'id': str(self.id),
             'tenant': self.tenant.id,
+            'assigned_to': self.assigned_to.id if self.assigned_to else None,
             'title': self.title,
             'description': self.description,
             'attachment': self.attachment.url if self.attachment else None,

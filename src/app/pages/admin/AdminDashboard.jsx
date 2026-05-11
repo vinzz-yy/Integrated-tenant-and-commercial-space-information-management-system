@@ -30,7 +30,8 @@ export function AdminDashboard() {
     totalStaff: 0,
     totalRevenue: 0,
     unpaidAmount: 0,
-    pendingCompliance: 0,
+    totalDocuments: 0,
+    pendingDocuments: 0,
     scheduledAppointments: 0,
     revenueGrowth: 0,
   });
@@ -38,6 +39,7 @@ export function AdminDashboard() {
   // State for chart data and lists
   const [revenueData, setRevenueData] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [complianceRequests, setComplianceRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
   // Load all dashboard data when component mounts
@@ -54,6 +56,7 @@ export function AdminDashboard() {
         const [
           usersResp,
           paymentsResp,
+          docsResp,
           compResp,
           apptResp,
           revenueResp,
@@ -61,7 +64,8 @@ export function AdminDashboard() {
         ] = await Promise.allSettled([
           connection.users.getUsers(),
           connection.financial.getPayments(),
-          connection.documents.getDocuments({ status: 'pending' }),
+          connection.documents.getDocuments(), // Fetch all documents
+          connection.compliance.getRequests(),
           connection.events.getAppointments({ status: 'scheduled' }),
           connection.financial.getRevenueAnalytics({ period: '6months' }),
           connection.notifications.getNotifications({ read: false, limit: 5 })
@@ -165,14 +169,28 @@ export function AdminDashboard() {
           setRevenueData(generatedRevenueData);
         }
 
+        // Process documents data
+        if (docsResp.status === 'fulfilled') {
+          const docsData = docsResp.value;
+          const allDocs = Array.isArray(docsData) ? docsData : (docsData?.results || []);
+          
+          setStats(prev => ({
+            ...prev,
+            totalDocuments: allDocs.length,
+            pendingDocuments: allDocs.filter(d => d.status === 'pending').length
+          }));
+        }
+
         // Process compliance data
         if (compResp.status === 'fulfilled') {
           const compData = compResp.value;
-          const pendingDocs = Array.isArray(compData) ? compData : (compData?.results || []);
-          setStats(prev => ({
-            ...prev,
-            pendingCompliance: pendingDocs.length
-          }));
+          const rawReqs = Array.isArray(compData) ? compData : (compData?.results || []);
+          
+          // Get recent compliance requests (newest 3)
+          const sortedCompliance = [...rawReqs]
+            .sort((a, b) => b.id - a.id)
+            .slice(0, 3);
+          setComplianceRequests(sortedCompliance);
         }
 
         // Process appointment data
@@ -219,8 +237,20 @@ export function AdminDashboard() {
 
   // Format date
   const formatAppointmentDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-PH', options);
+  };
+  
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
+      case 'scheduled': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
   };
 
   return (
@@ -282,24 +312,24 @@ export function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-[#ED1C24]">{formatCurrency(stats.unpaidAmount)}</div>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                Pending payments
+                Unpaid 
                 <ArrowRight className="h-3 w-3" />
               </p>
             </CardContent>
           </Card>
 
-          {/* Pending Items Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/Compliance')}>
+          {/* Total Documents Card */}
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/admin/Documents')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Pending Items
+               Total Documents
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-[#ED1C24]" />
+              <AlertCircle className={`h-4 w-4 ${stats.pendingDocuments > 0 ? 'text-[#ED1C24]' : 'text-gray-400'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#ED1C24]">{stats.pendingCompliance}</div>
+              <div className="text-2xl font-bold text-[#2E3192]">{stats.totalDocuments}</div>
               <p className="text-xs text-gray-500 mt-1">
-                Compliance documents
+                {stats.pendingDocuments} pending approval
               </p>
             </CardContent>
           </Card>
@@ -393,33 +423,76 @@ export function AdminDashboard() {
                     >
                       <Calendar className="h-5 w-5 text-[#2E3192] mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{appointment.title}</p>
+                        <div className="flex justify-between items-start gap-2">
+                          <p className="font-medium text-sm truncate">{appointment.category || appointment.title}</p>
+                          <Badge variant="outline" className={`text-[10px] py-0 h-4 ${getStatusColor(appointment.status)}`}>
+                            {appointment.status}
+                          </Badge>
+                        </div>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatAppointmentDate(appointment.date)} at {appointment.time}
                         </p>
-                        {appointment.tenant && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {appointment.tenant.name}
-                          </p>
-                        )}
                       </div>
-                      <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
-                        {appointment.status}
-                      </Badge>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No upcoming appointments
+                  No upcoming events
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Compliance Requests */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-[#2E3192]">Compliance Requests</CardTitle>
+                <CardDescription>
+                  Recent operation requests
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin/Compliance')}
+                className="border-gray-300 hover:bg-[#F9E81B]/10 hover:text-[#2E3192]"
+              >
+                View All
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {complianceRequests.length > 0 ? (
+                <div className="space-y-4">
+                  {complianceRequests.map((request) => (
+                    <div 
+                      key={request.id} 
+                      className="flex items-start gap-3 p-3 border rounded-lg hover:bg-[#F9E81B]/5 transition-colors"
+                    >
+                      <ClipboardList className="h-5 w-5 text-[#2E3192] mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <p className="font-medium text-sm truncate">{request.title}</p>
+                          <Badge variant="outline" className={`text-[10px] py-0 h-4 ${getStatusColor(request.status)}`}>
+                            {request.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          From: {request.tenantName || 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No recent requests
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
-
-
-
       </div>
     </Layout>
   );

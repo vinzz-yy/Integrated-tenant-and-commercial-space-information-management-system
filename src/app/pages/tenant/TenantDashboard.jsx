@@ -5,7 +5,7 @@ import { Layout } from '../../components/Layout.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card.jsx';
 import { Button } from '../../components/ui/button.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
-import { Calendar, FileCheck, CreditCard, Wrench, Building, ArrowRight } from 'lucide-react';
+import { Calendar, FileCheck, CreditCard, Wrench, Building, ArrowRight, CheckCircle } from 'lucide-react';
 import connection from '../../connected/connection.js';
 
 export function TenantDashboard() {
@@ -14,14 +14,15 @@ export function TenantDashboard() {
   
   // State for tenant's data
   const [payments, setPayments] = useState([]);
-  const [requests, setRequests] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [documents, setDocuments] = useState([]);
 
   // Redirect if not tenant
   useEffect(() => {
     if (user?.role !== 'tenant') navigate('/');
   }, [user, navigate]);
 
-  // Load tenant's invoices and maintenance requests
+  // Load tenant's invoices, appointments, and documents with real-time updates
   useEffect(() => {
     const load = async () => {
       try {
@@ -29,26 +30,42 @@ export function TenantDashboard() {
         const pay = await connection.financial.getPayments({ tenant_id: user?.id });
         setPayments(pay.results || pay || []);
         
-        // Fetch maintenance requests for this tenant
-        const req = await connection.maintenance.getRequests({ tenant_id: user?.id });
-        setRequests(Array.isArray(req) ? req : (req?.results || []));
+        // Fetch appointments for this tenant
+        const resp = await connection.events.getAppointments({ tenant_id: user?.id });
+        const list = Array.isArray(resp) ? resp : (resp?.results || []);
+        setAppointments(list);
+
+        // Fetch documents for this tenant
+        const docs = await connection.documents.getDocuments({ tenant_id: user?.id });
+        setDocuments(Array.isArray(docs) ? docs : (docs?.results || []));
       } catch (e) {
         setPayments([]); 
-        setRequests([]);
+        setAppointments([]);
+        setDocuments([]);
       }
     };
+
     load();
+
+    // Polling for real-time updates (every 5 seconds)
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Navigation handlers
   const handleMyUnitClick = () => navigate('/tenant/commercial-space');
   const handlePendingPaymentsClick = () => navigate('/tenant/payments');
-  const handleMaintenanceRequestsClick = () => navigate('/tenant/maintenance');
+  const handleAppointmentsClick = () => navigate('/tenant/appointments');
   const handleDocumentsClick = () => navigate('/tenant/compliance');
 
   // Calculate unpaid payments total
   const unpaidPayments = payments.filter(pay => pay.status === 'unpaid' || pay.status === 'pending');
   const unpaidTotal = unpaidPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+
+  // Calculate paid payments total and methods
+  const paidPayments = payments.filter(pay => pay.status === 'completed' || pay.status === 'paid');
+  const paidTotal = paidPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0);
+  const paymentMethods = [...new Set(paidPayments.map(pay => pay.payment_method || pay.method).filter(Boolean))];
 
   return (
     <Layout role="tenant">
@@ -62,7 +79,7 @@ export function TenantDashboard() {
         </div>
 
         {/* Stats cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {/* My Unit Card */}
           <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={handleMyUnitClick}>
             <CardHeader className="pb-2">
@@ -99,18 +116,36 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
-          {/* Maintenance Requests Card */}
-          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={handleMaintenanceRequestsClick}>
+          {/* Paid Payments Card */}
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={() => navigate('/tenant/payments')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
-                Maintenance Requests
-                <Wrench className="h-4 w-4 text-[#F9E81B]" />
+                Paid Payments
+                <CheckCircle className="h-4 w-4 text-green-600" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#2E3192]">{requests.length}</div>
+              <div className="text-2xl font-bold text-[#2E3192]">
+                ₱{paidTotal.toLocaleString()}
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                {requests.filter(req => req.status === 'pending').length} pending
+                {paymentMethods.length > 0 ? paymentMethods.join(', ') : 'No payments yet'}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Appointments Card */}
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-[#F9E81B] border-2 border-transparent" onClick={handleAppointmentsClick}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+                Appointments
+                <Calendar className="h-4 w-4 text-[#F9E81B]" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#2E3192]">{appointments.length}</div>
+              <p className="text-xs text-gray-500 mt-1">
+                {appointments.filter(apt => apt.status === 'scheduled').length} pending
               </p>
             </CardContent>
           </Card>
@@ -124,7 +159,7 @@ export function TenantDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#2E3192]">3</div>
+              <div className="text-2xl font-bold text-[#2E3192]">{documents.length}</div>
               <p className="text-xs text-gray-500 mt-1">
                 Compliance documents
               </p>
@@ -132,7 +167,7 @@ export function TenantDashboard() {
           </Card>
         </div>
 
-        {/* Main content grid - Recent Invoices and Maintenance Requests */}
+        {/* Main content grid - Recent Invoices and Appointments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Invoices section */}
           <Card>
@@ -174,35 +209,42 @@ export function TenantDashboard() {
             </CardContent>
           </Card>
 
-          {/* Maintenance Requests section */}
+          {/* Appointments section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-[#2E3192]">My Maintenance Requests</CardTitle>
-                <CardDescription>Track your maintenance requests</CardDescription>
+                <CardTitle className="text-[#2E3192]">My Appointments</CardTitle>
+                <CardDescription>Track your scheduled appointments</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/tenant/maintenance')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/tenant/appointments')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
                 View All <ArrowRight className="h-4 w-4" />
               </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {requests.slice(0, 3).map((request) => (
+                {appointments.slice(0, 3).map((appointment) => (
                   <div 
-                    key={request.id} 
+                    key={appointment.id} 
                     className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-[#F9E81B]/10 transition-colors"
-                    onClick={() => navigate('/tenant/maintenance')}
+                    onClick={() => navigate('/tenant/appointments')}
                   >
-                    <Wrench className="h-5 w-5 text-[#F9E81B] mt-0.5" />
+                    <Calendar className="h-5 w-5 text-[#F9E81B] mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{request.title}</p>
+                      <p className="font-medium text-sm">{appointment.title}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Created: {request.createdAt}
+                        Date: {appointment.date} | Time: {appointment.time}
                       </p>
                       <Badge 
-                        className={`mt-2 ${request.status === 'completed' ? 'bg-[#2E3192] text-white' : 'bg-[#F9E81B]/30 text-[#2E3192]'}`}
+                        className={`mt-2 ${
+                          appointment.status === 'completed' ? 'bg-[#2E3192] text-white' : 
+                          appointment.status === 'scheduled' ? 'bg-[#F9E81B]/30 text-[#2E3192]' :
+                          appointment.status === 'in_progress' ? 'bg-[#2E3192]/10 text-[#2E3192]' :
+                          'bg-gray-100 text-gray-700'
+                        }`}
                       >
-                        {request.status?.replace('_', ' ')}
+                        {appointment.status === 'scheduled' ? 'Pending' : 
+                         appointment.status === 'in_progress' ? 'Confirmed' : 
+                         appointment.status?.replace('_', ' ')}
                       </Badge>
                     </div>
                   </div>

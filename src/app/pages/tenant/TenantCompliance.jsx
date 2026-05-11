@@ -334,10 +334,19 @@ export function TenantCompliance() {
                 <Input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,image/*"
-                  onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 10 * 1024 * 1024) {
+                      toast.error('File size exceeds 10MB limit');
+                      e.target.value = '';
+                      setFormData({ ...formData, file: null });
+                    } else {
+                      setFormData({ ...formData, file: file });
+                    }
+                  }}
                   className="border-gray-200"
                 />
-                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (max 5MB)</p>
+                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (max 10MB)</p>
 
                 {/* Image Preview */}
                 {formData.file && formData.file.type.startsWith('image/') && (
@@ -398,10 +407,19 @@ export function TenantCompliance() {
                 <Input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,image/*"
-                  onChange={(e) => setEditFormData({ ...editFormData, file: e.target.files?.[0] || null })}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 10 * 1024 * 1024) {
+                      toast.error('File size exceeds 10MB limit');
+                      e.target.value = '';
+                      setEditFormData({ ...editFormData, file: null });
+                    } else {
+                      setEditFormData({ ...editFormData, file: file });
+                    }
+                  }}
                   className="border-gray-200"
                 />
-                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (max 5MB). Leave empty to keep existing file.</p>
+                <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG (max 10MB). Leave empty to keep existing file.</p>
               </div>
             </div>
             <DialogFooter>
