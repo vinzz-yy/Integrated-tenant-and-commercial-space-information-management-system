@@ -239,7 +239,7 @@ export function TenantCompliance() {
                 // Document list
                 documents.map((doc) => {
                   const url = doc.fileUrl || doc.file_url || doc.file || '';
-                  const fullUrl = url.startsWith('/') ? `http://localhost:8000${url}` : url;
+                  const fullUrl = url.startsWith('/') ? `${window.location.origin}${url}` : url;
                   const isImage = String(url).match(/\.(jpeg|jpg|gif|png)$/i);
                   const statusBadge = getStatusBadge(doc.status);
 

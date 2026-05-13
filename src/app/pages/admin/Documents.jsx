@@ -325,7 +325,7 @@ export function Documents() {
                 {/* Document Preview */}
                 {(selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file) && (() => {
                   const url = selectedDocument.fileUrl || selectedDocument.file_url || selectedDocument.file;
-                  const fullUrl = url.startsWith('/') ? `http://localhost:8000${url}` : url;
+                  const fullUrl = url.startsWith('/') ? `${window.location.origin}${url}` : url;
                   return (
                     <div className="mt-2 border border-gray-200 rounded-md overflow-hidden bg-gray-50 flex items-center justify-center p-2 min-h-32 max-h-64">
                       {String(url).match(/\.(jpeg|jpg|gif|png)$/i) ? (

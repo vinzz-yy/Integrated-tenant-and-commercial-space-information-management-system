@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // access token and refresh token is in the backend Settings.py
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = '/api';
 
 // JWT access token — sent on every API request (7-day lifetime)
 function getAuthToken() {
