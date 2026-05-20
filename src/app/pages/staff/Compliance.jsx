@@ -257,12 +257,8 @@ export function Compliance() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#2E3192]">Compliance Management</h1>
-            <p className="text-gray-600 mt-1">Monitor, assign, and resolve operational compliance requests.</p>
+            <p className="text-gray-600 mt-1">Monitor and resolve your assigned operational compliance requests.</p>
           </div>
-          <Button className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold" onClick={openCreateDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Request
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -361,26 +357,25 @@ export function Compliance() {
                               <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
                               <span>View Details</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditClick(request)} className="cursor-pointer">
-                              <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
-                              <span>Edit Request</span>
-                            </DropdownMenuItem>
-                            {STATUS_OPTIONS.map((status) => (
-                              <DropdownMenuItem
-                                key={`${request.id}-${status}`}
-                                onClick={() => handleUpdateStatus(request, status)}
-                                className="cursor-pointer capitalize"
-                              >
-                                Mark as {status.replace('_', ' ')}
-                              </DropdownMenuItem>
-                            ))}
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteRequest(request.id)}
-                              className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete Request</span>
-                            </DropdownMenuItem>
+
+                            {/* Only allow actions if the request is assigned to the current user */}
+                            {String(request.assignedToId) === String(user?.id) ? (
+                              <>
+                                {STATUS_OPTIONS.map((status) => (
+                                  <DropdownMenuItem
+                                    key={`${request.id}-${status}`}
+                                    onClick={() => handleUpdateStatus(request, status)}
+                                    className="cursor-pointer capitalize"
+                                  >
+                                    Mark as {status.replace('_', ' ')}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            ) : (
+                              <div className="px-2 py-1.5 text-xs text-gray-500 italic">
+                                Only assigned staff can take action
+                              </div>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

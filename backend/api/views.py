@@ -422,7 +422,14 @@ class EventsViewSet(viewsets.ModelViewSet):
         user = self.request.user
         role = getattr(getattr(user, "profile", None), "role", None)
         if role == 'tenant':
-            qs = qs.filter(tenant=user)
+            from django.db.models import Q
+            # Tenant sees:
+            # 1. Their own appointments (any status)
+            # 2. ANY approved event/appointment (scheduled, in_progress, completed)
+            qs = qs.filter(
+                Q(tenant=user) | 
+                Q(status__in=['scheduled', 'in_progress', 'completed'])
+            )
         else:
             tenant_id = self.request.query_params.get("tenant_id")
             if tenant_id:
@@ -434,12 +441,26 @@ class EventsViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         user = getattr(request, "user", None)
         role = getattr(getattr(user, "profile", None), "role", None)
+        
+        # Logic for status based on role
         if role == 'tenant':
-            data["tenant"] = request.user.id
-        else:
-            tid = data.pop("tenant_id", None)
+            data["tenant"] = user.id
+            data["status"] = 'pending'
+        elif role == 'staff':
+            # Staff can create events, but they start as pending for admin approval
+            data["status"] = 'pending'
+            # If creating for a tenant, keep the tenant ID
+            tid = data.get("tenant_id") or data.get("tenant")
             if tid:
                 data["tenant"] = tid
+        else: # admin
+            tid = data.get("tenant_id") or data.get("tenant")
+            if tid:
+                data["tenant"] = tid
+            # Admin can set status directly, default to scheduled
+            if "status" not in data:
+                data["status"] = 'scheduled'
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -452,11 +473,24 @@ class EventsViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         user = getattr(request, "user", None)
         role = getattr(getattr(user, "profile", None), "role", None)
+
+        # Restricted status updates: Only admin can approve (pending -> scheduled)
+        # or reject events. Staff can only update if it's their own and still pending?
+        # For now, let's allow admin full control and restrict staff from approving.
+        
+        if "status" in data and role == 'staff':
+            new_status = data["status"]
+            # Staff cannot move from pending to scheduled (approved)
+            if instance.status == 'pending' and new_status == 'scheduled':
+                return Response({"detail": "Only administrators can approve events."}, status=status.HTTP_403_FORBIDDEN)
+
         if role != 'tenant':
-            has_tid = "tenant_id" in data
-            tid = data.pop("tenant_id", None)
+            # Handle tenant_id to tenant mapping for admin/staff
+            has_tid = "tenant_id" in data or "tenant" in data
+            tid = data.pop("tenant_id", data.get("tenant"))
             if has_tid:
                 data["tenant"] = tid or None
+
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)

@@ -77,7 +77,7 @@ npm run dev
 Application will run at:
 
 ```
-http://localhost:5173
+http://localhost:5174
 ```
 
 ---
@@ -101,6 +101,15 @@ Output files will be generated inside the **dist/** folder.
 | Admin  | [admin@skymall.com](mailto:admin@skymall.com)   | password |
 | Staff  | [staff@skymall.com](mailto:staff@skymall.com)   | password |
 | Tenant | [tenant@skymall.com](mailto:tenant@skymall.com) | password |
+
+### Session Management
+
+The system features **Session Persistence** (User Session Management), which allows for a seamless user experience:
+
+* **Persistent Login**: Checking "Remember me" during login saves your session to `localStorage`.
+* **Multi-Tab Support**: As long as your session is active, you can open new tabs, copy localhost links, or navigate between pages without being logged out.
+* **Shared Session**: The system maintains an active user session after successful login, allowing users to navigate multiple tabs/pages without requiring repeated authentication until logout or session expiration.
+* **Global Logout**: Logging out in one tab will invalidate the session for all open tabs of the system.
 
 ---
 

@@ -9,11 +9,11 @@ import { Calendar, ClipboardList, ArrowRight, PhilippinePeso, Users, Building, F
 import connection from '../../connected/connection.js';
 
 export function StaffDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
-  // State for storing staff's appointments and requests
-  const [appointments, setAppointments] = useState([]);
+  // State for storing staff's events and requests
+  const [events, setEvents] = useState([]);
   const [requests, setRequests] = useState([]);
   const [unpaidAmount, setUnpaidAmount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
@@ -23,17 +23,20 @@ export function StaffDashboard() {
 
   // Load staff data when component mounts
   useEffect(() => {
+    // Wait for auth to load
+    if (loading) return;
+
     // Redirect if not staff
-    if (user?.role !== 'staff') {
+    if (!user || user.role !== 'staff') {
       navigate('/');
       return;
     }
     
     const load = async () => {
       try {
-        // Fetch appointments, requests, payments, users, units, and documents in parallel
-        // For staff, we want to see appointments and requests where they are the assignee
-        const [appts, reqs, payResult, usersResult, unitsResult, docsResult] = await Promise.all([
+        // Fetch events, requests, payments, users, units, and documents in parallel
+        // For staff, we want to see events and requests where they are the assignee
+        const [eventResp, reqs, payResult, usersResult, unitsResult, docsResult] = await Promise.all([
           connection.events.getAppointments(), // Fetch all so we can filter by assigned_to
           connection.compliance.getRequests(), // Fetch all so we can filter by assigned_to
           connection.financial.getPayments(),
@@ -42,10 +45,10 @@ export function StaffDashboard() {
           connection.documents.getDocuments()
         ]);
         
-        const rawAppts = Array.isArray(appts) ? appts : (appts?.results || []);
-        // Filter appointments assigned to this staff member
-        const apptList = rawAppts.filter(a => String(a.assigned_to) === String(user?.id) || String(a.assignedToId) === String(user?.id));
-        setAppointments(apptList);
+        const rawEvents = Array.isArray(eventResp) ? eventResp : (eventResp?.results || []);
+        // Filter events assigned to this staff member
+        const eventList = rawEvents.filter(e => String(e.assigned_to) === String(user?.id) || String(e.assignedToId) === String(user?.id));
+        setEvents(eventList);
         
         const rawReqs = Array.isArray(reqs) ? reqs : (reqs?.results || []);
         // Filter requests assigned to this staff member
@@ -74,7 +77,7 @@ export function StaffDashboard() {
         setTotalDocuments(docs.length);
       } catch (e) {
         console.error("Error loading dashboard data:", e);
-        setAppointments([]); 
+        setEvents([]); 
         setRequests([]);
         setUnpaidAmount(0);
         setPaidAmount(0);
@@ -84,7 +87,17 @@ export function StaffDashboard() {
       }
     };
     load();
-  }, [user, navigate]);
+  }, [user, navigate, loading]);
+
+  if (loading) {
+    return (
+      <Layout role="staff">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E3192]"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   // Calculate pending tasks
   const pendingTasks = requests.filter(req => req.status === 'pending');
@@ -190,14 +203,14 @@ export function StaffDashboard() {
           </Card>
         </div>
 
-        {/* Main content grid - Appointments and Tasks */}
+        {/* Main content grid - Events and Tasks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* My Appointments section */}
+          {/* My Events section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-[#2E3192]">My Appointments</CardTitle>
-                <CardDescription>Your upcoming appointments</CardDescription>
+                <CardTitle className="text-[#2E3192]">My Events</CardTitle>
+                <CardDescription>Your upcoming events</CardDescription>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate('/staff/Events')} className="gap-1 text-[#2E3192] hover:text-[#2E3192] hover:bg-[#F9E81B]/20">
                 View All <ArrowRight className="h-4 w-4" />
@@ -205,17 +218,17 @@ export function StaffDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {appointments.slice(0, 3).map((appointment) => (
+                {events.slice(0, 3).map((event) => (
                   <div
-                    key={appointment.id}
+                    key={event.id}
                     className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-[#F9E81B]/10 transition-colors"
                     onClick={() => navigate('/staff/Events')}
                   >
                     <Calendar className="h-5 w-5 text-[#F9E81B] mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{appointment.title}</p>
+                      <p className="font-medium text-sm">{event.category || event.title || 'Untitled Event'}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {appointment.date} at {appointment.time}
+                        {event.date} at {event.time}
                       </p>
                       <Badge className="mt-2 bg-[#2E3192] text-white">
                         Scheduled

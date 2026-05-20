@@ -12,7 +12,7 @@ import mannaLogo from '../images/manna_logo.png';
 import backgroundLogin from '../images/MANAAAA.jpg';
 
 export function Login() {
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
 
   // State for form inputs
@@ -22,7 +22,7 @@ export function Login() {
 
   // UI state
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Load saved email if "remember me" was checked
@@ -36,12 +36,14 @@ export function Login() {
 
   // Redirect if already authenticated
   useEffect(() => {
+    if (loading) return;
+
     if (isAuthenticated && user) {
       if (user.role === 'admin') navigate('/admin', { replace: true });
       else if (user.role === 'staff') navigate('/staff', { replace: true });
       else if (user.role === 'tenant') navigate('/tenant', { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, loading]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -59,13 +61,13 @@ export function Login() {
     }
 
     setError('');
-    setLoading(true);
+    setLoadingForm(true);
 
     try {
       // Attempt login
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
-      const user = await login(cleanEmail, cleanPassword);
+      const user = await login(cleanEmail, cleanPassword, rememberMe);
 
       // Handle "remember me" functionality
       if (rememberMe) {
@@ -104,9 +106,17 @@ export function Login() {
     } catch (err) {
       setError(err?.message || 'Invalid email or password. Please try again.');
     } finally {
-      setLoading(false);
+      setLoadingForm(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#2E3192]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundLogin})` }}>
@@ -162,7 +172,7 @@ export function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                disabled={loading}
+                disabled={loadingForm}
                 autoComplete="email"
                 autoFocus
                 required
@@ -185,7 +195,7 @@ export function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  disabled={loading}
+                  disabled={loadingForm}
                   autoComplete="current-password"
                   required
                   className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F9E81B] focus:border-[#F9E81B] transition h-11 pr-10"
@@ -210,7 +220,7 @@ export function Login() {
                 id="remember"
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
-                disabled={loading}
+                disabled={loadingForm}
                 className="w-4 h-4 border-gray-300 data-[state=checked]:bg-[#2E3192] data-[state=checked]:border-[#2E3192]"
               />
               <Label
@@ -224,16 +234,16 @@ export function Login() {
             {/* Submit button with loading state */}
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loadingForm}
               className={`
                 w-full py-3 h-12 rounded-xl font-bold transition active:scale-95 shadow-lg mt-2 text-base
-                ${loading
+                ${loadingForm
                   ? 'bg-[#F9E81B]/60 text-[#2E3192] cursor-wait'
                   : 'bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] cursor-pointer'
                 }
               `}
             >
-              {loading ? (
+              {loadingForm ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...

@@ -9,7 +9,7 @@ import { Calendar, FileCheck, CreditCard, Wrench, Building, ArrowRight, CheckCir
 import connection from '../../connected/connection.js';
 
 export function TenantDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   // State for tenant's data
@@ -19,11 +19,17 @@ export function TenantDashboard() {
 
   // Redirect if not tenant
   useEffect(() => {
-    if (user?.role !== 'tenant') navigate('/');
-  }, [user, navigate]);
+    // Wait for auth to load
+    if (loading) return;
+
+    if (!user || user.role !== 'tenant') navigate('/');
+  }, [user, navigate, loading]);
 
   // Load tenant's invoices, appointments, and documents with real-time updates
   useEffect(() => {
+    // Wait for auth to load
+    if (loading || !user) return;
+
     const load = async () => {
       try {
         // Fetch payments for this tenant
@@ -50,7 +56,17 @@ export function TenantDashboard() {
     // Polling for real-time updates (every 5 seconds)
     const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, loading]);
+
+  if (loading) {
+    return (
+      <Layout role="tenant">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E3192]"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   // Navigation handlers
   const handleMyUnitClick = () => navigate('/tenant/commercial-space');

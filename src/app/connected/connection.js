@@ -5,12 +5,12 @@ const API_BASE_URL = '/api';
 
 // JWT access token — sent on every API request (7-day lifetime)
 function getAuthToken() {
-  return sessionStorage.getItem('authToken');
+  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
 }
 
 // JWT refresh token — used only to get a new access token (30-day lifetime)
 function getRefreshToken() {
-  return sessionStorage.getItem('refreshToken');
+  return localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
 }
 
 // Axios instance — all API calls go through this
@@ -57,6 +57,9 @@ api.interceptors.response.use(
 
       // No refresh token — redirect to login
       if (!refresh) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         sessionStorage.removeItem('authToken');
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
@@ -86,7 +89,11 @@ api.interceptors.response.use(
         );
 
         const newAccessToken = data.access;
-        sessionStorage.setItem('authToken', newAccessToken);
+        if (localStorage.getItem('authToken')) {
+          localStorage.setItem('authToken', newAccessToken);
+        } else {
+          sessionStorage.setItem('authToken', newAccessToken);
+        }
         api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
         processQueue(null, newAccessToken);
 
@@ -97,6 +104,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh token expired (30 days) — force re-login
         processQueue(refreshError, null);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         sessionStorage.removeItem('authToken');
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');

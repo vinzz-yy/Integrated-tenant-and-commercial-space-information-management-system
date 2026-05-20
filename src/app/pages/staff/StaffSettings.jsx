@@ -429,7 +429,7 @@ export function StaffSettings() {
                   </div>
                 </div>
 
-                {/* Department — read-only */}
+                {/* Department */}
                 <div className="space-y-2">
                   <Label htmlFor="sf-department" className="text-[#2E3192] font-medium flex items-center gap-2">
                     <Briefcase className="h-4 w-4" /> Department
@@ -437,8 +437,9 @@ export function StaffSettings() {
                   <Input
                     id="sf-department"
                     value={formData.department}
-                    disabled
-                    className="h-11 border-gray-200 bg-gray-50 text-gray-500"
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    placeholder="Enter your department"
+                    className="h-11 border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
 

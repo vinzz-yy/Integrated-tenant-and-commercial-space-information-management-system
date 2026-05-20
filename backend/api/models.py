@@ -53,8 +53,15 @@ class Appointment(models.Model):
     location = models.CharField(max_length=128, blank=True, null=True)
     status = models.CharField(
         max_length=16,
-        choices=[('scheduled', 'scheduled'), ('in_progress', 'in_progress'), ('completed', 'completed'), ('cancelled', 'cancelled')],
-        default='scheduled'
+        choices=[
+            ('pending', 'pending'),
+            ('scheduled', 'scheduled'),
+            ('in_progress', 'in_progress'),
+            ('completed', 'completed'),
+            ('cancelled', 'cancelled'),
+            ('rejected', 'rejected'),
+        ],
+        default='pending'
     )
 
     def __str__(self):

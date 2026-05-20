@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.jsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar.jsx';
-import { Search, Plus, Eye, Pencil, Trash2, MoreVertical, Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Search, Eye, Trash2, MoreVertical, Calendar, Clock, MapPin, Plus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,66 +20,106 @@ import {
 } from '../../components/ui/dropdown-menu.jsx';
 import connection from '../../connected/connection.js';
 
-const STATUS_OPTIONS = ['scheduled', 'in_progress', 'completed', 'cancelled'];
+const STATUS_OPTIONS = ['pending', 'scheduled', 'in_progress', 'completed', 'cancelled', 'rejected'];
 
 const STATUS_LABELS = {
-  scheduled: 'Pending',
-  in_progress: 'Confirmed',
+  pending: 'Pending Approval',
+  scheduled: 'Approved',
+  in_progress: 'In Progress',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  rejected: 'Rejected',
 };
 
 const statusBadgeClass = {
-  scheduled: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
+  pending: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
+  scheduled: 'bg-green-100 text-green-700 hover:bg-green-200',
   in_progress: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-  completed: 'bg-green-100 text-green-700 hover:bg-green-200',
+  completed: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
   cancelled: 'bg-red-100 text-red-700 hover:bg-red-200',
+  rejected: 'bg-red-200 text-red-800 hover:bg-red-300',
 };
 
-const normalizeAppointment = (a) => ({
-  ...a,
-  id: a.id,
-  title: a.title || a.category || 'Untitled Event',
-  category: a.category || a.title || 'General',
-  date: a.date || '',
-  time: a.time || '',
-  location: a.location || '',
-  status: a.status || 'scheduled',
-  assignedTo: a.assignedTo || 'Unassigned',
-  assignedToId: a.assignedToId || a.assigned_to || null,
-  tenantName: a.tenantName || 'Unknown',
-  tenantId: a.tenantId || a.tenant || null,
+const normalizeEvent = (e) => ({
+  ...e,
+  id: e.id,
+  title: e.title || e.category || 'Untitled Event',
+  category: e.category || e.title || 'General',
+  date: e.date || '',
+  time: e.time || '',
+  location: e.location || '',
+  status: e.status || 'scheduled',
+  assignedTo: e.assignedTo || 'Unassigned',
+  assignedToId: e.assignedToId || e.assigned_to || null,
+  tenantName: e.tenantName || 'Unknown',
+  tenantId: e.tenantId || e.tenant || null,
 });
 
 export function Events() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [appointments, setAppointments] = useState([]);
+  const [events, setEvents] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [units, setUnits] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState('');
   const [resultMessage, setResultMessage] = useState('');
 
   const [formData, setFormData] = useState({
+    title: '',
     category: 'General',
     date: '',
     time: '',
     location: '',
-    assignedTo: '',
-    tenantId: '',
-    status: 'scheduled',
   });
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      category: 'General',
+      date: '',
+      time: '',
+      location: '',
+    });
+  };
+
+  const handleCreateEvent = async () => {
+    if (!formData.title || !formData.date || !formData.time) {
+      setResultTitle('Missing Required Fields');
+      setResultMessage('Please fill in Title, Date, and Time.');
+      setIsResultDialogOpen(true);
+      return;
+    }
+    try {
+      const payload = { 
+        ...formData,
+        tenant_id: null, // Always a community event
+      };
+      
+      const created = await connection.events.createAppointment({
+        ...payload,
+        status: 'pending'
+      });
+      setEvents((prev) => [normalizeEvent(created), ...prev]);
+      setIsCreateDialogOpen(false);
+      resetForm();
+      setResultTitle('Success');
+      setResultMessage('Event created and sent for admin approval.');
+      setIsResultDialogOpen(true);
+    } catch (error) {
+      setResultTitle('Error');
+      setResultMessage(error?.message || 'Failed to create event.');
+      setIsResultDialogOpen(true);
+    }
+  };
 
   const formatDate = (d) => {
     if (!d) return '-';
@@ -123,13 +163,13 @@ export function Events() {
           connection.commercialSpace.getUnits(),
         ]);
         const list = (Array.isArray(resp) ? resp : (resp?.results || []))
-          .map(normalizeAppointment)
+          .map(normalizeEvent)
           .sort((a, b) => {
             const dateCompare = (b.date || '').localeCompare(a.date || '');
             if (dateCompare !== 0) return dateCompare;
             return (b.time || '').localeCompare(a.time || '', undefined, { numeric: true });
           });
-        setAppointments(list);
+        setEvents(list);
 
         const usersList = Array.isArray(usersResp) ? usersResp : (usersResp?.results || []);
         setStaffUsers(usersList);
@@ -175,7 +215,7 @@ export function Events() {
     return d;
   };
 
-  const filteredAppointments = useMemo(() => {
+  const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const today = new Date();
     const start = dateFilter === 'today'
@@ -193,7 +233,7 @@ export function Events() {
           ? getEndOfMonth(today)
           : null;
 
-    return appointments.filter((a) => {
+    return events.filter((a) => {
       const matchesQuery = !q || (
         String(a.id).toLowerCase().includes(q) ||
         (a.title || '').toLowerCase().includes(q) ||
@@ -212,95 +252,30 @@ export function Events() {
       
       return matchesQuery && matchesStatus && matchesDate;
     });
-  }, [appointments, searchQuery, statusFilter, dateFilter]);
+  }, [events, searchQuery, statusFilter, dateFilter]);
 
   const stats = useMemo(() => {
     const todayKey = new Date().toISOString().slice(0, 10);
     const thisWeekStart = getStartOfWeek(new Date()).getTime();
     const thisWeekEnd = getEndOfWeek(new Date()).getTime();
     return {
-      total: appointments.length,
-      today: appointments.filter((a) => (a.date || '').slice(0, 10) === todayKey).length,
-      thisWeek: appointments.filter((a) => {
+      total: events.length,
+      today: events.filter((a) => (a.date || '').slice(0, 10) === todayKey).length,
+      thisWeek: events.filter((a) => {
         const ms = new Date(a.date)?.getTime();
         return ms && ms >= thisWeekStart && ms <= thisWeekEnd;
       }).length,
-      scheduled: appointments.filter((a) => a.status === 'scheduled').length,
-      completed: appointments.filter((a) => a.status === 'completed').length,
+      pending: events.filter((a) => a.status === 'pending').length,
+      approved: events.filter((a) => a.status === 'scheduled').length,
+      completed: events.filter((a) => a.status === 'completed').length,
     };
-  }, [appointments]);
-
-  const openCreateDialog = () => {
-    setFormData({ category: 'General', date: '', time: '', location: '', assignedTo: '', tenantId: '', status: 'scheduled' });
-    setIsEditMode(false);
-    setEditingId(null);
-    setIsCreateDialogOpen(true);
-  };
-
-  const handleSaveEvent = async () => {
-    if (!formData.category || !formData.date || !formData.time || !formData.location) {
-      setResultTitle('Validation Error');
-      setResultMessage('Please fill up all the fields');
-      setIsResultDialogOpen(true);
-      return;
-    }
-
-    try {
-      const payload = {
-        title: formData.category, // Category replaces title
-        category: formData.category,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location.trim(),
-        status: formData.status,
-        tenant: formData.tenantId ? Number(formData.tenantId) : null,
-        assigned_to: formData.assignedTo ? Number(formData.assignedTo) : null,
-      };
-
-      if (isEditMode && editingId) {
-        const updated = normalizeAppointment(await connection.events.updateAppointment(editingId, payload));
-        setAppointments((prev) => prev.map((a) => (String(a.id) === String(editingId) ? updated : a)));
-        setResultTitle('Update Successful');
-        setResultMessage('The event has been updated and assigned.');
-      } else {
-        const created = normalizeAppointment(await connection.events.createAppointment(payload));
-        setAppointments((prev) => [created, ...prev]);
-        setResultTitle('Event Created');
-        setResultMessage('A new event has been scheduled.');
-      }
-
-      setIsCreateDialogOpen(false);
-      setIsEditMode(false);
-      setEditingId(null);
-      setFormData({ title: '', date: '', time: '', location: '', assignedTo: '', tenantId: '', status: 'scheduled' });
-      setIsResultDialogOpen(true);
-    } catch (error) {
-      setResultTitle('Failed Saving Event');
-      setResultMessage(error?.message || 'Please try again.');
-      setIsResultDialogOpen(true);
-    }
-  };
-
-  const handleEditClick = (appointment) => {
-    setFormData({
-      category: appointment.category || 'General',
-      date: appointment.date || '',
-      time: appointment.time || '',
-      location: appointment.location || '',
-      assignedTo: getAssigneeId(appointment.assignedToId),
-      tenantId: getAssigneeId(appointment.tenantId),
-      status: appointment.status || 'scheduled',
-    });
-    setEditingId(appointment.id);
-    setIsEditMode(true);
-    setIsCreateDialogOpen(true);
-  };
+  }, [events]);
 
   const handleDeleteEvent = async (id) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
     try {
       await connection.events.deleteAppointment(id);
-      setAppointments((prev) => prev.filter((a) => String(a.id) !== String(id)));
+      setEvents((prev) => prev.filter((a) => String(a.id) !== String(id)));
       setResultTitle('Delete Successful');
       setResultMessage('The event has been deleted.');
       setIsResultDialogOpen(true);
@@ -311,10 +286,10 @@ export function Events() {
     }
   };
 
-  const handleUpdateStatus = async (appointment, nextStatus) => {
+  const handleUpdateStatus = async (event, nextStatus) => {
     try {
-      const updated = normalizeAppointment(await connection.events.updateAppointment(String(appointment.id), { status: nextStatus }));
-      setAppointments((prev) => prev.map((a) => (String(a.id) === String(appointment.id) ? updated : a)));
+      const updated = normalizeEvent(await connection.events.updateAppointment(String(event.id), { status: nextStatus }));
+      setEvents((prev) => prev.map((a) => (String(a.id) === String(event.id) ? updated : a)));
     } catch (error) {
       setResultTitle('Status Update Failed');
       setResultMessage(error?.message || 'Unable to update event status.');
@@ -328,11 +303,14 @@ export function Events() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#2E3192]">Events Management</h1>
-            <p className="text-gray-600 mt-1">Schedule, manage, and track all property events and appointments.</p>
+            <p className="text-gray-600 mt-1">Schedule, manage, and track all property events.</p>
           </div>
-          <Button className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold" onClick={openCreateDialog}>
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+          >
             <Plus className="h-4 w-4 mr-2" />
-            New Event
+            Create Event
           </Button>
         </div>
 
@@ -340,8 +318,8 @@ export function Events() {
           <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Total Events</p><p className="text-2xl font-bold text-[#2E3192]">{stats.total}</p></CardContent></Card>
           <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Today</p><p className="text-2xl font-bold text-[#2E3192]">{stats.today}</p></CardContent></Card>
           <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">This Week</p><p className="text-2xl font-bold text-blue-700">{stats.thisWeek}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Pending</p><p className="text-2xl font-bold text-yellow-700">{stats.scheduled}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Completed</p><p className="text-2xl font-bold text-green-700">{stats.completed}</p></CardContent></Card>
+          <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Pending</p><p className="text-2xl font-bold text-yellow-700">{stats.pending}</p></CardContent></Card>
+          <Card><CardContent className="pt-4"><p className="text-xs text-gray-500">Approved</p><p className="text-2xl font-bold text-green-700">{stats.approved}</p></CardContent></Card>
         </div>
 
         <Card className="border-2 border-transparent hover:border-[#F9E81B] transition-colors">
@@ -386,7 +364,7 @@ export function Events() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-[#2E3192]">Events ({filteredAppointments.length})</CardTitle>
+            <CardTitle className="text-[#2E3192]">Events ({filteredEvents.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border border-gray-200 overflow-x-auto">
@@ -403,35 +381,35 @@ export function Events() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAppointments.map((appointment) => (
-                    <TableRow key={appointment.id} className="hover:bg-[#F9E81B]/5">
+                  {filteredEvents.map((event) => (
+                    <TableRow key={event.id} className="hover:bg-[#F9E81B]/5">
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[#2E3192]">{appointment.category}</span>
-                          <span className="text-[10px] text-gray-400">ID: {appointment.id}</span>
+                          <span className="font-semibold text-[#2E3192]">{event.category}</span>
+                          <span className="text-[10px] text-gray-400">ID: {event.id}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-sm flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatDate(appointment.date)}</span>
-                          <span className="text-xs text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> {appointment.time || 'TBD'}</span>
+                          <span className="text-sm flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatDate(event.date)}</span>
+                          <span className="text-xs text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> {event.time || 'TBD'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" /> {appointment.location || '-'}</TableCell>
-                      <TableCell className="text-sm">{appointment.tenantName}</TableCell>
+                      <TableCell className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.location || '-'}</TableCell>
+                      <TableCell className="text-sm">{event.tenantName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7">
                             <AvatarFallback className="text-[10px] bg-[#2E3192]/10 text-[#2E3192] font-semibold">
-                              {getInitials(appointment.assignedTo)}
+                              {getInitials(event.assignedTo)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{appointment.assignedTo}</span>
+                          <span className="text-sm">{event.assignedTo}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusBadgeClass[appointment.status] || statusBadgeClass.scheduled}>
-                          {STATUS_LABELS[appointment.status] || appointment.status || STATUS_LABELS.scheduled}
+                        <Badge className={statusBadgeClass[event.status] || statusBadgeClass.scheduled}>
+                          {STATUS_LABELS[event.status] || event.status || STATUS_LABELS.scheduled}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -444,7 +422,7 @@ export function Events() {
                           <DropdownMenuContent align="end" className="w-[190px]">
                             <DropdownMenuItem
                               onClick={() => {
-                                setSelectedAppointment(appointment);
+                                setSelectedEvent(event);
                                 setIsDetailsDialogOpen(true);
                               }}
                               className="cursor-pointer"
@@ -452,20 +430,16 @@ export function Events() {
                               <Eye className="mr-2 h-4 w-4 text-[#2E3192]" />
                               <span>View Details</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditClick(appointment)} className="cursor-pointer">
-                              <Pencil className="mr-2 h-4 w-4 text-[#2E3192]" />
-                              <span>Update Event</span>
-                            </DropdownMenuItem>
-                            {STATUS_OPTIONS.map((status) => (
+                            {user?.role === 'admin' && STATUS_OPTIONS.map((status) => (
                               <DropdownMenuItem
-                                key={`${appointment.id}-${status}`}
-                                onClick={() => handleUpdateStatus(appointment, status)}
+                                key={`${event.id}-${status}`}
+                                onClick={() => handleUpdateStatus(event, status)}
                                 className="cursor-pointer"
                               >
                                 Mark as {STATUS_LABELS[status] || status}
                               </DropdownMenuItem>
                             ))}
-                            <DropdownMenuItem onClick={() => handleDeleteEvent(appointment.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
+                            <DropdownMenuItem onClick={() => handleDeleteEvent(event.id)} className="cursor-pointer text-[#ED1C24] focus:text-[#ED1C24] focus:bg-[#ED1C24]/10">
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>Delete Event</span>
                             </DropdownMenuItem>
@@ -480,137 +454,78 @@ export function Events() {
           </CardContent>
         </Card>
 
-        {/* Create/Edit Event Dialog */}
+        {/* Create Event Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-[#2E3192]">{isEditMode ? 'Edit Event' : 'Create New Event'}</DialogTitle>
-              <DialogDescription>{isEditMode ? 'Update event details and assignment.' : 'Schedule a new event or appointment.'}</DialogDescription>
+              <DialogTitle className="text-[#2E3192]">Create New Event</DialogTitle>
+              <DialogDescription>Fill in the details for the new event. It will be sent to the admin for approval.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Category <span className="text-red-500">*</span></Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(val) => setFormData({ ...formData, category: val })}
+                <Label htmlFor="title">Event Title</Label>
+                <Input 
+                  id="title" 
+                  value={formData.title} 
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  placeholder="e.g. Community Meeting"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input 
+                    id="date" 
+                    type="date" 
+                    value={formData.date} 
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <Input 
+                    id="time" 
+                    type="time" 
+                    value={formData.time} 
+                    onChange={(e) => setFormData({...formData, time: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input 
+                  id="location" 
+                  value={formData.location} 
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  placeholder="e.g. Community Hall"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(val) => setFormData({...formData, category: val})}
                 >
-                  <SelectTrigger className="border-gray-200 focus:ring-[#F9E81B]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="General">General</SelectItem>
-                    <SelectItem value="Inspection">Inspection</SelectItem>
                     <SelectItem value="Maintenance">Maintenance</SelectItem>
                     <SelectItem value="Meeting">Meeting</SelectItem>
-                    <SelectItem value="Compliance">Compliance</SelectItem>
+                    <SelectItem value="Social">Social</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Date <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Time <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="time"
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Location <span className="text-red-500">*</span></Label>
-                <Select
-                  value={formData.location}
-                  onValueChange={(val) => setFormData({ ...formData, location: val })}
-                >
-                  <SelectTrigger className="border-gray-200 focus:ring-[#F9E81B]">
-                    <SelectValue placeholder="Select unit location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 py-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Available Units</p>
-                      {units.map(unit => {
-                        const unitNum = unit.number || unit.unit_number;
-                        return (
-                          <SelectItem key={unit.id} value={`Unit ${unitNum}`}>Unit {unitNum}</SelectItem>
-                        );
-                      })}
-                    </div>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Tenant</Label>
-                  <Select
-                    value={formData.tenantId || "unassigned"}
-                    onValueChange={(val) => setFormData({ ...formData, tenantId: val === "unassigned" ? "" : val })}
-                  >
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue placeholder="Select tenant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">No Tenant</SelectItem>
-                      {staffUsers.filter(u => u.role === 'tenant').map((u) => (
-                        <SelectItem key={u.id} value={String(u.id)}>
-                          {getDisplayName(u)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2E3192] font-medium">Assign Staff</Label>
-                  <Select
-                    value={formData.assignedTo || "unassigned"}
-                    onValueChange={(val) => setFormData({ ...formData, assignedTo: val === "unassigned" ? "" : val })}
-                  >
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue placeholder="Assign staff member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {staffUsers.filter(u => u.role === 'staff' || u.role === 'admin').map((u) => (
-                        <SelectItem key={u.id} value={String(u.id)}>
-                          {getDisplayName(u)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[#2E3192] font-medium">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {STATUS_LABELS[s] || s}
-                      </SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" className="border-gray-300" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-              <Button className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold" onClick={handleSaveEvent}>
-                {isEditMode ? 'Update Event' : 'Create Event'}
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+              <Button 
+                className="bg-[#F9E81B] hover:bg-[#e6d619] text-[#2E3192] font-semibold"
+                onClick={handleCreateEvent}
+              >
+                Create Event
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -623,15 +538,15 @@ export function Events() {
               <DialogTitle className="text-[#2E3192]">Event Details</DialogTitle>
               <DialogDescription>Full event information for tracking and management.</DialogDescription>
             </DialogHeader>
-            {selectedAppointment && (
+            {selectedEvent && (
               <div className="space-y-3 text-sm">
-                <p><span className="font-semibold text-[#2E3192]">Event ID:</span> {selectedAppointment.id}</p>
-                <p><span className="font-semibold text-[#2E3192]">Title:</span> {selectedAppointment.title}</p>
-                <p><span className="font-semibold text-[#2E3192]">Date:</span> {formatDate(selectedAppointment.date)}</p>
-                <p><span className="font-semibold text-[#2E3192]">Time:</span> {selectedAppointment.time || 'TBD'}</p>
-                <p><span className="font-semibold text-[#2E3192]">Location:</span> {selectedAppointment.location || '-'}</p>
-                <p><span className="font-semibold text-[#2E3192]">Status:</span> {STATUS_LABELS[selectedAppointment.status] || selectedAppointment.status}</p>
-                <p><span className="font-semibold text-[#2E3192]">Assigned To:</span> {selectedAppointment.assignedTo || 'Unassigned'}</p>
+                <p><span className="font-semibold text-[#2E3192]">Event ID:</span> {selectedEvent.id}</p>
+                <p><span className="font-semibold text-[#2E3192]">Title:</span> {selectedEvent.title}</p>
+                <p><span className="font-semibold text-[#2E3192]">Date:</span> {formatDate(selectedEvent.date)}</p>
+                <p><span className="font-semibold text-[#2E3192]">Time:</span> {selectedEvent.time || 'TBD'}</p>
+                <p><span className="font-semibold text-[#2E3192]">Location:</span> {selectedEvent.location || '-'}</p>
+                <p><span className="font-semibold text-[#2E3192]">Status:</span> {STATUS_LABELS[selectedEvent.status] || selectedEvent.status}</p>
+                <p><span className="font-semibold text-[#2E3192]">Assigned To:</span> {selectedEvent.assignedTo || 'Unassigned'}</p>
               </div>
             )}
             <DialogFooter>
@@ -654,8 +569,7 @@ export function Events() {
                 OK
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </DialogContent></Dialog>
       </div>
     </Layout>
   );

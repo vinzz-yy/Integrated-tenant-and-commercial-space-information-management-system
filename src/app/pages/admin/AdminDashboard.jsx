@@ -20,7 +20,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export function AdminDashboard() {
   // Get current user from auth context and navigation hook
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   // State for storing dashboard statistics
@@ -32,20 +32,23 @@ export function AdminDashboard() {
     unpaidAmount: 0,
     totalDocuments: 0,
     pendingDocuments: 0,
-    scheduledAppointments: 0,
+    scheduledEvents: 0,
     revenueGrowth: 0,
   });
 
   // State for chart data and lists
   const [revenueData, setRevenueData] = useState([]);
-  const [appointments, setAppointments] = useState([]);
+  const [events, setEvents] = useState([]);
   const [complianceRequests, setComplianceRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
   // Load all dashboard data when component mounts
   useEffect(() => {
+    // Wait for auth to load
+    if (loading) return;
+
     // Redirect non-admin users
-    if (user?.role !== 'admin') {
+    if (!user || user.role !== 'admin') {
       navigate('/');
       return;
     }
@@ -58,7 +61,7 @@ export function AdminDashboard() {
           paymentsResp,
           docsResp,
           compResp,
-          apptResp,
+          eventResp,
           revenueResp,
           notifResp
         ] = await Promise.allSettled([
@@ -193,20 +196,20 @@ export function AdminDashboard() {
           setComplianceRequests(sortedCompliance);
         }
 
-        // Process appointment data
-        if (apptResp.status === 'fulfilled') {
-          const apptData = apptResp.value;
-          const appointmentsData = Array.isArray(apptData) ? apptData : (apptData?.results || []);
+        // Process event data
+        if (eventResp.status === 'fulfilled') {
+          const eventData = eventResp.value;
+          const eventsDataList = Array.isArray(eventData) ? eventData : (eventData?.results || []);
           setStats(prev => ({
             ...prev,
-            scheduledAppointments: appointmentsData.length
+            scheduledEvents: eventsDataList.length
           }));
           
-          // Get upcoming appointments (next 3 newest)
-          const sortedAppointments = [...appointmentsData]
+          // Get upcoming events (next 3 newest)
+          const sortedEvents = [...eventsDataList]
             .sort((a, b) => b.id - a.id)
             .slice(0, 3);
-          setAppointments(sortedAppointments);
+          setEvents(sortedEvents);
         }
 
         // Process notifications
@@ -223,7 +226,17 @@ export function AdminDashboard() {
     };
     
     loadDashboardData();
-  }, [user, navigate]);
+  }, [user, navigate, loading]);
+
+  if (loading) {
+    return (
+      <Layout role="admin">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E3192]"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -236,7 +249,7 @@ export function AdminDashboard() {
   };
 
   // Format date
-  const formatAppointmentDate = (dateString) => {
+  const formatEventDate = (dateString) => {
     if (!dateString) return 'N/A';
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-PH', options);
@@ -335,7 +348,7 @@ export function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Main content grid - Revenue chart and appointments */}
+        {/* Main content grid - Revenue chart and events */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Revenue Chart - takes 2/3 of the grid */}
           <Card className="lg:col-span-2">
@@ -395,7 +408,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Upcoming Appointments - takes 1/3 of the grid */}
+          {/* Upcoming Events - takes 1/3 of the grid */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -414,23 +427,23 @@ export function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              {appointments.length > 0 ? (
+              {events.length > 0 ? (
                 <div className="space-y-4">
-                  {appointments.map((appointment) => (
+                  {events.map((event) => (
                     <div 
-                      key={appointment.id} 
+                      key={event.id} 
                       className="flex items-start gap-3 p-3 border rounded-lg hover:bg-[#F9E81B]/5 transition-colors"
                     >
                       <Calendar className="h-5 w-5 text-[#2E3192] mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
-                          <p className="font-medium text-sm truncate">{appointment.category || appointment.title}</p>
-                          <Badge variant="outline" className={`text-[10px] py-0 h-4 ${getStatusColor(appointment.status)}`}>
-                            {appointment.status}
+                          <p className="font-medium text-sm truncate">{event.category || event.title}</p>
+                          <Badge variant="outline" className={`text-[10px] py-0 h-4 ${getStatusColor(event.status)}`}>
+                            {event.status}
                           </Badge>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatAppointmentDate(appointment.date)} at {appointment.time}
+                          {formatEventDate(event.date)} at {event.time}
                         </p>
                       </div>
                     </div>

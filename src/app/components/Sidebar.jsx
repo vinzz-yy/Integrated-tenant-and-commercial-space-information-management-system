@@ -45,7 +45,7 @@ const tenantMenuItems = {
     { icon: CreditCard, label: 'Payments', path: '/tenant/payments' },
     { icon: FileCheck, label: 'Documents', path: '/tenant/compliance' },
     { icon: Wrench, label: 'Maintenance', path: '/tenant/maintenance' },
-    { icon: Calendar, label: 'Appointments', path: '/tenant/appointments' },
+    { icon: Calendar, label: 'Events & Schedules', path: '/tenant/appointments' },
   ],
   system: [
     { icon: Settings, label: 'Settings', path: '/tenant/settings' },

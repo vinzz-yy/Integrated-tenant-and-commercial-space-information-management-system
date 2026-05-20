@@ -671,6 +671,7 @@ export function UserManagement() {
                     id="department"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    placeholder="Enter department name"
                     className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
@@ -844,6 +845,7 @@ export function UserManagement() {
                     id="editDepartment"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    placeholder="Enter department name"
                     className="border-gray-200 focus:border-[#F9E81B] focus:ring-[#F9E81B]"
                   />
                 </div>
